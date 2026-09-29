@@ -4,55 +4,60 @@
 #   kiem-tra   lint · kiểm dữ liệu thật · định dạng · kiểu · test · build
 #   bao-mat    gitleaks (bí mật lọt vào lịch sử git) · pnpm audit
 #
-# Stage đóng gói image + triển khai thuộc Mốc 2, dựng theo mẫu nhánh develop
-# của repo foxai-gdos cũ (build SRV-01 → deploy SRV-03, deploy bấm tay).
+# RUNNER CỦA FOXAI LÀ SHELL EXECUTOR (docs/FOXAI-CICD-Runbook.md của repo cũ):
+#   tag `foxai-build`, chạy trên SRV-01, user chạy runner có quyền docker.
 #
-# ⚠ CHƯA KIỂM TRÊN RUNNER THẬT. File này viết cho runner kiểu docker executor
-#   (có dùng `image:`). Nếu FOXAI chỉ có shell runner (tag foxai-build như repo
-#   cũ) thì phải sửa trước lần push đầu — xem docs/tien-do.md.
+#   - Không gắn tag → không runner nào nhận → pipeline treo "stuck".
+#   - Shell executor BỎ QUA `image:` → job chạy thẳng trên máy chủ, không có
+#     Node. Nên mỗi job tự chạy trong container bằng `docker run`.
+#   - `--user $(id -u):$(id -g)`: file sinh ra trong thư mục build thuộc user
+#     của runner, không thuộc root — không thì lần clone sau runner không dọn
+#     được thư mục và job hỏng ở bước chuẩn bị.
+#   - node:24 bản ĐẦY ĐỦ (không phải alpine/slim) vì cần git: script
+#     kiem-du-lieu-that dùng `git ls-files`.
+#
+# Stage đóng gói image + triển khai thuộc Mốc 2, theo mẫu nhánh develop của
+# repo foxai-gdos cũ (build SRV-01 → deploy SRV-03, deploy bấm tay).
 # ============================================================================
 
 stages:
   - kiem-tra
   - bao-mat
 
-variables:
-  PNPM_VERSION: '11.12.0'
+default:
+  tags: ['foxai-build']
 
-.node:
-  image: node:24-alpine
-  before_script:
-    - npm install -g pnpm@${PNPM_VERSION}
-    - pnpm config set store-dir .pnpm-store
-    - pnpm install --frozen-lockfile
+variables:
+  NODE_IMAGE: 'node:24'
+  PNPM: 'pnpm@11.12.0'
+
+kiem-tra:
+  stage: kiem-tra
+  script:
+    - >-
+      docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e CI=true
+      -v "$CI_PROJECT_DIR":/app -w /app "$NODE_IMAGE"
+      sh -c "npx --yes $PNPM install --frozen-lockfile --store-dir .pnpm-store && npx --yes $PNPM kiem-tra"
   cache:
     key:
       files: [pnpm-lock.yaml]
     paths: [.pnpm-store]
 
-kiem-tra:
-  extends: .node
-  stage: kiem-tra
-  script:
-    - pnpm lint
-    - pnpm format:check
-    - pnpm typecheck
-    - pnpm test
-    - pnpm build
-
 gitleaks:
   stage: bao-mat
-  image:
-    name: zricethezav/gitleaks:latest
-    entrypoint: ['']
   variables:
     GIT_DEPTH: '0' # quét TOÀN BỘ lịch sử — bí mật đã commit rồi xoá vẫn còn trong lịch sử
   script:
-    - gitleaks git --redact --verbose .
+    - >-
+      docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp
+      -v "$CI_PROJECT_DIR":/repo zricethezav/gitleaks:latest
+      git --redact --verbose /repo
 
 audit:
-  extends: .node
   stage: bao-mat
   script:
-    # Chỉ phụ thuộc chạy thật (--prod), chặn ở mức high trở lên.
-    - pnpm audit --prod --audit-level high
+    # Chỉ phụ thuộc chạy thật (--prod), chặn ở mức high trở lên. Đọc lockfile, không cần cài.
+    - >-
+      docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp
+      -v "$CI_PROJECT_DIR":/app -w /app "$NODE_IMAGE"
+      npx --yes $PNPM audit --prod --audit-level high
