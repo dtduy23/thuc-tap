@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790725492480,
+      "tag": "0000_mo-rong",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790725493921,
+      "tag": "0001_bang",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790725495452,
+      "tag": "0002_bao-mat",
+      "breakpoints": true
+    }
+  ]
+}

@@ -45,15 +45,22 @@ export const NHOM = [
 
 export type MaNhom = (typeof NHOM)[number]['ma']
 
+/**
+ * Bảy hành động — xem ADR-0006. Mã quyền là `MÃ_PHÂN_HỆ.HÀNH_ĐỘNG`, ghép từ
+ * module và chức năng, không viết tay — nên không thể gõ sai một mã quyền.
+ */
+export const HANH_DONG = ['READ', 'CREATE', 'UPDATE', 'DELETE', 'EXPORT', 'APPROVE', 'ASSIGN'] as const
+export type HanhDong = (typeof HANH_DONG)[number]
+
 /** Nguồn dữ liệu của module: Postgres của GDOS, hay gọi sang FOXAI Native. */
 export type NguonDuLieu = 'db' | 'native'
 
-/** Cấp 4 — một đường vào của module cha. Quyền mặc định kế thừa cha. */
+/** Cấp 4 — một đường vào của module cha. */
 export interface ChucNang {
   id: string
   nhan: string
-  /** Chỉ khai khi CHẶT HƠN module cha (vd Đôn đốc cần URGE.WRITE). */
-  quyen?: string
+  /** Hành động cần để thấy chức năng này. Mặc định READ; "Tạo mới" là CREATE, "Đôn đốc" là ASSIGN… */
+  hanhDong?: HanhDong
   mo?: string
 }
 
@@ -62,15 +69,15 @@ export interface ModuleDef {
   id: string
   nhan: string
   nhom: MaNhom
-  /** Dạng MODULE.ACTION, vd PROJECT.READ. Tầng 2 bắt buộc ADMIN.* */
-  quyen: string
+  /** Phần MÃ_PHÂN_HỆ của mã quyền, vd PROJECT. Tầng 2 bắt buộc tiền tố QT_. */
+  maQuyen: string
   nguon: NguonDuLieu
   mo: string
   con: readonly ChucNang[]
 }
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-const QUYEN = /^[A-Z][A-Z0-9_]*\.[A-Z][A-Z0-9_]*$/
+const MA_QUYEN = /^[A-Z][A-Z0-9_]*$/
 
 export const tangCuaNhom = (ma: MaNhom): SoTang => NHOM.find((n) => n.ma === ma)!.tang
 
@@ -91,14 +98,16 @@ export function kiemTraCay(modules: readonly ModuleDef[]): string[] {
     const noi = `module ${m.id}`
     ghiId(m.id, noi)
     if (!m.nhan.trim()) loi.push(`${noi}: thiếu nhãn`)
-    if (!QUYEN.test(m.quyen)) loi.push(`${noi}: quyền "${m.quyen}" phải có dạng MODULE.ACTION`)
+    if (!MA_QUYEN.test(m.maQuyen))
+      loi.push(`${noi}: mã quyền "${m.maQuyen}" phải viết HOA, không dấu, nối bằng _`)
 
     // Hai chiều của cùng một luật: màn quản trị không lọt ra Tầng 1, và màn
     // nghiệp vụ không nấp sau cờ quản trị ở Tầng 2.
-    const laQuanTri = m.quyen.startsWith('ADMIN.')
-    if (tangCuaNhom(m.nhom) === 2 && !laQuanTri) loi.push(`${noi}: nằm ở Tầng 2 thì quyền phải là ADMIN.*`)
+    const laQuanTri = m.maQuyen.startsWith('QT_')
+    if (tangCuaNhom(m.nhom) === 2 && !laQuanTri)
+      loi.push(`${noi}: nằm ở Tầng 2 thì mã quyền phải bắt đầu QT_`)
     if (tangCuaNhom(m.nhom) === 1 && laQuanTri)
-      loi.push(`${noi}: nằm ở Tầng 1 thì không được dùng quyền ADMIN.*`)
+      loi.push(`${noi}: nằm ở Tầng 1 thì không được dùng mã quyền QT_`)
 
     // Cấp 3 là một đối tượng; không có đường vào nào thì không vào được — tức route mồ côi.
     if (m.con.length === 0) loi.push(`${noi}: phải có ít nhất một chức năng cấp 4`)
@@ -106,8 +115,6 @@ export function kiemTraCay(modules: readonly ModuleDef[]): string[] {
       const noiCon = `${noi} › ${c.id}`
       ghiId(c.id, noiCon)
       if (!c.nhan.trim()) loi.push(`${noiCon}: thiếu nhãn`)
-      if (c.quyen !== undefined && !QUYEN.test(c.quyen))
-        loi.push(`${noiCon}: quyền "${c.quyen}" phải có dạng MODULE.ACTION`)
     }
   }
   return loi
@@ -130,8 +137,8 @@ export interface NhanhTang {
   nhom: NhanhNhom[]
 }
 
-/** Quyền thực tế của một chức năng cấp 4: của riêng nó nếu có, không thì của cha. */
-export const quyenCua = (m: ModuleDef, c: ChucNang): string => c.quyen ?? m.quyen
+/** Mã quyền cần để thấy một chức năng cấp 4, vd `PROJECT.READ`, `PROJECT.CREATE`. */
+export const quyenCua = (m: ModuleDef, c: ChucNang): string => `${m.maQuyen}.${c.hanhDong ?? 'READ'}`
 
 /**
  * Lọc cây theo quyền ở CẢ BỐN cấp. Nhánh nào không còn con nào được thấy thì

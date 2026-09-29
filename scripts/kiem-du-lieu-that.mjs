@@ -12,11 +12,16 @@
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 
+// Dãy số đứng liền dấu "-" là một khúc của UUID (khúc cuối dài đúng 12 ký tự,
+// toàn số thì trông y hệt CCCD) — không phải số của người.
+const KHONG_DINH = String.raw`(?<![\d.\-])`
+const KHONG_DUOI = String.raw`(?![\d.\-])`
+
 const MAU = [
   { ten: 'email công vụ .gov.vn', re: /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.gov\.vn\b/ },
   { ten: 'email cá nhân', re: /[A-Za-z0-9._%+-]+@(?:gmail|yahoo|outlook|hotmail)\.com\b/ },
-  { ten: 'số di động Việt Nam', re: /(?<![\d.])0[35789]\d{8}(?![\d.])/ },
-  { ten: 'số CCCD (12 chữ số)', re: /(?<![\d.])0\d{11}(?![\d.])/ },
+  { ten: 'số di động Việt Nam', re: new RegExp(`${KHONG_DINH}0[35789]\\d{8}${KHONG_DUOI}`) },
+  { ten: 'số CCCD (12 chữ số)', re: new RegExp(`${KHONG_DINH}0\\d{11}${KHONG_DUOI}`) },
 ]
 
 const BO_QUA_TEP = [

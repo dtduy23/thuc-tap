@@ -46,10 +46,23 @@ scripts/         kiểm tra chạy trong CI
 
 **Dữ liệu** (ADR-0004)
 
-- Mọi bảng nghiệp vụ: có `organization_id`, bật **RLS**, có `deleted_at` (xóa mềm), mọi thay
-  đổi ghi nhật ký thao tác. Không có ngoại lệ "tạm thời".
+- Mọi bảng nghiệp vụ: có `don_vi_id`, bật **RLS**, có `deleted_at` (xóa mềm), gắn trigger
+  `ghi_nhat_ky` + `dat_updated_at`, cấp quyền cho `gdos_app` **không có DELETE**. Mẫu: migration
+  `0002_bao-mat.sql`. Không có ngoại lệ "tạm thời".
+- Chạm dữ liệu nghiệp vụ **chỉ qua `trongPhamVi()`** (`apps/api/src/db/pham-vi.ts`). Không mở
+  transaction riêng, không dùng thẳng connection pool.
+- Bảng `tai_khoan`: luôn chọn cột tường minh — `gdos_app` không có quyền đọc `mat_khau_bam`, nên
+  `select *` sẽ lỗi. Đó là cố ý.
+- Mỗi bảng mới phải có test trong `bao-mat.test.ts` (hoặc file cùng kiểu): xã A không thấy dữ liệu
+  xã B, không xóa cứng được.
 - Tài khoản là của GDOS (ADR-0003). `native_user_id` chỉ là tham chiếu, được phép rỗng.
 - Tệp đính kèm nằm ở MinIO; Postgres chỉ giữ đường dẫn.
+
+**Quyền** (ADR-0006)
+
+- Quyền = vai (hành động) × phân công (phân hệ). Mã quyền `MÃ_PHÂN_HỆ.HÀNH_ĐỘNG` được **ghép**
+  bởi `quyenCua()`, không gõ tay. Tính bằng `tinhQuyen()` — API và web dùng chung một hàm.
+- Không thêm vai mới chỉ vì cần _phạm vi_ khác — đó là việc của phân công.
 
 **Bảo mật** (ADR-0003, ADR-0005)
 

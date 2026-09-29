@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { NHOM, TANG, kiemTraCay, locTheoQuyen, type ModuleDef } from './phan-he.js'
+import { NHOM, TANG, kiemTraCay, locTheoQuyen, quyenCua, type ModuleDef } from './phan-he.js'
 
 const mau = (ghiDe: Partial<ModuleDef> = {}): ModuleDef => ({
   id: 'du-an',
   nhan: 'Dự án',
   nhom: 'tac-nghiep',
-  quyen: 'PROJECT.READ',
+  maQuyen: 'PROJECT',
   nguon: 'db',
   mo: 'Danh mục dự án.',
   con: [
     { id: 'da-tat-ca', nhan: 'Tất cả dự án' },
-    { id: 'da-don-doc', nhan: 'Đôn đốc', quyen: 'URGE.WRITE' },
+    { id: 'da-tao', nhan: 'Tạo dự án mới', hanhDong: 'CREATE' },
   ],
   ...ghiDe,
 })
@@ -27,6 +27,14 @@ describe('khung cố định', () => {
   it('không có nhóm "ngăn kéo" kiểu mở rộng / khác / tiện ích', () => {
     const cam = /mo-rong|khac|tien-ich|nang-cao/
     expect(NHOM.filter((n) => cam.test(n.ma))).toEqual([])
+  })
+})
+
+describe('quyenCua', () => {
+  it('ghép mã phân hệ với hành động, mặc định READ', () => {
+    const m = mau()
+    expect(quyenCua(m, m.con[0]!)).toBe('PROJECT.READ')
+    expect(quyenCua(m, m.con[1]!)).toBe('PROJECT.CREATE')
   })
 })
 
@@ -48,25 +56,26 @@ describe('kiemTraCay', () => {
     expect(kiemTraCay([mau({ id: 'Dự-Án' })]).length).toBeGreaterThan(0)
   })
 
-  it('bắt quyền sai dạng MODULE.ACTION', () => {
-    expect(kiemTraCay([mau({ quyen: 'project-read' })]).length).toBeGreaterThan(0)
+  it('bắt mã quyền sai dạng', () => {
+    expect(kiemTraCay([mau({ maQuyen: 'project' })]).length).toBeGreaterThan(0)
+    expect(kiemTraCay([mau({ maQuyen: 'PROJECT.READ' })]).length).toBeGreaterThan(0)
   })
 
-  it('màn Tầng 2 bắt buộc quyền ADMIN.*', () => {
+  it('module Tầng 2 bắt buộc mã quyền QT_', () => {
     const loi = kiemTraCay([
       mau({
         id: 'qt-tai-khoan',
         nhom: 'qt-nguoi-dung',
-        quyen: 'USER.READ',
+        maQuyen: 'USER',
         con: [{ id: 'tk-ds', nhan: 'Danh sách' }],
       }),
     ])
-    expect(loi).toContain('module qt-tai-khoan: nằm ở Tầng 2 thì quyền phải là ADMIN.*')
+    expect(loi).toContain('module qt-tai-khoan: nằm ở Tầng 2 thì mã quyền phải bắt đầu QT_')
   })
 
-  it('màn nghiệp vụ không được nấp sau quyền ADMIN.*', () => {
-    const loi = kiemTraCay([mau({ quyen: 'ADMIN.CONF' })])
-    expect(loi).toContain('module du-an: nằm ở Tầng 1 thì không được dùng quyền ADMIN.*')
+  it('màn nghiệp vụ không được nấp sau mã quyền QT_', () => {
+    const loi = kiemTraCay([mau({ maQuyen: 'QT_DU_AN' })])
+    expect(loi).toContain('module du-an: nằm ở Tầng 1 thì không được dùng mã quyền QT_')
   })
 })
 
@@ -77,19 +86,18 @@ describe('locTheoQuyen', () => {
       id: 'qt-tai-khoan',
       nhan: 'Tài khoản',
       nhom: 'qt-nguoi-dung',
-      quyen: 'ADMIN.USER',
+      maQuyen: 'QT_NGUOI_DUNG',
       con: [{ id: 'tk-ds', nhan: 'Danh sách tài khoản' }],
     }),
   ]
 
-  it('quyền chặt hơn ở cấp 4 chỉ ẩn đúng chức năng đó, anh em vẫn còn', () => {
+  it('thiếu hành động ở cấp 4 chỉ ẩn đúng chức năng đó, anh em vẫn còn', () => {
     const ket = locTheoQuyen(cay, new Set(['PROJECT.READ']))
-    const duAn = ket[0]!.nhom[0]!.modules[0]!
-    expect(duAn.con.map((c) => c.id)).toEqual(['da-tat-ca'])
+    expect(ket[0]!.nhom[0]!.modules[0]!.con.map((c) => c.id)).toEqual(['da-tat-ca'])
   })
 
   it('không có cờ quản trị thì mất cả tiêu đề Tầng 2', () => {
-    const ket = locTheoQuyen(cay, new Set(['PROJECT.READ', 'URGE.WRITE']))
+    const ket = locTheoQuyen(cay, new Set(['PROJECT.READ', 'PROJECT.CREATE']))
     expect(ket.map((t) => t.so)).toEqual([1])
   })
 
@@ -97,8 +105,8 @@ describe('locTheoQuyen', () => {
     expect(locTheoQuyen(cay, new Set())).toEqual([])
   })
 
-  it('có cờ quản trị thì thấy đủ hai tầng', () => {
-    const ket = locTheoQuyen(cay, new Set(['PROJECT.READ', 'URGE.WRITE', 'ADMIN.USER']))
+  it('có quyền Tầng 2 thì thấy đủ hai tầng', () => {
+    const ket = locTheoQuyen(cay, new Set(['PROJECT.READ', 'QT_NGUOI_DUNG.READ']))
     expect(ket.map((t) => t.so)).toEqual([1, 2])
   })
 })
