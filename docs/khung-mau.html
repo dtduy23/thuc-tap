@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>xOS — Khung mẫu phân hệ</title>
+<!--
+  ============================================================================
+  xOS — KHUNG MẪU PHÂN HỆ  (bản mẫu tự chứa, không cần build, không gọi mạng)
+
+  Dựng thành hình cái MINDSET phân nhóm module dùng chung cho cả họ sản phẩm
+  (GDOS · EAOS · HDOS · PMS · IOC), để nhân viên NHÌN thấy khung.
+
+  Căn cứ:
+    - GDOS  https://gitlab.foxai.com.vn/dangnm/foxai-gdos  (registry một tệp)
+    - PMS   https://gitlab.foxai.com.vn/fox/pms            (4 vai × cờ quản trị,
+            timeline engine, KPI 100 điểm, SLA NĐ 45, nhật ký thao tác)
+
+  CÂY BỐN CẤP
+    Cấp 1  TẦNG       Nghiệp vụ | Quản trị hệ thống
+    Cấp 2  NHÓM       Tầng 1: Điều hành · Tác nghiệp · Danh mục · Giám sát & Lưu vết
+                      Tầng 2: Người dùng & Phân quyền · Kết nối · Cấu hình & Vận hành
+    Cấp 3  MODULE     một ĐỐI TƯỢNG nghiệp vụ (Dự án, Đơn thư, Tài khoản…)
+    Cấp 4  CHỨC NĂNG  các ĐƯỜNG VÀO khác nhau của CÙNG đối tượng đó:
+                      một bộ lọc · một giai đoạn · một thao tác.
+                      Là đối tượng mới thì phải lên cấp 3, không nhét vào cấp 4.
+
+  KHÔNG có cấp 5. Thẻ bên trong một hồ sơ (checklist, giải ngân…) là trục
+  PHẠM VI — phải mở hồ sơ trước — chứ không phải độ sâu của cây.
+
+  Không nhúng mật khẩu thật. Không có dữ liệu của người thật.
+  ============================================================================
+-->
+<style>
+:root{
+  --brand:#1B66E0; --brand-dim:#1552bb; --tint-brand:#e8f0fe;
+  --ok:#0f9d58; --tint-ok:#e6f4ec;
+  --warn:#e8a33d; --tint-warn:#fdf3e3;
+  --danger:#d93025; --tint-danger:#fce8e6;
+  --tim:#7c4dff; --tint-tim:#f0eaff;
+  --bg:#eef1f6; --nen:#ffffff; --nen-2:#f7f9fc;
+  --ink:#16222e; --body:#41505f; --faint:#8494a5;
+  --line:#dfe5ec; --line-2:#eef2f7;
+  --nav-hover:#f0f4fa; --nav-active:var(--tint-brand);
+  --shadow:0 1px 2px rgba(16,34,54,.06), 0 4px 16px rgba(16,34,54,.06);
+  --r:10px;
+}
+:root[data-theme="dark"]{
+  --brand:#5b9bff; --brand-dim:#3f7fe0; --tint-brand:#16273f;
+  --ok:#4cc38a; --tint-ok:#123024;
+  --warn:#e0a458; --tint-warn:#33260f;
+  --danger:#ff6b60; --tint-danger:#3a1714;
+  --tim:#a98bff; --tint-tim:#241a3d;
+  --bg:#0e141b; --nen:#161e27; --nen-2:#1b242f;
+  --ink:#e8eef5; --body:#b3c0cd; --faint:#7d8c9c;
+  --line:#26313d; --line-2:#1f2831;
+  --nav-hover:#1d2833; --nav-active:var(--tint-brand);
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0}
+a{color:var(--brand);text-decoration:none}
+code{font-size:.92em;background:var(--nen-2);border:1px solid var(--line-2);padding:0 4px;border-radius:4px}
+.tnum{font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ── Đăng nhập ─────────────────────────────────────────────────────────── */
+#dangnhap{position:fixed;inset:0;display:grid;place-items:center;padding:20px;z-index:60;
+  background:radial-gradient(1100px 520px at 12% -10%,#24457a 0%,transparent 60%),radial-gradient(900px 520px at 100% 110%,#123055 0%,transparent 58%),#0d1723}
+.the-dn{width:100%;max-width:412px;background:var(--nen);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.42);padding:30px 28px 24px}
+.dn-logo{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+.dn-mark{width:38px;height:38px;border-radius:9px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px}
+.dn-ten{font-weight:700;font-size:16px;line-height:1.15}
+.dn-phu{font-size:11.5px;color:var(--faint)}
+.truong{margin-bottom:13px}
+.truong label{display:block;font-size:12.5px;color:var(--body);margin-bottom:5px;font-weight:600}
+.truong input,.truong select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--nen-2)}
+.o-chon{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--body);margin:-2px 0 15px;cursor:pointer}
+.o-chon input{width:15px;height:15px;accent-color:var(--brand)}
+.nut{width:100%;padding:10px;border-radius:8px;background:var(--brand);color:#fff;font-weight:600}
+.nut:hover{background:var(--brand-dim)}
+.dn-ghichu{margin-top:16px;padding:10px 12px;border-radius:8px;background:var(--nen-2);border:1px solid var(--line-2);font-size:11.5px;color:var(--faint);line-height:1.55}
+
+/* ── Vỏ ────────────────────────────────────────────────────────────────── */
+#ung-dung{display:none;height:100%;flex-direction:column}
+#ung-dung.hien{display:flex}
+.thanh-tren{height:54px;flex:none;display:flex;align-items:center;gap:14px;padding:0 14px;background:var(--nen);border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:9px;width:252px;flex:none}
+.logo-mark{width:30px;height:30px;border-radius:7px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:800;font-size:11px}
+.logo-ten{font-weight:700;font-size:14.5px;line-height:1.1}
+.logo-phu{font-size:10.5px;color:var(--faint)}
+.tim-kiem{flex:1;max-width:520px;position:relative}
+.tim-kiem input{width:100%;padding:7px 11px 7px 32px;border:1px solid var(--line);border-radius:8px;background:var(--nen-2)}
+.tim-kiem svg{position:absolute;left:9px;top:8px;color:var(--faint)}
+.kq-tim{position:absolute;top:calc(100% + 5px);left:0;right:0;background:var(--nen);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);max-height:360px;overflow:auto;z-index:30;padding:5px}
+.kq-tim button{display:block;width:100%;text-align:left;padding:7px 9px;border-radius:6px;font-size:13px}
+.kq-tim button:hover{background:var(--nav-hover)}
+.kq-nhom{font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.4px;padding:7px 9px 3px}
+.tt-phai{margin-left:auto;display:flex;align-items:center;gap:8px}
+.nut-vo{padding:6px 10px;border-radius:8px;color:var(--body);font-size:12.5px;display:flex;align-items:center;gap:6px;position:relative}
+.nut-vo:hover{background:var(--nav-hover)}
+.cham{position:absolute;top:3px;right:4px;min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center}
+.nguoi{display:flex;align-items:center;gap:8px;padding-left:10px;border-left:1px solid var(--line)}
+.nguoi-ten{font-size:12.5px;font-weight:600;line-height:1.2}
+.nguoi-vai{font-size:10.5px;color:var(--faint)}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--tint-brand);color:var(--brand);display:grid;place-items:center;font-weight:700;font-size:12px}
+.than{flex:1;display:flex;min-height:0}
+
+/* ── CÂY BỐN CẤP ───────────────────────────────────────────────────────── */
+.canh{width:252px;flex:none;background:var(--nen);border-right:1px solid var(--line);overflow-y:auto;padding:10px 8px 24px}
+.cay-cong{display:flex;gap:4px;padding:0 2px 6px}
+.cay-cong button{flex:1;font-size:11px;color:var(--faint);padding:5px 4px;border-radius:6px;border:1px solid var(--line-2)}
+.cay-cong button:hover{background:var(--nav-hover);color:var(--body)}
+.mui{width:12px;height:12px;flex:none;transition:transform .15s;opacity:.65}
+.dong > .mui{transform:rotate(-90deg)}
+
+/* Cấp 1 — Tầng */
+.c1{display:flex;align-items:center;gap:6px;width:100%;padding:11px 6px 2px;text-align:left;
+  font-size:10.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--brand)}
+.c1.t2{color:var(--tim)}
+.c1 .bar{width:3px;height:12px;border-radius:2px;background:currentColor;flex:none}
+.c1-hoi{padding:0 8px 3px 27px;font-size:10.5px;color:var(--faint);font-style:italic;line-height:1.4}
+/* Cấp 2 — Nhóm */
+.c2{display:flex;align-items:center;gap:6px;width:100%;padding:8px 6px 3px 12px;text-align:left;
+  font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--faint)}
+.c2:hover{color:var(--body)}
+/* Cấp 3 — Module */
+.c3{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px 6px 12px;border-radius:8px;text-align:left;font-size:13px;color:var(--body)}
+.c3:hover{background:var(--nav-hover)}
+.c3.co-chon{color:var(--ink);font-weight:600}
+.c3 .ico{width:16px;flex:none;opacity:.85}
+.c3 .nhan{flex:1;min-width:0}
+.c3 .so{font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:9px;background:var(--tint-danger);color:var(--danger)}
+/* Cấp 4 — Chức năng */
+.c4-khung{margin:1px 0 5px 27px;border-left:1px solid var(--line);padding-left:6px}
+.c4{display:block;width:100%;padding:5px 8px;border-radius:6px;text-align:left;font-size:12.5px;color:var(--body)}
+.c4:hover{background:var(--nav-hover)}
+.c4.chon{background:var(--nav-active);color:var(--brand);font-weight:600}
+.vach{height:1px;background:var(--line-2);margin:12px 6px 4px}
+
+/* ── Nội dung ──────────────────────────────────────────────────────────── */
+.chinh{flex:1;overflow-y:auto;padding:18px 22px 40px;min-width:0}
+.duong-dan{font-size:11.5px;color:var(--faint);margin-bottom:5px;display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.duong-dan .cap{font-size:9.5px;font-weight:700;padding:0 5px;border-radius:4px;background:var(--nen-2);border:1px solid var(--line);color:var(--faint)}
+.tieu-de{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px}
+.tieu-de h1{font-size:21px;margin:0 0 3px;letter-spacing:-.2px}
+.tieu-de p{margin:0;font-size:12.5px;color:var(--faint);max-width:72ch}
+.td-nut{margin-left:auto;display:flex;gap:8px;flex:none;align-items:center}
+.nut-nho{padding:7px 12px;border-radius:8px;border:1px solid var(--line);font-size:12.5px;color:var(--body);background:var(--nen)}
+.nut-nho:hover{background:var(--nav-hover)}
+.nut-nho.chinh-yeu{background:var(--brand);color:#fff;border-color:var(--brand)}
+.nut-nho.chinh-yeu:hover{background:var(--brand-dim)}
+.the{background:var(--nen);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:16px}
+.the-dau{padding:12px 15px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;gap:10px}
+.the-dau h2{font-size:14px;margin:0;font-weight:650}
+.the-dau .phu{font-size:11.5px;color:var(--faint)}
+.the-than{padding:15px}
+.the-than.khit{padding:0}
+.luoi{display:grid;gap:14px}
+.c4g{grid-template-columns:repeat(4,1fr)} .c3g{grid-template-columns:repeat(3,1fr)} .c2g{grid-template-columns:repeat(2,1fr)}
+@media(max-width:1180px){.c4g{grid-template-columns:repeat(2,1fr)}.c3g{grid-template-columns:repeat(2,1fr)}}
+/* Màn hẹp: sidebar KHÔNG được biến mất — thành ngăn kéo mở bằng nút ☰.
+   Ẩn hẳn là người dùng mất đường đi, cây bốn cấp thành vô nghĩa. */
+.nut-menu{display:none}
+@media(max-width:780px){
+  .c4g,.c3g,.c2g{grid-template-columns:1fr}
+  .chinh{padding:14px}
+  .nut-menu{display:flex}
+  .logo{width:auto} .logo-ten,.logo-phu{display:none}
+  .nguoi > div:not(.avatar){display:none}
+  .tim-kiem{min-width:0}
+  .canh{position:fixed;top:54px;left:0;bottom:0;z-index:45;transform:translateX(-105%);transition:transform .18s;box-shadow:var(--shadow)}
+  .canh.mo{transform:none}
+}
+.kpi{background:var(--nen);border:1px solid var(--line);border-radius:var(--r);padding:14px 15px;box-shadow:var(--shadow)}
+.kpi .nhan{font-size:11.5px;color:var(--faint);margin-bottom:6px}
+.kpi .so{font-size:25px;font-weight:700;letter-spacing:-.5px;line-height:1}
+.kpi .duoi{font-size:11.5px;color:var(--body);margin-top:6px}
+table{width:100%;border-collapse:collapse;font-size:12.8px}
+th{text-align:left;font-weight:650;color:var(--body);background:var(--nen-2);padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;z-index:1}
+td{padding:9px 12px;border-bottom:1px solid var(--line-2);vertical-align:top}
+tbody tr:hover{background:var(--nav-hover)}
+tbody tr.bam{cursor:pointer}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.chip.ok{background:var(--tint-ok);color:var(--ok)}
+.chip.warn{background:var(--tint-warn);color:#a9742a}
+.chip.danger{background:var(--tint-danger);color:var(--danger)}
+.chip.brand{background:var(--tint-brand);color:var(--brand)}
+.chip.tim{background:var(--tint-tim);color:var(--tim)}
+.chip.xam{background:var(--nen-2);color:var(--faint);border:1px solid var(--line)}
+.thanh-tien{height:6px;border-radius:4px;background:var(--line-2);overflow:hidden;min-width:70px}
+.thanh-tien i{display:block;height:100%;background:var(--brand);border-radius:4px}
+.trong{padding:34px 20px;text-align:center;color:var(--faint);font-size:12.8px;line-height:1.7}
+.tab{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:15px;overflow-x:auto}
+.tab button{padding:8px 13px;font-size:13px;color:var(--body);border-bottom:2px solid transparent;white-space:nowrap}
+.tab button.chon{color:var(--brand);border-bottom-color:var(--brand);font-weight:600}
+.hang-viec{display:flex;align-items:center;gap:11px;padding:10px 15px;border-bottom:1px solid var(--line-2)}
+.hang-viec:last-child{border-bottom:0}
+.hv-ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;flex:none;font-weight:700}
+.hv-noi{flex:1;min-width:0}
+.hv-tieu{font-size:13px;font-weight:600;margin-bottom:1px}
+.hv-phu{font-size:11.5px;color:var(--faint)}
+.ghi-chu{border-left:3px solid var(--brand);background:var(--tint-brand);padding:11px 14px;border-radius:0 8px 8px 0;font-size:12.5px;color:var(--body);margin-bottom:16px;line-height:1.6}
+.ghi-chu b{color:var(--ink)}
+.tro-ly-nut{position:fixed;right:20px;bottom:20px;width:50px;height:50px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;box-shadow:0 8px 22px rgba(27,102,224,.42);z-index:40}
+.tro-ly-bang{position:fixed;right:20px;bottom:80px;width:330px;max-height:440px;background:var(--nen);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);z-index:40;display:none;flex-direction:column;overflow:hidden}
+.tro-ly-bang.hien{display:flex}
+.tl-dau{padding:11px 14px;border-bottom:1px solid var(--line-2);font-weight:650;font-size:13px;display:flex;align-items:center;gap:8px}
+.tl-than{flex:1;overflow-y:auto;padding:13px 14px;font-size:12.5px;color:var(--body);line-height:1.6}
+.tl-goi{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tl-goi button{padding:5px 10px;border-radius:14px;background:var(--nen-2);border:1px solid var(--line);font-size:11.5px;color:var(--body)}
+.lop-phu{position:fixed;inset:0;background:rgba(9,17,26,.5);z-index:50;display:none;padding:26px;overflow:auto}
+.lop-phu.hien{display:block}
+.hop{max-width:1040px;margin:0 auto;background:var(--nen);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.hop-dau{padding:14px 18px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;gap:10px}
+.hop-dau h2{margin:0;font-size:15px}
+.hop-than{padding:18px;max-height:calc(100vh - 150px);overflow:auto}
+.the-mod{border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--nen)}
+.the-mod h4{margin:0 0 2px;font-size:13px;display:flex;align-items:center;gap:6px}
+.the-mod .mo{font-size:11px;color:var(--faint);line-height:1.45;margin-bottom:7px}
+.the-mod button{display:block;width:100%;text-align:left;font-size:12px;padding:3px 0 3px 10px;border-left:1px solid var(--line);color:var(--body)}
+.the-mod button:hover:not([disabled]){color:var(--brand)}
+.the-mod button[disabled]{opacity:.4;cursor:default}
+.lgd{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:11.5px;color:var(--faint);margin-top:10px}
+.lgd span{display:flex;align-items:center;gap:5px}
+.o{width:9px;height:9px;border-radius:3px;display:inline-block}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ ĐĂNG NHẬP ══════════════════ -->
+<div id="dangnhap">
+  <form class="the-dn" onsubmit="vaoHe(event)">
+    <div class="dn-logo">
+      <div class="dn-mark">xOS</div>
+      <div><div class="dn-ten">Nền tảng điều hành số</div><div class="dn-phu">Khung mẫu phân hệ · FOXAI</div></div>
+    </div>
+    <div class="truong">
+      <label for="dn-vai">Đăng nhập với vai</label>
+      <select id="dn-vai" onchange="$('#dn-qt').checked = this.value === 'so'">
+        <option value="lanh-dao">Lãnh đạo tỉnh — xem toàn bộ</option>
+        <option value="so" selected>Sở KH&amp;CN — toàn quyền nghiệp vụ</option>
+        <option value="chu-dau-tu">Chủ đầu tư — dự án của đơn vị</option>
+        <option value="nha-thau">Nhà thầu — gói thầu tham gia</option>
+      </select>
+    </div>
+    <label class="o-chon"><input type="checkbox" id="dn-qt" checked /> Kèm cờ <b>quản trị hệ thống</b> — mở Tầng 2</label>
+    <div class="truong"><label for="dn-tk">Tài khoản</label><input id="dn-tk" value="nguoidung.demo" autocomplete="username" /></div>
+    <div class="truong"><label for="dn-mk">Mật khẩu</label><input id="dn-mk" type="password" value="demo" autocomplete="current-password" /></div>
+    <button class="nut" type="submit">Đăng nhập</button>
+    <div class="dn-ghichu">
+      Bản mẫu chạy tại máy, <b>không gọi mạng và không nhúng mật khẩu thật</b>. Mật khẩu nào cũng vào được.
+      <b>Vai nghiệp vụ × cờ quản trị độc lập</b>, đúng mô hình PMS: vai quyết định Tầng 1, cờ quyết định Tầng 2.
+    </div>
+  </form>
+</div>
+
+<!-- ══════════════════ ỨNG DỤNG ══════════════════ -->
+<div id="ung-dung">
+  <header class="thanh-tren">
+    <button class="nut-vo nut-menu" onclick="$('#canh').classList.toggle('mo')" title="Mở cây phân hệ" aria-label="Mở cây phân hệ">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <div class="logo">
+      <div class="logo-mark">xOS</div>
+      <div><div class="logo-ten">Nền tảng điều hành số</div><div class="logo-phu" id="tt-donvi">—</div></div>
+    </div>
+    <div class="tim-kiem">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="o-tim" placeholder="Tìm chức năng, dự án, đơn thư…  (Ctrl + K)" oninput="timKiem(this.value)" onfocus="timKiem(this.value)" />
+      <div class="kq-tim" id="kq-tim" style="display:none"></div>
+    </div>
+    <div class="tt-phai">
+      <button class="nut-vo" onclick="di('viec-cua-toi')" title="Việc của tôi">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>
+        <span class="cham" id="cham-viec">0</span>
+      </button>
+      <button class="nut-vo" onclick="moToanBo()" title="Toàn bộ chức năng">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      </button>
+      <button class="nut-vo" onclick="doiNen()" title="Sáng / tối">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+      </button>
+      <div class="nguoi">
+        <div class="avatar" id="tt-chu">S</div>
+        <div><div class="nguoi-ten" id="tt-ten">—</div><div class="nguoi-vai" id="tt-vai">—</div></div>
+        <button class="nut-vo" onclick="thoat()" title="Đăng xuất">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+  <div class="than">
+    <nav class="canh" id="canh" aria-label="Cây phân hệ"></nav>
+    <main class="chinh" id="chinh"></main>
+  </div>
+</div>
+
+<button class="tro-ly-nut" id="tro-ly-nut" onclick="doiTroLy()" style="display:none" title="Trợ lý hỏi đáp">
+  <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>
+</button>
+<div class="tro-ly-bang" id="tro-ly-bang">
+  <div class="tl-dau">Trợ lý hỏi đáp <button class="nut-vo" style="margin-left:auto;padding:2px 6px" onclick="doiTroLy()">✕</button></div>
+  <div class="tl-than" id="tl-than"></div>
+</div>
+
+<div class="lop-phu" id="lop-phu" onclick="if(event.target===this)dongPhu()">
+  <div class="hop">
+    <div class="hop-dau"><h2 id="phu-ten">—</h2><button class="nut-nho" style="margin-left:auto" onclick="dongPhu()">Đóng</button></div>
+    <div class="hop-than" id="phu-than"></div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   CẤP 1 — TẦNG.  CẤP 2 — NHÓM.  Cả hai là danh sách ĐÓNG.
+   Thêm tầng/nhóm = sửa hai mảng này = phải có người duyệt.
+   ══════════════════════════════════════════════════════════════════════════ */
+const TANG = [
+  { so:1, nhan:'Tầng 1 — Nghiệp vụ',         hoi:'Màn này quan hệ với dữ liệu nghiệp vụ như thế nào?' },
+  { so:2, nhan:'Tầng 2 — Quản trị hệ thống', hoi:'Một cửa, đúng ba nhóm.' },
+];
+const NHOM = [
+  { ma:'dieu-hanh',     tang:1, nhan:'Điều hành',               hoi:'Đọc tổng hợp NHIỀU hồ sơ, không sửa gì?' },
+  { ma:'tac-nghiep',    tang:1, nhan:'Tác nghiệp',              hoi:'Có mã hồ sơ + thời hạn đo được + người chịu trách nhiệm?' },
+  { ma:'danh-muc',      tang:1, nhan:'Danh mục',                hoi:'Có TỪ HAI nhóm nghiệp vụ tham chiếu tới?' },
+  { ma:'giam-sat',      tang:1, nhan:'Giám sát & Lưu vết',      hoi:'Là VẾT của việc đã làm, người xem là thanh tra/lãnh đạo?' },
+  { ma:'qt-nguoi-dung', tang:2, nhan:'Người dùng & Phân quyền', hoi:'Ai được vào, được làm gì?' },
+  { ma:'qt-ket-noi',    tang:2, nhan:'Kết nối',                 hoi:'Hệ thống nói chuyện với bên ngoài qua đâu?' },
+  { ma:'qt-cau-hinh',   tang:2, nhan:'Cấu hình & Vận hành',     hoi:'Hệ thống chạy thế nào, đang chạy ra sao?' },
+];
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CẤP 3 — MODULE (một đối tượng) và CẤP 4 — CHỨC NĂNG (các đường vào nó).
+
+   Module khai: nhom · quyen · nguon ('api' Native | 'db' Postgres xOS) · con[]
+   Chức năng khai: id · nhan · ve (hàm vẽ; bỏ trống = màn phác) · loc (bộ lọc)
+                   · quyen (ghi đè khi chặt hơn module, vd Đôn đốc)
+   ══════════════════════════════════════════════════════════════════════════ */
+const MODULE = [
+  /* ── Điều hành ───────────────────────────────────────────────────────── */
+  { id:'tong-quan', nhan:'Tổng quan', nhom:'dieu-hanh', quyen:'DASHBOARD.READ', nguon:'db',
+    mo:'Bức tranh toàn danh mục: tiến độ, cảnh báo, giải ngân.',
+    con:[ {id:'tq-toan', nhan:'Toàn danh mục', ve:'tongQuan'},
+          {id:'tq-cdt',  nhan:'Theo chủ đầu tư'},
+          {id:'tq-lv',   nhan:'Theo lĩnh vực'} ] },
+  { id:'bao-cao', nhan:'Báo cáo điều hành', nhom:'dieu-hanh', quyen:'REPORT.READ', nguon:'db',
+    mo:'Báo cáo định kỳ và theo biểu mẫu.',
+    con:[ {id:'bc-dinh-ky', nhan:'Báo cáo định kỳ'},
+          {id:'bc-bc35',    nhan:'Báo cáo BC35'},
+          {id:'bc-excel',   nhan:'Xuất danh mục Excel'} ] },
+  { id:'bo-chi-so', nhan:'Bộ chỉ số', nhom:'dieu-hanh', quyen:'KPI.READ', nguon:'db',
+    mo:'KPI 100 điểm: đúng hạn 40 · độ trễ 25 · điều chỉnh kế hoạch 15 · giải ngân 20 → A/B/C/D.',
+    con:[ {id:'bcs-kpi',      nhan:'KPI dự án'},
+          {id:'bcs-xep-hang', nhan:'Xếp hạng chủ đầu tư'} ] },
+
+  /* ── Tác nghiệp ──────────────────────────────────────────────────────── */
+  { id:'du-an', nhan:'Dự án', nhom:'tac-nghiep', quyen:'PROJECT.READ', nguon:'db',
+    mo:'Danh mục dự án. Mở một dự án để vào không gian hồ sơ.',
+    con:[ {id:'da-tat-ca',       nhan:'Tất cả dự án',        ve:'duAn', loc:'tat-ca'},
+          {id:'da-cua-toi',      nhan:'Dự án tôi phụ trách', ve:'duAn', loc:'cua-toi'},
+          {id:'da-cho-xac-nhan', nhan:'Chờ xác nhận bước',   ve:'duAn', loc:'cho-xac-nhan'},
+          {id:'da-tao',          nhan:'Tạo dự án mới'},
+          {id:'da-nhap',         nhan:'Nhập từ Excel'},
+          {id:'da-don-doc',      nhan:'Đôn đốc', ve:'donDoc', quyen:'URGE.WRITE',
+           mo:'Gửi nhắc việc quá hạn. Chỉ cơ quan quản lý (PMS: Điều 36).'} ] },
+  { id:'xu-ly-van-ban', nhan:'Xử lý văn bản', nhom:'tac-nghiep', quyen:'DOCUMENT.READ', nguon:'api',
+    mo:'Văn bản đi qua Document Service của Native. Tóm tắt, soạn thảo là chức năng của văn bản — không phải một nhóm "AI".',
+    con:[ {id:'vb-den',       nhan:'Văn bản đến'},
+          {id:'vb-tom-tat',   nhan:'Tóm tắt văn bản'},
+          {id:'vb-soan-thao', nhan:'Soạn thảo văn bản'},
+          {id:'vb-phan-cong', nhan:'Phân công từ văn bản'},
+          {id:'vb-mau',       nhan:'Mẫu văn bản'} ] },
+  { id:'don-thu', nhan:'Đơn thư — Khiếu nại', nhom:'tac-nghiep', quyen:'COMPLAINT.READ', nguon:'db',
+    mo:'Cấp 4 xếp theo HÀNH TRÌNH của một lá đơn, không đẻ nhóm "giai đoạn".',
+    con:[ {id:'dt-tiep-nhan',  nhan:'Tiếp nhận — chờ thụ lý', ve:'donThu', loc:'tiep-nhan'},
+          {id:'dt-thu-ly',     nhan:'Đang thụ lý, xác minh',  ve:'donThu', loc:'thu-ly'},
+          {id:'dt-giai-quyet', nhan:'Đang giải quyết',        ve:'donThu', loc:'giai-quyet'},
+          {id:'dt-xong',       nhan:'Đã giải quyết',          ve:'donThu', loc:'xong'} ] },
+  { id:'nhiem-vu', nhan:'Nhiệm vụ', nhom:'tac-nghiep', quyen:'TASK.READ', nguon:'db',
+    mo:'Việc giao từ văn bản, cuộc họp, chỉ đạo.',
+    con:[ {id:'nv-cua-toi',  nhan:'Việc được giao cho tôi'},
+          {id:'nv-da-giao',  nhan:'Việc tôi đã giao'},
+          {id:'nv-theo-doi', nhan:'Theo dõi chung'} ] },
+
+  /* ── Danh mục ────────────────────────────────────────────────────────── */
+  { id:'dm-to-chuc', nhan:'Tổ chức', nhom:'danh-muc', quyen:'ORG.READ', nguon:'api', guong:1,
+    mo:'GƯƠNG của System Service trên Native — chỉ đọc. Postgres xOS chỉ giữ native_id.',
+    con:[ {id:'dm-don-vi', nhan:'Đơn vị', ve:'guong', loc:'don-vi'},
+          {id:'dm-can-bo', nhan:'Cán bộ', ve:'guong', loc:'can-bo', quyen:'USER.READ'} ] },
+  { id:'dm-nghiep-vu', nhan:'Danh mục nghiệp vụ', nhom:'danh-muc', quyen:'CATALOG.READ', nguon:'db',
+    mo:'Do xOS sở hữu, sửa được. Chỉ lên đây khi có TỪ HAI nhóm nghiệp vụ dùng tới.',
+    con:[ {id:'dm-linh-vuc',  nhan:'Lĩnh vực'},
+          {id:'dm-quy-trinh', nhan:'Quy trình mẫu', quyen:'TEMPLATE.READ'},
+          {id:'dm-loai-vb',   nhan:'Loại văn bản'} ] },
+
+  /* ── Giám sát & Lưu vết ──────────────────────────────────────────────── */
+  { id:'nhat-ky', nhan:'Nhật ký thao tác', nhom:'giam-sat', quyen:'AUDIT.READ', nguon:'db',
+    mo:'Ai, lúc nào, làm gì. Bằng chứng pháp lý — khác nhật ký HỆ THỐNG ở Tầng 2.',
+    con:[ {id:'nk-tat-ca', nhan:'Tất cả thao tác', ve:'nhatKy', loc:'tat-ca'},
+          {id:'nk-ho-so',  nhan:'Theo hồ sơ',      ve:'nhatKy', loc:'ho-so'},
+          {id:'nk-nguoi',  nhan:'Theo người dùng'} ] },
+  { id:'qua-han', nhan:'Hồ sơ quá hạn', nhom:'giam-sat', quyen:'AUDIT.READ', nguon:'db',
+    mo:'Cờ SLA gắn tự động: thẩm định ≤20 ngày, phê duyệt ≤3 ngày (NĐ 45, Điều 34).',
+    con:[ {id:'qh-sla', nhan:'Đã quá hạn',   ve:'quaHan', loc:'qua-han'},
+          {id:'qh-sap', nhan:'Sắp đến hạn',  ve:'quaHan', loc:'sap-han'} ] },
+
+  /* ── Tầng 2 · Người dùng & Phân quyền ────────────────────────────────── */
+  { id:'qt-tai-khoan', nhan:'Tài khoản', nhom:'qt-nguoi-dung', quyen:'ADMIN.USER', nguon:'api',
+    mo:'Gương của System Service. Tạo/sửa gọi thẳng API nền tảng.',
+    con:[ {id:'tk-ds',   nhan:'Danh sách tài khoản', ve:'taiKhoan', loc:'tat-ca'},
+          {id:'tk-khoa', nhan:'Tài khoản bị khóa',   ve:'taiKhoan', loc:'khoa'} ] },
+  { id:'qt-vai-tro', nhan:'Vai trò & Quyền', nhom:'qt-nguoi-dung', quyen:'ADMIN.USER', nguon:'api',
+    mo:'Vai nghiệp vụ × cờ quản trị độc lập.',
+    con:[ {id:'vt-ds',       nhan:'Danh sách vai trò'},
+          {id:'vt-ma-tran',  nhan:'Ma trận quyền', ve:'maTran'} ] },
+  { id:'qt-phe-duyet', nhan:'Luồng phê duyệt', nhom:'qt-nguoi-dung', quyen:'ADMIN.USER', nguon:'db',
+    mo:'Định nghĩa luồng (quy tắc) — còn việc CHỜ DUYỆT (thể hiện) nằm ở Việc của tôi.',
+    con:[ {id:'pd-ds',   nhan:'Luồng đang dùng'},
+          {id:'pd-them', nhan:'Thêm luồng mới'} ] },
+
+  /* ── Tầng 2 · Kết nối ────────────────────────────────────────────────── */
+  { id:'qt-native', nhan:'Nền tảng Native', nhom:'qt-ket-noi', quyen:'ADMIN.CONN', nguon:'api',
+    mo:'Native chỉ để gọi API. Dữ liệu nghiệp vụ nằm ở Postgres của xOS.',
+    con:[ {id:'kn-dia-chi',  nhan:'Địa chỉ & kiểm tra', ve:'native'},
+          {id:'kn-dich-vu',  nhan:'Trạng thái dịch vụ', ve:'dichVu'} ] },
+  { id:'qt-nguon-vao', nhan:'Nguồn dữ liệu vào', nhom:'qt-ket-noi', quyen:'ADMIN.CONN', nguon:'api',
+    mo:'Khai nguồn cho Hỏi đáp AI. Kết nối thật do Context Service làm phía máy chủ.',
+    con:[ {id:'nd-graphql', nhan:'Nguồn GraphQL / ERP'},
+          {id:'nd-ban-sao', nhan:'Bản sao dữ liệu'},
+          {id:'nd-cong-cu', nhan:'Công cụ API'} ] },
+  { id:'qt-tich-hop', nhan:'Tích hợp ra', nhom:'qt-ket-noi', quyen:'ADMIN.CONN', nguon:'api',
+    mo:'Portal không bao giờ gọi thẳng bên thứ ba từ trình duyệt.',
+    con:[ {id:'th-webhook', nhan:'Webhook', ve:'tichHop'},
+          {id:'th-api-key', nhan:'API key cho đối tác'},
+          {id:'th-nhat-ky', nhan:'Nhật ký gọi ra'} ] },
+
+  /* ── Tầng 2 · Cấu hình & Vận hành ────────────────────────────────────── */
+  { id:'qt-khai-bao', nhan:'Khai báo module', nhom:'qt-cau-hinh', quyen:'ADMIN.CONF', nguon:'db',
+    mo:'Bật/tắt và đổi nhãn theo từng khách — không fork mã.',
+    con:[ {id:'kb-cay',  nhan:'Cây phân hệ', ve:'khaiBao'},
+          {id:'kb-nhan', nhan:'Nhãn theo khách hàng'} ] },
+  { id:'qt-hien-thi', nhan:'Hiển thị', nhom:'qt-cau-hinh', quyen:'ADMIN.CONF', nguon:'db',
+    mo:'Giao diện và trang mặc định.',
+    con:[ {id:'ht-giao-dien', nhan:'Giao diện'},
+          {id:'ht-trang-dau', nhan:'Trang mặc định theo vai'} ] },
+  { id:'qt-canh-bao', nhan:'Quy tắc cảnh báo', nhom:'qt-cau-hinh', quyen:'ADMIN.CONF', nguon:'db',
+    mo:'QUY TẮC cảnh báo. Còn cảnh báo ĐANG MỞ nằm ở Giám sát & Lưu vết.',
+    con:[ {id:'cb-sla',  nhan:'Hạn luật định (SLA)'},
+          {id:'cb-kenh', nhan:'Kênh gửi thông báo'} ] },
+  { id:'qt-ai', nhan:'Mô hình AI', nhom:'qt-cau-hinh', quyen:'ADMIN.CONF', nguon:'api',
+    mo:'Chọn và kiểm tra — KHÔNG giữ khóa nhà cung cấp tại đây.',
+    con:[ {id:'ai-mac-dinh', nhan:'Mô hình mặc định'},
+          {id:'ai-giong',    nhan:'Giọng đọc'},
+          {id:'ai-han-muc',  nhan:'Hạn mức token theo đơn vị'} ] },
+  { id:'qt-van-hanh', nhan:'Theo dõi vận hành', nhom:'qt-cau-hinh', quyen:'ADMIN.CONF', nguon:'db',
+    mo:'Sức khỏe hệ thống — người xem là kỹ thuật, không phải thanh tra.',
+    con:[ {id:'vh-hang-doi', nhan:'Hàng đợi xử lý',    ve:'hangDoi'},
+          {id:'vh-nhat-ky',  nhan:'Nhật ký hệ thống',  ve:'nhatKyHt'} ] },
+];
+
+/* Trục PHẠM VI — thẻ trong hồ sơ. KHÔNG nằm trong cây, không phải cấp 5. */
+const THE_HO_SO = [
+  { id:'hs-checklist', nhan:'Checklist tiến độ' },
+  { id:'hs-giai-ngan', nhan:'Giải ngân' },
+  { id:'hs-vuong-mac', nhan:'Vướng mắc' },
+  { id:'hs-tai-lieu',  nhan:'Tài liệu' },
+];
+
+/* Làm phẳng cấp 4, gắn ngược về module cha. Quyền/nguồn kế thừa từ cha. */
+const LA = [];
+for (const m of MODULE) for (const c of m.con)
+  LA.push({ ...c, cha:m, quyen:c.quyen || m.quyen, nguon:c.nguon || m.nguon });
+const timLa = (id) => LA.find(x => x.id === id);
+const nhomCua = (ma) => NHOM.find(n => n.ma === ma);
+const tangCua = (so) => TANG.find(t => t.so === so);
+
+/* ══════════════════════════════════════════════════════════════════════════
+   VAI TRÒ — bốn vai nghiệp vụ của PMS × cờ quản trị độc lập
+   ══════════════════════════════════════════════════════════════════════════ */
+const VAI = {
+  'lanh-dao':   { ten:'Lãnh đạo tỉnh', donVi:'UBND tỉnh',               quyen:['DASHBOARD.READ','REPORT.READ','KPI.READ','PROJECT.READ','DOCUMENT.READ','COMPLAINT.READ','TASK.READ','ORG.READ','USER.READ','CATALOG.READ','TEMPLATE.READ','AUDIT.READ'] },
+  'so':         { ten:'Sở KH&CN',      donVi:'Sở Khoa học & Công nghệ', quyen:['DASHBOARD.READ','REPORT.READ','KPI.READ','PROJECT.READ','DOCUMENT.READ','COMPLAINT.READ','TASK.READ','URGE.WRITE','ORG.READ','USER.READ','CATALOG.READ','TEMPLATE.READ','AUDIT.READ'] },
+  'chu-dau-tu': { ten:'Chủ đầu tư',    donVi:'Sở Y tế',                 quyen:['DASHBOARD.READ','PROJECT.READ','DOCUMENT.READ','TASK.READ','CATALOG.READ','TEMPLATE.READ'] },
+  'nha-thau':   { ten:'Nhà thầu',      donVi:'Đơn vị thi công',         quyen:['PROJECT.READ','TASK.READ'] },
+};
+const QUYEN_QT = ['ADMIN.USER','ADMIN.CONN','ADMIN.CONF'];
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DỮ LIỆU GIẢ — không có thông tin của người thật
+   ══════════════════════════════════════════════════════════════════════════ */
+const TOI = 'Ng. V. A.';   // bản mẫu giả định người đang đăng nhập là cán bộ này
+const DUAN = [
+  { ma:'DA-2026-014', ten:'Nâng cấp hạ tầng trung tâm dữ liệu dùng chung',  cdt:'Sở Thông tin & Truyền thông', lv:'Hạ tầng số',   von:18400, chi:11200, gd:'II', td:62, tt:'dung-han',   han:'18/10/2026', kpi:81, hang:'B', phu:'Ng. V. A.', cxn:1 },
+  { ma:'DA-2026-021', ten:'Hệ thống quản lý hồ sơ sức khỏe điện tử',         cdt:'Sở Y tế',                     lv:'Y tế số',      von:12600, chi:9450,  gd:'II', td:75, tt:'dung-han',   han:'02/11/2026', kpi:88, hang:'A', phu:'Tr. T. B.' },
+  { ma:'DA-2026-007', ten:'Số hóa hồ sơ thủ tục hành chính giai đoạn 2',     cdt:'Văn phòng UBND tỉnh',         lv:'Dịch vụ công', von:8200,  chi:3100,  gd:'I',  td:34, tt:'qua-han',    han:'27/09/2026', kpi:52, hang:'C', phu:'Ng. V. A.', cxn:1 },
+  { ma:'DA-2026-033', ten:'Nền tảng tích hợp chia sẻ dữ liệu cấp tỉnh',      cdt:'Sở Thông tin & Truyền thông', lv:'Dữ liệu số',   von:24100, chi:6000,  gd:'I',  td:22, tt:'sap-han',    han:'05/10/2026', kpi:64, hang:'C', phu:'Lê V. C.',  cxn:1 },
+  { ma:'DA-2026-042', ten:'Trang bị thiết bị phục vụ Đề án 06 tuyến xã',     cdt:'Công an tỉnh',                lv:'Đề án 06',     von:15800, chi:15800, gd:'III',td:100,tt:'hoan-thanh', han:'12/09/2026', kpi:94, hang:'A', phu:'Ph. T. D.' },
+  { ma:'DA-2026-056', ten:'Hệ thống giám sát an toàn thông tin tập trung',   cdt:'Sở Thông tin & Truyền thông', lv:'An toàn TT',   von:9700,  chi:2400,  gd:'I',  td:18, tt:'sap-han',    han:'09/10/2026', kpi:58, hang:'C', phu:'Lê V. C.' },
+  { ma:'DA-2026-061', ten:'Phần mềm quản lý đất đai và bản đồ số',           cdt:'Sở Tài nguyên & Môi trường',  lv:'Dữ liệu số',   von:13300, chi:8600,  gd:'II', td:58, tt:'dung-han',   han:'21/11/2026', kpi:77, hang:'B', phu:'Ng. V. A.' },
+  { ma:'DA-2026-070', ten:'Hệ thống họp không giấy tờ cấp tỉnh',             cdt:'Văn phòng UBND tỉnh',         lv:'Điều hành',    von:5400,  chi:5100,  gd:'III',td:96, tt:'dung-han',   han:'30/09/2026', kpi:90, hang:'A', phu:'Ph. T. D.' },
+];
+const BUOC = [
+  { tt:1, ten:'Lập đề cương và dự toán chi tiết',     ngay:15, han:'12/06/2026', xong:'11/06/2026', s:'xong' },
+  { tt:2, ten:'Thẩm định đề cương',                   ngay:20, han:'02/07/2026', xong:'04/07/2026', s:'tre', sla:'Quá SLA thẩm định 20 ngày (NĐ 45 Đ.34)' },
+  { tt:3, ten:'Phê duyệt chủ trương đầu tư',          ngay:3,  han:'05/07/2026', xong:'05/07/2026', s:'xong' },
+  { tt:4, ten:'Lập kế hoạch lựa chọn nhà thầu',       ngay:12, han:'17/07/2026', xong:'16/07/2026', s:'xong' },
+  { tt:5, ten:'Tổ chức lựa chọn nhà thầu',            ngay:35, han:'21/08/2026', xong:'25/08/2026', s:'tre' },
+  { tt:6, ten:'Ký kết hợp đồng',                      ngay:7,  han:'01/09/2026', xong:'31/08/2026', s:'xong' },
+  { tt:7, ten:'Triển khai — nghiệm thu giai đoạn 1',  ngay:45, han:'16/10/2026', xong:'',           s:'dang' },
+  { tt:8, ten:'Đào tạo chuyển giao',                  ngay:14, han:'30/10/2026', xong:'',           s:'cho' },
+  { tt:9, ten:'Nghiệm thu, bàn giao đưa vào sử dụng', ngay:20, han:'19/11/2026', xong:'',           s:'cho' },
+  { tt:10,ten:'Báo cáo hoàn thành',                   ngay:20, han:'09/12/2026', xong:'',           s:'cho', sla:'Hạn báo cáo 20 ngày sau nghiệm thu (NĐ 45 Đ.35)' },
+];
+const DONTHU = [
+  { ma:'ĐT-2026-121', ng:'Ô. Ng. V. H.', nd:'Khiếu nại quyết định thu hồi đất nông nghiệp',        lv:'Đất đai',  nhan:'27/09/2026', gd:'tiep-nhan',  con:8 },
+  { ma:'ĐT-2026-118', ng:'B. Tr. T. L.', nd:'Tranh chấp ranh giới thửa đất liền kề',              lv:'Đất đai',  nhan:'19/09/2026', gd:'tiep-nhan',  con:0 },
+  { ma:'ĐT-2026-104', ng:'Ô. L. V. K.',  nd:'Khiếu nại mức bồi thường giải phóng mặt bằng',       lv:'Đất đai',  nhan:'02/09/2026', gd:'thu-ly',     con:4 },
+  { ma:'ĐT-2026-097', ng:'B. Ph. T. M.', nd:'Khiếu nại việc chậm cấp đổi giấy chứng nhận',        lv:'Đất đai',  nhan:'21/08/2026', gd:'giai-quyet', con:12 },
+  { ma:'ĐT-2026-088', ng:'Ô. H. V. T.',  nd:'Khiếu nại quyết định xử phạt vi phạm trật tự xây dựng', lv:'Xây dựng', nhan:'05/08/2026', gd:'giai-quyet', con:-3 },
+  { ma:'ĐT-2026-061', ng:'B. Đ. T. N.',  nd:'Khiếu nại quyết định cưỡng chế thu hồi đất',         lv:'Đất đai',  nhan:'10/06/2026', gd:'xong',       con:null },
+];
+const GD_DON = {
+  'tiep-nhan':  ['Chờ thụ lý',        'Thụ lý trong 10 ngày kể từ ngày nhận (Luật Khiếu nại 2011, Điều 27).'],
+  'thu-ly':     ['Đang xác minh',     'Giải quyết lần đầu không quá 30 ngày kể từ ngày thụ lý (Điều 28).'],
+  'giai-quyet': ['Đang giải quyết',   'Giải quyết lần đầu không quá 30 ngày kể từ ngày thụ lý (Điều 28).'],
+  'xong':       ['Đã giải quyết',     'Lưu trữ theo thời hạn luật định — xóa mềm, không xóa thật.'],
+};
+const VIEC = [
+  { moc:'qua-han', ten:'Xác nhận bước "Thẩm định đề cương"',   mo:'DA-2026-007 · quá hạn 2 ngày',        la:'da-cho-xac-nhan' },
+  { moc:'qua-han', ten:'Đơn ĐT-2026-118 chờ thụ lý',            mo:'hết hạn thụ lý 10 ngày trong hôm nay', la:'dt-tiep-nhan' },
+  { moc:'hom-nay', ten:'Xử lý văn bản đến số 2841/UBND-KGVX',   mo:'hạn hôm nay',                          la:'vb-den' },
+  { moc:'hom-nay', ten:'Tổng hợp báo cáo quý III',              mo:'giao từ cuộc họp 22/09',               la:'nv-cua-toi' },
+  { moc:'sap-toi', ten:'DA-2026-033 đến hạn nộp hồ sơ thầu',    mo:'còn 6 ngày',                           la:'da-tat-ca' },
+  { moc:'sap-toi', ten:'Đơn ĐT-2026-104 đến hạn giải quyết',    mo:'còn 4 ngày',                           la:'dt-thu-ly' },
+];
+const NHATKY = [
+  { luc:'29/09/2026 14:22', ai:'Sở KH&CN',   viec:'Gửi đôn đốc',          dt:'DA-2026-007', ghi:'Đôn đốc bước 2 quá hạn (Điều 36)' },
+  { luc:'29/09/2026 11:05', ai:'Chủ đầu tư', viec:'Ghi nhận hoàn thành',  dt:'DA-2026-021', ghi:'Bước 6 — Ký kết hợp đồng' },
+  { luc:'29/09/2026 09:41', ai:'Nhà thầu',   viec:'Gửi cập nhật tiến độ', dt:'DA-2026-014', ghi:'Bước 7 đạt 62%' },
+  { luc:'28/09/2026 16:30', ai:'Sở KH&CN',   viec:'Điều chỉnh kế hoạch',  dt:'DA-2026-033', ghi:'Điều chỉnh lần 1 — chậm bàn giao mặt bằng' },
+  { luc:'28/09/2026 10:12', ai:'Quản trị',   viec:'Cấp quyền',            dt:'Tài khoản',   ghi:'Gán vai Chủ đầu tư cho 1 tài khoản' },
+];
+const DICH_VU = [
+  { ten:'System Service',    duong:'/api/users · /roles · /organizations', ok:1, ghi:'Nguồn định danh. Tổ chức và Tài khoản là gương của service này.' },
+  { ten:'Document Service',  duong:'/api/document/*',                      ok:1, ghi:'Văn bản, tóm tắt, soạn thảo, phân công.' },
+  { ten:'Assistant Service', duong:'/api/assistant/*',                     ok:1, ghi:'Nơi DUY NHẤT gọi mô hình. Danh mục mô hình lấy từ /health.' },
+  { ten:'Knowledge Service', duong:'/api/knowledge-bases',                 ok:1, ghi:'Bộ tri thức.' },
+  { ten:'Context Service',   duong:'/api/context/v1/*',                    ok:1, ghi:'Nguồn dữ liệu, bản sao, chatbot, phân quyền cột.' },
+  { ten:'Index Service',     duong:'/api/index',                           ok:0, ghi:'Không phản hồi — trạng thái nạp tri thức sẽ không cập nhật.' },
+];
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TRẠNG THÁI + TIỆN ÍCH
+   ══════════════════════════════════════════════════════════════════════════ */
+let PHIEN = null, MAN = null, HOSO = null, THE_HS = 'hs-checklist';
+let MO = {};   // trạng thái mở/đóng từng nút của cây
+
+const $   = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const tien = (n) => n.toLocaleString('vi-VN');
+const duoc = (q) => !q || (PHIEN && PHIEN.quyen.includes(q));
+const khongDau = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/gi,'d').toLowerCase();
+const MUI = '<svg class="mui" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m6 9 6 6 6-6"/></svg>';
+
+const NHAN_TT   = { 'dung-han':['ok','Đúng hạn'], 'sap-han':['warn','Sắp hạn'], 'qua-han':['danger','Quá hạn'], 'hoan-thanh':['brand','Hoàn thành'] };
+const NHAN_BUOC = { xong:['ok','Hoàn thành'], tre:['danger','Trễ hạn'], dang:['brand','Đang làm'], cho:['xam','Chưa tới'] };
+const NHAN_NGUON= { api:['tim','Native'], db:['ok','Postgres xOS'] };
+
+/* Cây: mặc định mở cấp 1 và cấp 2, đóng cấp 3 — trừ nhánh đang xem. */
+function dangMo(k){
+  if (k in MO) return MO[k];
+  return k.startsWith('t:') || k.startsWith('g:');
+}
+function luuMo(){ try { localStorage.setItem('xos-cay', JSON.stringify(MO)); } catch {} }
+function napMo(){ try { MO = JSON.parse(localStorage.getItem('xos-cay') || '{}') || {}; } catch { MO = {}; } }
+function doiMo(k){ MO[k] = !dangMo(k); luuMo(); veCanh(); }
+function moToTien(laId){
+  const c = timLa(laId); if (!c) return;
+  const n = nhomCua(c.cha.nhom);
+  MO['t:' + n.tang] = true; MO['g:' + n.ma] = true; MO['m:' + c.cha.id] = true; luuMo();
+}
+function moHet(mo){
+  for (const t of TANG) MO['t:' + t.so] = true;          // tầng luôn mở, để còn thấy khung
+  for (const n of NHOM) MO['g:' + n.ma] = mo;
+  for (const m of MODULE) MO['m:' + m.id] = mo;
+  luuMo(); veCanh();
+}
+
+/* Những chức năng vai này được thấy, theo đúng thứ tự cây */
+const laDuoc = () => LA.filter(c => duoc(c.quyen));
+
+/* ── Đăng nhập ─────────────────────────────────────────────────────────── */
+function vaoHe(e){
+  e.preventDefault();
+  const ma = $('#dn-vai').value, v = VAI[ma], qt = $('#dn-qt').checked;
+  PHIEN = { ma, ten:$('#dn-tk').value || 'Người dùng demo', vai:v.ten + (qt ? ' · Quản trị' : ''),
+            donVi:v.donVi, quyen: qt ? [...v.quyen, ...QUYEN_QT] : v.quyen };
+  $('#dangnhap').style.display = 'none';
+  $('#ung-dung').classList.add('hien');
+  $('#tro-ly-nut').style.display = 'grid';
+  $('#tt-ten').textContent = PHIEN.ten; $('#tt-vai').textContent = PHIEN.vai;
+  $('#tt-donvi').textContent = PHIEN.donVi; $('#tt-chu').textContent = PHIEN.vai.charAt(0);
+  napMo();
+  // Màn đầu = chức năng ĐẦU TIÊN vai này có quyền. Không cứng "Tổng quan":
+  // nhà thầu không có DASHBOARD.READ thì phải vào Dự án, không phải trang trắng.
+  const dau = laDuoc()[0];
+  MAN = dau ? dau.id : null; HOSO = null;
+  if (MAN) moToTien(MAN);
+  veCanh(); veChinh(); veTroLy();
+}
+function thoat(){
+  PHIEN = null; HOSO = null;
+  $('#ung-dung').classList.remove('hien'); $('#tro-ly-nut').style.display = 'none';
+  $('#tro-ly-bang').classList.remove('hien'); $('#dangnhap').style.display = 'grid';
+}
+function doiNen(){
+  const r = document.documentElement;
+  r.setAttribute('data-theme', r.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SIDEBAR — CÂY BỐN CẤP, sinh từ registry, lọc theo quyền ở MỌI cấp.
+   Nút nào không còn con nào được thấy thì tự ẩn, kể cả tiêu đề tầng.
+   ══════════════════════════════════════════════════════════════════════════ */
+function veCanh(){
+  let h = `<div class="cay-cong">
+    <button onclick="moHet(true)">Mở rộng tất cả</button>
+    <button onclick="moHet(false)">Thu gọn tất cả</button></div>`;
+
+  for (const t of TANG){
+    const nhoms = NHOM.filter(n => n.tang === t.so).map(n => [n,
+        MODULE.filter(m => m.nhom === n.ma)
+              .map(m => [m, m.con.filter(c => duoc(c.quyen || m.quyen))])
+              .filter(([, cs]) => cs.length)])
+      .filter(([, ms]) => ms.length);
+    if (!nhoms.length) continue;
+
+    const k1 = 't:' + t.so, mo1 = dangMo(k1);
+    if (t.so === 2) h += '<div class="vach"></div>';
+    h += `<button class="c1 t${t.so} ${mo1 ? '' : 'dong'}" onclick="doiMo('${k1}')" aria-expanded="${mo1}">
+            ${MUI}<span class="bar"></span><span>${esc(t.nhan)}</span></button>`;
+    if (!mo1) continue;
+    h += `<div class="c1-hoi">${esc(t.hoi)}</div>`;
+
+    for (const [n, ms] of nhoms){
+      const k2 = 'g:' + n.ma, mo2 = dangMo(k2);
+      h += `<button class="c2 ${mo2 ? '' : 'dong'}" onclick="doiMo('${k2}')" title="${esc(n.hoi)}" aria-expanded="${mo2}">
+              ${MUI}<span>${esc(n.nhan)}</span></button>`;
+      if (!mo2) continue;
+
+      for (const [m, cs] of ms){
+        const k3 = 'm:' + m.id, mo3 = dangMo(k3);
+        const chua = !HOSO && cs.some(c => c.id === MAN) || (HOSO && m.id === 'du-an');
+        const so = m.id === 'du-an' ? DUAN.filter(d => d.tt === 'qua-han').length
+                 : m.id === 'don-thu' ? DONTHU.filter(d => d.con !== null && d.con <= 0).length : 0;
+        h += `<button class="c3 ${mo3 ? '' : 'dong'} ${chua ? 'co-chon' : ''}" onclick="bamModule('${m.id}')"
+                title="${esc(m.mo)}" aria-expanded="${mo3}">
+                <span class="ico">${bieuTuong(m.nhom)}</span>
+                <span class="nhan">${esc(m.nhan)}</span>
+                ${so ? `<span class="so tnum">${so}</span>` : ''}${MUI}</button>`;
+        if (!mo3) continue;
+        h += '<div class="c4-khung">';
+        for (const c of cs)
+          h += `<button class="c4 ${!HOSO && MAN === c.id ? 'chon' : ''}" onclick="di('${c.id}')">${esc(c.nhan)}</button>`;
+        h += '</div>';
+      }
+    }
+  }
+  const thay = laDuoc().length;
+  h += `<div class="vach"></div>
+    <div style="padding:0 10px;font-size:11px;color:var(--faint);line-height:1.6">
+      Vai <b style="color:var(--body)">${esc(PHIEN.vai)}</b><br>
+      Thấy ${thay} chức năng · ẩn ${LA.length - thay} do thiếu quyền
+    </div>`;
+  $('#canh').innerHTML = h;
+  $('#cham-viec').textContent = VIEC.filter(v => { const c = timLa(v.la); return c && duoc(c.quyen); }).length;
+}
+
+/* Bấm module cấp 3: mở ra và vào chức năng đầu tiên; bấm lần nữa khi đang ở trong thì thu lại. */
+function bamModule(id){
+  const m = MODULE.find(x => x.id === id), k = 'm:' + id;
+  const cs = m.con.filter(c => duoc(c.quyen || m.quyen));
+  const dangTrong = !HOSO && cs.some(c => c.id === MAN);
+  if (dangMo(k) && dangTrong){ MO[k] = false; luuMo(); veCanh(); return; }
+  MO[k] = true; luuMo();
+  if (!dangTrong) di(cs[0].id, true); else veCanh();
+}
+
+function bieuTuong(nhom){
+  const n = nhomCua(nhom), k = n && n.tang === 2 ? 'quan-tri' : nhom;
+  const d = {
+    'dieu-hanh':'<path d="M3 3v18h18"/><path d="m7 15 4-5 3 3 5-7"/>',
+    'tac-nghiep':'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/>',
+    'danh-muc':'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/>',
+    'giam-sat':'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    'quan-tri':'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
+  }[k] || '<circle cx="12" cy="12" r="9"/>';
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">${d}</svg>`;
+}
+
+/* ── Điều hướng ────────────────────────────────────────────────────────── */
+/* giuMenu: bấm module cấp 3 trên màn hẹp thì ngăn kéo phải mở tiếp để chọn cấp 4. */
+function di(id, giuMenu){
+  HOSO = null; MAN = id;
+  if (id !== 'viec-cua-toi') moToTien(id);
+  if (!giuMenu) $('#canh').classList.remove('mo');
+  veCanh(); veChinh(); $('#chinh').scrollTop = 0; dongTim();
+}
+function moHoSo(ma){
+  HOSO = DUAN.find(d => d.ma === ma); THE_HS = 'hs-checklist';
+  MO['t:1'] = true; MO['g:tac-nghiep'] = true; MO['m:du-an'] = true; luuMo();
+  $('#canh').classList.remove('mo');
+  veCanh(); veChinh(); $('#chinh').scrollTop = 0; dongTim();
+}
+
+/* ── Tìm kiếm toàn cục (ở VỎ) ──────────────────────────────────────────── */
+function timKiem(q){
+  const box = $('#kq-tim'), t = khongDau(q.trim());
+  if (!t){ box.style.display = 'none'; return; }
+  const las = laDuoc().filter(c => khongDau(c.nhan + ' ' + c.cha.nhan + ' ' + (c.mo || c.cha.mo)).includes(t)).slice(0, 7);
+  const das = duoc('PROJECT.READ') ? DUAN.filter(d => khongDau(d.ten + ' ' + d.ma).includes(t)).slice(0, 4) : [];
+  const dts = duoc('COMPLAINT.READ') ? DONTHU.filter(d => khongDau(d.nd + ' ' + d.ma).includes(t)).slice(0, 3) : [];
+  let h = '';
+  if (las.length){ h += '<div class="kq-nhom">Chức năng</div>';
+    for (const c of las) h += `<button onclick="di('${c.id}')"><span style="color:var(--faint)">${esc(c.cha.nhan)} ›</span> ${esc(c.nhan)}</button>`; }
+  if (das.length){ h += '<div class="kq-nhom">Dự án</div>';
+    for (const d of das) h += `<button onclick="moHoSo('${d.ma}')"><b class="tnum">${d.ma}</b> — ${esc(d.ten)}</button>`; }
+  if (dts.length){ h += '<div class="kq-nhom">Đơn thư</div>';
+    for (const d of dts) h += `<button onclick="di('dt-${d.gd}')"><b class="tnum">${esc(d.ma)}</b> — ${esc(d.nd)}</button>`; }
+  box.innerHTML = h || '<div class="kq-nhom">Không có kết quả</div>'; box.style.display = 'block';
+}
+function dongTim(){ $('#kq-tim').style.display = 'none'; $('#o-tim').value = ''; }
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'){ e.preventDefault(); $('#o-tim').focus(); }
+  if (e.key === 'Escape'){ dongTim(); dongPhu(); }
+});
+document.addEventListener('click', e => { if (!e.target.closest('.tim-kiem')) $('#kq-tim').style.display = 'none'; });
+
+/* ══════════════════════════════════════════════════════════════════════════
+   NỘI DUNG
+   ══════════════════════════════════════════════════════════════════════════ */
+const VE = {
+  tongQuan:()=>veTongQuan, duAn:()=>veDuAn, donDoc:()=>veDonDoc, donThu:()=>veDonThu,
+  guong:()=>veGuong, nhatKy:()=>veNhatKy, quaHan:()=>veQuaHan,
+  taiKhoan:()=>veTaiKhoan, maTran:()=>veMaTran, native:()=>veNative, dichVu:()=>veDichVu,
+  tichHop:()=>veTichHop, khaiBao:()=>veKhaiBao, hangDoi:()=>veHangDoi, nhatKyHt:()=>veNhatKyHt,
+};
+function veChinh(){
+  if (HOSO) return veHoSo();
+  if (MAN === 'viec-cua-toi') return veViec();
+  const c = timLa(MAN);
+  if (!c || !duoc(c.quyen)) return $('#chinh').innerHTML = khungTrong('Không có quyền', 'Vai hiện tại không được cấp quyền mở chức năng này.');
+  const f = VE[c.ve] ? VE[c.ve]() : vePhac;
+  $('#chinh').innerHTML = f(c);
+}
+
+/* Đường dẫn bốn cấp — nhìn là biết màn này nằm ở đâu trong khung. */
+function dau(c, phu){
+  const n = nhomCua(c.cha.nhom), t = tangCua(n.tang), ng = NHAN_NGUON[c.nguon];
+  const anhEm = c.cha.con.filter(x => duoc(x.quyen || c.cha.quyen));
+  return `<div class="duong-dan">
+      <span class="cap">C1</span> ${esc(t.nhan)} ›
+      <span class="cap">C2</span> ${esc(n.nhan)} ›
+      <span class="cap">C3</span> ${esc(c.cha.nhan)} ›
+      <span class="cap">C4</span> <b style="color:var(--body)">${esc(c.nhan)}</b>
+    </div>
+    <div class="tieu-de">
+      <div><h1>${esc(c.nhan)}</h1><p>${esc(c.mo || c.cha.mo)}</p></div>
+      <div class="td-nut">
+        <span class="chip ${ng[0]}">${ng[1]}</span>
+        <span class="chip xam">${esc(c.quyen)}</span>${phu || ''}
+      </div>
+    </div>
+    ${anhEm.length > 1 ? `<div class="tab">${anhEm.map(x =>
+      `<button class="${x.id === c.id ? 'chon' : ''}" onclick="di('${x.id}')">${esc(x.nhan)}</button>`).join('')}</div>` : ''}`;
+}
+function khungTrong(t, p){ return `<div class="the"><div class="trong"><b style="color:var(--body)">${esc(t)}</b><br>${esc(p)}</div></div>`; }
+
+/* ── Việc của tôi — VỎ: gom từ mọi module, xếp theo MỐC trước ──────────── */
+function veViec(){
+  const moc = [['qua-han','Quá hạn','danger'], ['hom-nay','Hôm nay','warn'], ['sap-toi','Sắp tới','brand']];
+  let h = `<div class="duong-dan">VỎ · không thuộc cây</div>
+    <div class="tieu-de"><div><h1>Việc của tôi</h1>
+    <p>Gom từ mọi module. Xếp theo <b>mốc thời gian trước</b>, trong mỗi mốc mới chia theo module — vì câu hỏi thật của cán bộ là "cái gì sắp chết hạn".</p></div></div>`;
+  let co = 0;
+  for (const [ma, ten, mau] of moc){
+    const ds = VIEC.filter(v => v.moc === ma && duoc((timLa(v.la) || {}).quyen));
+    if (!ds.length) continue; co += ds.length;
+    h += `<div class="the"><div class="the-dau"><h2>${ten}</h2><span class="chip ${mau}">${ds.length}</span></div><div class="the-than khit">`;
+    for (const v of ds){
+      const c = timLa(v.la);
+      h += `<div class="hang-viec">
+        <div class="hv-ic" style="background:var(--tint-${mau});color:var(--${mau})">${bieuTuong(c.cha.nhom)}</div>
+        <div class="hv-noi"><div class="hv-tieu">${esc(v.ten)}</div><div class="hv-phu">${esc(v.mo)}</div></div>
+        <button class="nut-nho" onclick="di('${c.id}')">${esc(c.cha.nhan)} › ${esc(c.nhan)}</button></div>`;
+    }
+    h += '</div></div>';
+  }
+  $('#chinh').innerHTML = co ? h : h + khungTrong('Không có việc nào', 'Vai hiện tại chưa được giao việc nào.');
+}
+
+/* ── Điều hành ─────────────────────────────────────────────────────────── */
+function veTongQuan(c){
+  const tong = DUAN.length, qh = DUAN.filter(d=>d.tt==='qua-han').length, sh = DUAN.filter(d=>d.tt==='sap-han').length;
+  const von = DUAN.reduce((s,d)=>s+d.von,0), chi = DUAN.reduce((s,d)=>s+d.chi,0);
+  const kpiTb = Math.round(DUAN.reduce((s,d)=>s+d.kpi,0)/tong);
+  const lv = {}; for (const d of DUAN) lv[d.lv] = (lv[d.lv]||0)+1;
+  const max = Math.max(...Object.values(lv));
+  return dau(c) + `
+  <div class="ghi-chu">Nhóm <b>Điều hành</b> chỉ <b>đọc và tổng hợp nhiều hồ sơ</b>. Bấm vào một dự án là rời nhóm này,
+    sang <b>Tác nghiệp</b> — và sang <b>phạm vi hồ sơ</b>.</div>
+  <div class="luoi c4g" style="margin-bottom:16px">
+    <div class="kpi"><div class="nhan">Dự án đang theo dõi</div><div class="so tnum">${tong}</div><div class="duoi">Bản thật: 77 dự án theo QĐ 580</div></div>
+    <div class="kpi"><div class="nhan">Quá hạn / Sắp hạn</div><div class="so tnum" style="color:var(--danger)">${qh} <span style="color:var(--faint);font-size:17px">/ ${sh}</span></div><div class="duoi">Cờ SLA gắn tự động theo NĐ 45</div></div>
+    <div class="kpi"><div class="nhan">Giải ngân</div><div class="so tnum">${Math.round(chi/von*100)}%</div><div class="duoi">${tien(chi)} / ${tien(von)} triệu đồng</div></div>
+    <div class="kpi"><div class="nhan">KPI trung bình</div><div class="so tnum">${kpiTb}<span style="font-size:15px;color:var(--faint)">/100</span></div><div class="duoi">Đúng hạn 40 · trễ 25 · điều chỉnh 15 · giải ngân 20</div></div>
+  </div>
+  <div class="luoi c2g">
+    <div class="the"><div class="the-dau"><h2>Dự án theo lĩnh vực</h2></div><div class="the-than">
+      ${Object.entries(lv).map(([k,v])=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px">
+        <div style="width:118px;font-size:12.5px;color:var(--body)">${esc(k)}</div>
+        <div class="thanh-tien" style="flex:1"><i style="width:${v/max*100}%"></i></div>
+        <div class="tnum" style="width:20px;text-align:right;font-size:12.5px;font-weight:600">${v}</div></div>`).join('')}
+    </div></div>
+    <div class="the"><div class="the-dau"><h2>Cần chú ý</h2><span class="phu">theo cờ SLA</span></div><div class="the-than khit">
+      ${DUAN.filter(d=>d.tt==='qua-han'||d.tt==='sap-han').map(d=>`<div class="hang-viec" style="cursor:pointer" onclick="moHoSo('${d.ma}')">
+        <div class="hv-ic" style="background:var(--tint-${d.tt==='qua-han'?'danger':'warn'});color:var(--${d.tt==='qua-han'?'danger':'warn'})">!</div>
+        <div class="hv-noi"><div class="hv-tieu">${esc(d.ten)}</div><div class="hv-phu tnum">${d.ma} · hạn ${d.han}</div></div>
+        <span class="chip ${NHAN_TT[d.tt][0]}">${NHAN_TT[d.tt][1]}</span></div>`).join('')}
+    </div></div>
+  </div>`;
+}
+
+/* ── Tác nghiệp · Dự án: BA chức năng cấp 4 dùng CHUNG một bảng ────────── */
+function veDuAn(c){
+  const ds = c.loc === 'cua-toi' ? DUAN.filter(d => d.phu === TOI)
+           : c.loc === 'cho-xac-nhan' ? DUAN.filter(d => d.cxn) : DUAN;
+  return dau(c) + `
+  <div class="ghi-chu"><b>Một nhà, nhiều đường vào.</b> "Tất cả", "Tôi phụ trách", "Chờ xác nhận" là
+    <b>ba bộ lọc của cùng một bảng</b> — nên chúng là cấp 4 của module Dự án, không phải ba module.
+    ${c.loc === 'cua-toi' ? `Bản mẫu giả định bạn là cán bộ <b>${TOI}</b>.` : ''}</div>
+  ${bangDuAn(ds)}`;
+}
+function bangDuAn(ds){
+  if (!ds.length) return khungTrong('Không có dự án nào', 'Bộ lọc này hiện không có dòng nào.');
+  return `<div class="the"><div class="the-than khit" style="overflow:auto;max-height:560px">
+    <table><thead><tr><th>Mã</th><th>Tên dự án</th><th>Chủ đầu tư</th><th>GĐ</th><th style="width:130px">Tiến độ</th><th>Hạn</th><th>KPI</th><th>Trạng thái</th></tr></thead><tbody>
+    ${ds.map(d=>`<tr class="bam" onclick="moHoSo('${d.ma}')">
+      <td class="tnum" style="font-weight:600">${d.ma}</td>
+      <td>${esc(d.ten)}<div style="font-size:11px;color:var(--faint);margin-top:2px">Phụ trách: ${esc(d.phu)} · ${esc(d.lv)}</div></td>
+      <td style="color:var(--body)">${esc(d.cdt)}</td><td class="tnum">${d.gd}</td>
+      <td><div style="display:flex;align-items:center;gap:7px"><div class="thanh-tien" style="flex:1"><i style="width:${d.td}%"></i></div><span class="tnum" style="font-size:11.5px;width:30px">${d.td}%</span></div></td>
+      <td class="tnum">${d.han}</td>
+      <td><span class="chip ${d.hang==='A'?'ok':d.hang==='B'?'brand':'warn'}">${d.kpi} · ${d.hang}</span></td>
+      <td><span class="chip ${NHAN_TT[d.tt][0]}">${NHAN_TT[d.tt][1]}</span></td></tr>`).join('')}
+    </tbody></table></div></div>`;
+}
+function veDonDoc(c){
+  const ds = DUAN.filter(d => d.tt === 'qua-han' || d.tt === 'sap-han');
+  return dau(c) + `
+  <div class="ghi-chu">Chức năng này có quyền <b>chặt hơn</b> module cha (<code>URGE.WRITE</code> thay vì <code>PROJECT.READ</code>),
+    nên nó tự biến mất khỏi cây với Chủ đầu tư và Nhà thầu — mà bốn chức năng anh em của nó vẫn còn.
+    Lọc quyền phải chạy ở <b>cấp 4</b>, không chỉ ở cấp 3.</div>
+  <div class="the"><div class="the-than khit"><table><thead><tr><th>Mã</th><th>Dự án</th><th>Hạn</th><th>Tình trạng</th><th style="width:130px"></th></tr></thead><tbody>
+    ${ds.map(d=>`<tr><td class="tnum" style="font-weight:600">${d.ma}</td><td>${esc(d.ten)}</td><td class="tnum">${d.han}</td>
+      <td><span class="chip ${NHAN_TT[d.tt][0]}">${NHAN_TT[d.tt][1]}</span></td>
+      <td><button class="nut-nho chinh-yeu" onclick="moPhu('Gửi đôn đốc','<p style=&quot;font-size:13px;color:var(--body)&quot;>Bản mẫu không gửi thật. Ở bản chạy, thao tác này ghi vào <b>Giám sát &amp; Lưu vết › Nhật ký thao tác</b> kèm người gửi, thời điểm và lý do.</p>')">Gửi đôn đốc</button></td></tr>`).join('')}
+    </tbody></table></div></div>`;
+}
+
+/* ── Tác nghiệp · Đơn thư: cấp 4 = các chặng của hành trình ─────────────── */
+function veDonThu(c){
+  const gd = GD_DON[c.loc], ds = DONTHU.filter(d => d.gd === c.loc);
+  const han = (d) => d.con === null ? '<span class="chip ok">Đã giải quyết</span>'
+    : d.con < 0 ? `<span class="chip danger">Quá ${-d.con} ngày</span>`
+    : d.con === 0 ? '<span class="chip danger">Hết hạn hôm nay</span>'
+    : d.con <= 5 ? `<span class="chip warn">Còn ${d.con} ngày</span>` : `<span class="chip ok">Còn ${d.con} ngày</span>`;
+  return dau(c) + `
+  <div class="ghi-chu"><b>Xếp theo hành trình, không đẻ nhóm "giai đoạn".</b> Bốn chức năng cấp 4 là bốn chặng
+    một lá đơn đi qua, xếp đúng thứ tự. Chặng này: <b>${esc(gd[0])}</b> — ${esc(gd[1])}</div>
+  ${ds.length ? `<div class="the"><div class="the-than khit"><table><thead><tr>
+    <th>Mã đơn</th><th>Người gửi</th><th>Nội dung</th><th>Lĩnh vực</th><th>Ngày nhận</th><th>Hạn</th></tr></thead><tbody>
+    ${ds.map(d=>`<tr><td class="tnum" style="font-weight:600">${esc(d.ma)}</td><td>${esc(d.ng)}</td><td>${esc(d.nd)}</td>
+      <td>${esc(d.lv)}</td><td class="tnum">${d.nhan}</td><td>${han(d)}</td></tr>`).join('')}
+    </tbody></table></div></div>` : khungTrong('Không có đơn nào ở chặng này', '')}`;
+}
+
+/* ── Phạm vi HỒ SƠ ─────────────────────────────────────────────────────── */
+function veHoSo(){
+  const d = HOSO;
+  const noi = { 'hs-checklist':hsChecklist, 'hs-giai-ngan':hsGiaiNgan, 'hs-vuong-mac':hsVuongMac, 'hs-tai-lieu':hsTaiLieu }[THE_HS](d);
+  $('#chinh').innerHTML = `
+    <div class="duong-dan"><span class="cap">C1</span> Tầng 1 — Nghiệp vụ › <span class="cap">C2</span> Tác nghiệp ›
+      <span class="cap">C3</span> <a href="#" onclick="di('da-tat-ca');return false">Dự án</a> ›
+      <span class="cap" style="border-color:var(--tim);color:var(--tim)">HỒ SƠ</span> <b style="color:var(--body)">${d.ma}</b></div>
+    <div class="tieu-de"><div><h1>${esc(d.ten)}</h1>
+      <p class="tnum">${d.ma} · ${esc(d.cdt)} · Giai đoạn ${d.gd} · hạn ${d.han} · phụ trách ${esc(d.phu)}</p></div>
+      <div class="td-nut"><span class="chip ${NHAN_TT[d.tt][0]}">${NHAN_TT[d.tt][1]}</span>
+        <span class="chip ${d.hang==='A'?'ok':d.hang==='B'?'brand':'warn'}">KPI ${d.kpi} · hạng ${d.hang}</span></div></div>
+    <div class="ghi-chu"><b>Đây không phải cấp 5.</b> Bốn thẻ dưới đây là trục <b>phạm vi</b>: chỉ có nghĩa khi đã mở
+      một hồ sơ, nên không nằm trong cây và không bao giờ lên sidebar. Cây dừng ở cấp 4.</div>
+    <div class="tab">${THE_HO_SO.map(t=>`<button class="${THE_HS===t.id?'chon':''}" onclick="THE_HS='${t.id}';veChinh()">${esc(t.nhan)}</button>`).join('')}</div>
+    ${noi}`;
+}
+function hsChecklist(){
+  return `<div class="the"><div class="the-dau"><h2>Checklist tiến độ</h2>
+    <span class="phu">due[i] = override[i] ?? due[i-1] + days[i] — sửa số ngày một bước, cả chuỗi sau tự tính lại</span></div>
+    <div class="the-than khit" style="overflow:auto"><table><thead><tr><th style="width:36px">#</th><th>Bước</th><th style="width:70px">Số ngày</th><th style="width:96px">Hạn</th><th style="width:96px">Thực tế</th><th style="width:120px">Trạng thái</th></tr></thead><tbody>
+    ${BUOC.map(b=>`<tr><td class="tnum" style="color:var(--faint)">${b.tt}</td>
+      <td>${esc(b.ten)}${b.sla?`<div style="font-size:11px;color:var(--danger);margin-top:2px">⚠ ${esc(b.sla)}</div>`:''}</td>
+      <td class="tnum">${b.ngay}</td><td class="tnum">${b.han}</td><td class="tnum">${b.xong||'—'}</td>
+      <td><span class="chip ${NHAN_BUOC[b.s][0]}">${NHAN_BUOC[b.s][1]}</span></td></tr>`).join('')}
+    </tbody></table></div></div>`;
+}
+function hsGiaiNgan(d){
+  const a = Math.round(d.von*.3), b = Math.round(d.von*.35);
+  const dot = [['Đợt 1 — tạm ứng hợp đồng',a,'15/07/2026',1],['Đợt 2 — nghiệm thu giai đoạn 1',b,'16/10/2026',d.td>60],['Đợt 3 — quyết toán',d.von-a-b,'19/11/2026',0]];
+  return `<div class="luoi c3g" style="margin-bottom:16px">
+    <div class="kpi"><div class="nhan">Tổng vốn</div><div class="so tnum">${tien(d.von)}</div><div class="duoi">triệu đồng</div></div>
+    <div class="kpi"><div class="nhan">Đã chi</div><div class="so tnum">${tien(d.chi)}</div><div class="duoi">${Math.round(d.chi/d.von*100)}% kế hoạch</div></div>
+    <div class="kpi"><div class="nhan">Còn lại</div><div class="so tnum">${tien(d.von-d.chi)}</div><div class="duoi">triệu đồng</div></div></div>
+  <div class="the"><div class="the-than khit"><table><thead><tr><th>Đợt</th><th style="width:130px">Giá trị</th><th style="width:110px">Dự kiến</th><th style="width:120px">Trạng thái</th></tr></thead><tbody>
+    ${dot.map(([t,v,h,s])=>`<tr><td>${esc(t)}</td><td class="tnum">${tien(v)}</td><td class="tnum">${h}</td><td><span class="chip ${s?'ok':'xam'}">${s?'Đã chi':'Chưa tới'}</span></td></tr>`).join('')}
+  </tbody></table></div></div>`;
+}
+function hsVuongMac(d){
+  const vm = d.tt==='qua-han'||d.tt==='sap-han'
+    ? [['VM-01','Chậm bàn giao mặt bằng triển khai','Cao','Đang xử lý','danger'],['VM-02','Chờ ý kiến thẩm định của cơ quan chuyên môn','Trung bình','Đang xử lý','warn']]
+    : [['VM-01','Điều chỉnh cấu hình thiết bị theo thực tế','Thấp','Đã xử lý','ok']];
+  return `<div class="the"><div class="the-than khit"><table><thead><tr><th style="width:70px">Mã</th><th>Nội dung</th><th style="width:110px">Mức độ</th><th style="width:130px">Trạng thái</th></tr></thead><tbody>
+    ${vm.map(([m,n,mu,s,cl])=>`<tr><td class="tnum">${m}</td><td>${esc(n)}</td><td>${esc(mu)}</td><td><span class="chip ${cl}">${esc(s)}</span></td></tr>`).join('')}
+  </tbody></table></div></div>`;
+}
+function hsTaiLieu(){
+  const tl = [['Đề cương và dự toán chi tiết','PDF','2,4 MB','11/06/2026'],['Quyết định phê duyệt chủ trương','PDF','0,8 MB','05/07/2026'],
+              ['Hợp đồng và phụ lục','PDF','5,1 MB','31/08/2026'],['Biên bản nghiệm thu giai đoạn 1','DOCX','1,2 MB','—']];
+  return `<div class="the"><div class="the-dau"><h2>Tài liệu hồ sơ</h2><span class="phu">tệp ở kho đối tượng, Postgres chỉ giữ đường dẫn</span></div>
+    <div class="the-than khit"><table><thead><tr><th>Tên tài liệu</th><th style="width:80px">Dạng</th><th style="width:90px">Cỡ</th><th style="width:110px">Ngày</th></tr></thead><tbody>
+    ${tl.map(([t,d,s,n])=>`<tr><td>${esc(t)}</td><td><span class="chip xam">${d}</span></td><td class="tnum">${s}</td><td class="tnum">${n}</td></tr>`).join('')}
+  </tbody></table></div></div>`;
+}
+
+/* ── Danh mục · Tổ chức (gương Native) ─────────────────────────────────── */
+function veGuong(c){
+  const dv = [['UBND tỉnh','Cấp tỉnh','—'],['Sở Khoa học & Công nghệ','Sở','UBND tỉnh'],['Sở Y tế','Sở','UBND tỉnh'],
+              ['Sở Thông tin & Truyền thông','Sở','UBND tỉnh'],['Sở Tài nguyên & Môi trường','Sở','UBND tỉnh']];
+  const cb = [['Ng. V. A.','Chuyên viên','Sở Khoa học & Công nghệ','Đang dùng'],['Tr. T. B.','Chuyên viên','Sở Y tế','Đang dùng'],
+              ['Lê V. C.','Chuyên viên','Sở Thông tin & Truyền thông','Đang dùng'],['Ph. T. D.','Phó phòng','Sở Khoa học & Công nghệ','Tạm khóa']];
+  const laDv = c.loc === 'don-vi';
+  return dau(c, '<span class="chip warn">Chỉ đọc</span>') + `
+  <div class="ghi-chu"><b>Luật sở hữu dữ liệu.</b> Đây là <b>gương của System Service</b>. Postgres xOS chỉ giữ
+    <code>native_id</code> và bản nhớ tạm để hiển thị — không bao giờ có bảng người dùng thứ hai.</div>
+  <div class="the"><div class="the-dau"><h2>${laDv?'Đơn vị':'Cán bộ'}</h2><span class="phu">đồng bộ lúc 29/09/2026 14:30</span></div>
+    <div class="the-than khit"><table><thead><tr>${laDv
+      ? '<th>Tên đơn vị</th><th style="width:110px">Cấp</th><th style="width:180px">Trực thuộc</th>'
+      : '<th>Họ tên</th><th style="width:120px">Chức vụ</th><th style="width:220px">Đơn vị</th><th style="width:110px">Trạng thái</th>'}</tr></thead><tbody>
+    ${(laDv?dv:cb).map(r=>`<tr>${r.map((v,i)=>`<td>${!laDv&&i===3?`<span class="chip ${v==='Đang dùng'?'ok':'xam'}">${esc(v)}</span>`:esc(v)}</td>`).join('')}</tr>`).join('')}
+  </tbody></table></div></div>`;
+}
+
+/* ── Giám sát & Lưu vết ────────────────────────────────────────────────── */
+function veNhatKy(c){
+  const ds = c.loc === 'ho-so' ? NHATKY.filter(n => n.dt.startsWith('DA-')) : NHATKY;
+  return dau(c) + `
+  <div class="ghi-chu"><b>Nhật ký thao tác</b> là bằng chứng pháp lý, người xem là thanh tra và lãnh đạo — nên ở <b>Tầng 1</b>.
+    Khác <b>nhật ký hệ thống</b> (job lỗi, gọi API hỏng) ở Tầng 2 › Cấu hình &amp; Vận hành › Theo dõi vận hành.</div>
+  <div class="the"><div class="the-than khit"><table><thead><tr><th style="width:150px">Thời điểm</th><th style="width:120px">Người thực hiện</th><th style="width:180px">Thao tác</th><th style="width:120px">Đối tượng</th><th>Ghi chú</th></tr></thead><tbody>
+    ${ds.map(n=>`<tr><td class="tnum">${n.luc}</td><td>${esc(n.ai)}</td><td><span class="chip brand">${esc(n.viec)}</span></td>
+      <td class="tnum">${esc(n.dt)}</td><td style="color:var(--body)">${esc(n.ghi)}</td></tr>`).join('')}
+  </tbody></table></div></div>`;
+}
+function veQuaHan(c){
+  const ds = DUAN.filter(d => d.tt === c.loc);
+  return dau(c) + (ds.length ? `<div class="the"><div class="the-than khit"><table><thead><tr><th>Mã</th><th>Hồ sơ</th><th>Căn cứ hạn</th><th style="width:110px">Hạn</th><th style="width:120px">Tình trạng</th></tr></thead><tbody>
+    ${ds.map(d=>`<tr class="bam" onclick="moHoSo('${d.ma}')"><td class="tnum" style="font-weight:600">${d.ma}</td><td>${esc(d.ten)}</td>
+      <td style="color:var(--body);font-size:12px">NĐ 45 Điều 34 — thẩm định ≤20 ngày, phê duyệt ≤3 ngày</td>
+      <td class="tnum">${d.han}</td><td><span class="chip ${NHAN_TT[d.tt][0]}">${NHAN_TT[d.tt][1]}</span></td></tr>`).join('')}
+  </tbody></table></div></div>` : khungTrong('Không có hồ sơ nào', ''));
+}
+
+/* ── Tầng 2 · Người dùng & Phân quyền ──────────────────────────────────── */
+function veTaiKhoan(c){
+  const tk = [['lanhdao.demo','Lãnh đạo tỉnh','UBND tỉnh',0,'Đang dùng'],['so.demo','Sở KH&CN','Sở Khoa học & Công nghệ',1,'Đang dùng'],
+              ['cdt.demo','Chủ đầu tư','Sở Y tế',0,'Đang dùng'],['nhathau.demo','Nhà thầu','Đơn vị thi công',0,'Tạm khóa']];
+  const ds = c.loc === 'khoa' ? tk.filter(r => r[4] !== 'Đang dùng') : tk;
+  return dau(c) + `
+  <div class="ghi-chu"><b>Vai nghiệp vụ × cờ quản trị độc lập</b> — đúng mô hình PMS. Tài khoản là gương của System Service:
+    tạo/sửa gọi thẳng API nền tảng, Postgres xOS không giữ bảng người dùng.</div>
+  <div class="the"><div class="the-than khit"><table><thead><tr><th>Tài khoản</th><th>Vai nghiệp vụ</th><th>Đơn vị</th><th style="width:120px">Cờ quản trị</th><th style="width:110px">Trạng thái</th></tr></thead><tbody>
+    ${ds.map(([a,v,d,q,s])=>`<tr><td class="tnum">${esc(a)}</td><td>${esc(v)}</td><td>${esc(d)}</td>
+      <td><span class="chip ${q?'tim':'xam'}">${q?'Có':'Không'}</span></td><td><span class="chip ${s==='Đang dùng'?'ok':'xam'}">${esc(s)}</span></td></tr>`).join('')}
+  </tbody></table></div></div>`;
+}
+function veMaTran(c){
+  const vai = Object.values(VAI);
+  const quyen = [...new Set(LA.filter(x => nhomCua(x.cha.nhom).tang === 1).map(x => x.quyen))];
+  return dau(c) + `
+  <div class="ghi-chu">Sidebar lọc bằng đúng bảng này, ở <b>cả bốn cấp</b>. Một quyền có thể thuộc cấp 3 (cả module)
+    hoặc chỉ một chức năng cấp 4 (vd <code>URGE.WRITE</code> → Đôn đốc).</div>
+  <div class="the"><div class="the-than khit" style="overflow:auto"><table><thead><tr><th>Quyền</th><th>Mở những gì</th>${vai.map(v=>`<th style="text-align:center">${esc(v.ten)}</th>`).join('')}</tr></thead><tbody>
+    ${quyen.map(q=>{
+      const mo = LA.filter(x => x.quyen === q), mods = [...new Set(mo.map(x => x.cha.nhan))];
+      const tat = mo.length === mo[0].cha.con.length ? mods.join(', ') : mo.map(x => x.cha.nhan + ' › ' + x.nhan).join(', ');
+      return `<tr><td class="tnum" style="font-size:12px">${esc(q)}</td><td style="font-size:12px;color:var(--body)">${esc(tat)}</td>
+        ${vai.map(v=>`<td style="text-align:center">${v.quyen.includes(q)?'<b style="color:var(--ok)">✓</b>':'<span style="color:var(--faint)">—</span>'}</td>`).join('')}</tr>`;
+    }).join('')}
+    <tr><td class="tnum" style="font-size:12px">ADMIN.*</td><td style="font-size:12px;color:var(--body)">Toàn bộ Tầng 2</td>
+      <td colspan="${vai.length}" style="text-align:center;color:var(--tim);font-size:12px">theo cờ quản trị, không theo vai</td></tr>
+  </tbody></table></div></div>`;
+}
+
+/* ── Tầng 2 · Kết nối ──────────────────────────────────────────────────── */
+function veNative(c){
+  return dau(c) + `
+  <div class="ghi-chu">Màn này phải đọc cấu hình <b>lúc chạy</b>, không phải lúc build. Vite nhúng <code>VITE_*</code> vào bundle —
+    không gỡ chỗ đó thì bấm Lưu, F5 là mất. Cách gỡ: <code>/config.json</code> phục vụ từ volume, container sinh lúc khởi động.</div>
+  <div class="the"><div class="the-than" style="max-width:560px">
+    <div class="truong"><label>Địa chỉ gateway</label><input value="(để trống — đường dẫn tương đối /api, qua nginx)" /></div>
+    <div class="truong"><label>Kiểm tra bằng</label><input value="GET /api/assistant/health" readonly /></div>
+    <button class="nut-nho chinh-yeu" onclick="di('kn-dich-vu')">Thử kết nối →</button>
+    <div style="margin-top:12px;padding:9px 11px;border-radius:8px;background:var(--tint-warn);font-size:11.5px;color:#8a5f1e;line-height:1.55">
+      <b>Không nhập khóa nhà cung cấp mô hình tại đây.</b> Khóa nằm ở Native hoặc BFF. Màn này chỉ <b>chọn</b> và <b>kiểm tra</b>.</div>
+  </div></div>`;
+}
+function veDichVu(c){
+  return dau(c) + `<div class="the"><div class="the-than khit"><table><tbody>
+    ${DICH_VU.map(s=>`<tr><td style="width:26px"><span class="o" style="background:var(--${s.ok?'ok':'danger'})"></span></td>
+      <td><b>${esc(s.ten)}</b><div style="font-size:11px;color:var(--faint);margin-top:1px">${esc(s.duong)}</div>
+      <div style="font-size:11.5px;color:var(--body);margin-top:3px">${esc(s.ghi)}</div></td>
+      <td style="width:110px"><span class="chip ${s.ok?'ok':'danger'}">${s.ok?'Bình thường':'Mất kết nối'}</span></td></tr>`).join('')}
+  </tbody></table></div></div>`;
+}
+function veTichHop(c){
+  return dau(c) + `<div class="the"><div class="the-than khit"><table><thead><tr><th>Đối tác</th><th>Sự kiện đẩy</th><th style="width:140px">Lần gọi gần nhất</th><th style="width:110px">Trạng thái</th></tr></thead><tbody>
+    <tr><td>Hệ thống báo cáo tỉnh</td><td><span class="chip xam">AFTER_SUMMARIZE</span></td><td class="tnum">29/09 13:40</td><td><span class="chip ok">Thành công</span></td></tr>
+    <tr><td>Cổng thông tin điện tử</td><td><span class="chip xam">AFTER_COMPOSE</span></td><td class="tnum">28/09 17:02</td><td><span class="chip ok">Thành công</span></td></tr>
+    <tr><td>Kho dữ liệu dùng chung</td><td><span class="chip xam">ON_ERROR</span></td><td class="tnum">—</td><td><span class="chip xam">Chưa chạy</span></td></tr>
+  </tbody></table></div></div>`;
+}
+
+/* ── Tầng 2 · Cấu hình & Vận hành ──────────────────────────────────────── */
+function veKhaiBao(c){
+  let rows = '';
+  for (const t of TANG) for (const n of NHOM.filter(x => x.tang === t.so)) for (const m of MODULE.filter(x => x.nhom === n.ma)){
+    rows += `<tr style="background:var(--nen-2)"><td><span class="chip brand">C3</span></td><td class="tnum" style="color:var(--faint)">${m.id}</td>
+      <td><b>${esc(m.nhan)}</b></td><td style="font-size:12px">${esc(t.nhan.split(' — ')[0])} › ${esc(n.nhan)}</td>
+      <td class="tnum" style="font-size:11.5px">${esc(m.quyen)}</td><td><span class="chip ${NHAN_NGUON[m.nguon][0]}">${NHAN_NGUON[m.nguon][1]}</span></td>
+      <td><input type="checkbox" checked disabled /></td></tr>`;
+    for (const x of m.con){
+      const q = x.quyen || m.quyen;
+      rows += `<tr><td><span class="chip xam">C4</span></td><td class="tnum" style="color:var(--faint)">${x.id}</td>
+        <td style="padding-left:26px">${esc(x.nhan)}${x.ve ? '' : ' <span style="color:var(--faint);font-size:11px">· phác</span>'}</td><td></td>
+        <td class="tnum" style="font-size:11.5px;${q !== m.quyen ? 'color:var(--tim);font-weight:600' : 'color:var(--faint)'}">${q !== m.quyen ? esc(q) : 'kế thừa'}</td>
+        <td></td><td><input type="checkbox" checked disabled /></td></tr>`;
+    }
+  }
+  return dau(c) + `
+  <div class="ghi-chu">Đây là <b>registry phơi ra</b> — bật/tắt và đổi nhãn theo từng khách, <b>không fork mã</b>.
+    Cấp 1 và cấp 2 là danh sách đóng; cấp 3 và cấp 4 khai ở đây. Quyền cấp 4 mặc định kế thừa cấp 3.</div>
+  <div class="luoi c4g" style="margin-bottom:16px">
+    <div class="kpi"><div class="nhan">Cấp 1 · Tầng</div><div class="so tnum">${TANG.length}</div></div>
+    <div class="kpi"><div class="nhan">Cấp 2 · Nhóm</div><div class="so tnum">${NHOM.length}</div></div>
+    <div class="kpi"><div class="nhan">Cấp 3 · Module</div><div class="so tnum">${MODULE.length}</div></div>
+    <div class="kpi"><div class="nhan">Cấp 4 · Chức năng</div><div class="so tnum">${LA.length}</div><div class="duoi">+ ${THE_HO_SO.length} thẻ hồ sơ (không phải cấp 5)</div></div>
+  </div>
+  <div class="the"><div class="the-than khit" style="overflow:auto;max-height:520px"><table><thead><tr>
+    <th style="width:54px">Cấp</th><th style="width:130px">Mã</th><th>Nhãn</th><th>Vị trí</th><th style="width:130px">Quyền</th><th style="width:110px">Nguồn</th><th style="width:48px">Bật</th>
+  </tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function veHangDoi(c){
+  return dau(c) + `<div class="the"><div class="the-than khit"><table><tbody>
+    <tr><td>Tóm tắt văn bản</td><td class="tnum">3 đang chạy</td><td style="width:110px"><span class="chip ok">Bình thường</span></td></tr>
+    <tr><td>Phân công từ tệp</td><td class="tnum">1 chờ</td><td><span class="chip ok">Bình thường</span></td></tr>
+    <tr><td>Nạp tri thức</td><td class="tnum">2 lỗi</td><td><span class="chip danger">Cần xem</span></td></tr>
+  </tbody></table></div></div>`;
+}
+function veNhatKyHt(c){
+  return dau(c) + `
+  <div class="ghi-chu">Nhật ký <b>hệ thống</b>, người xem là kỹ thuật. Khác nhật ký <b>thao tác</b> ở Tầng 1 › Giám sát &amp; Lưu vết.</div>
+  <div class="the"><div class="the-than khit"><table><tbody>
+    <tr><td class="tnum" style="width:110px;color:var(--faint)">14:31:02</td><td><span class="chip danger">Lỗi</span> Index Service không phản hồi sau 30s</td></tr>
+    <tr><td class="tnum" style="color:var(--faint)">14:28:55</td><td><span class="chip warn">Cảnh báo</span> Gọi lại lần 2 — /api/index</td></tr>
+    <tr><td class="tnum" style="color:var(--faint)">13:40:11</td><td><span class="chip ok">OK</span> Webhook AFTER_SUMMARIZE — 200</td></tr>
+  </tbody></table></div></div>`;
+}
+
+/* ── Màn phác: nói rõ VÌ SAO chức năng này nằm đúng chỗ của nó ─────────── */
+function vePhac(c){
+  const n = nhomCua(c.cha.nhom);
+  return dau(c) + `<div class="the"><div class="trong">
+    <b style="color:var(--body);font-size:14px">Màn phác</b><br>
+    Bản mẫu dựng chi tiết một số chức năng đại diện; chức năng này mới có vị trí trong cây.<br><br>
+    <b>Cấp 2 · ${esc(n.nhan)}</b> — vì trả lời CÓ cho: <i style="color:var(--body)">"${esc(n.hoi)}"</i><br>
+    <b>Cấp 3 · ${esc(c.cha.nhan)}</b> — đối tượng: <i style="color:var(--body)">${esc(c.cha.mo)}</i><br>
+    <b>Cấp 4 · ${esc(c.nhan)}</b> — một đường vào của chính đối tượng đó, không phải đối tượng mới.
+  </div></div>`;
+}
+
+/* ── Toàn bộ chức năng: cây bốn cấp trải phẳng, có mờ theo quyền ───────── */
+function moToanBo(){
+  let h = `<p style="font-size:12.8px;color:var(--body);margin:0 0 16px;line-height:1.6">
+    Cây bốn cấp trải phẳng. Mờ = vai hiện tại <b>không có quyền</b> — chức năng không biến mất khỏi hệ thống,
+    chỉ không hiện trên cây của người này. Trang này là điều kiện để sidebar được phép thu gọn.</p>`;
+  for (const t of TANG){
+    h += `<div class="c1 t${t.so}" style="padding:${t.so === 1 ? 0 : 14}px 0 1px;cursor:default"><span class="bar"></span>C1 · ${esc(t.nhan)}</div>
+          <div style="font-size:11.5px;color:var(--faint);font-style:italic;margin:0 0 10px 9px">${esc(t.hoi)}</div>`;
+    for (const n of NHOM.filter(x => x.tang === t.so)){
+      h += `<div style="font-size:11px;font-weight:700;color:var(--faint);letter-spacing:.5px;text-transform:uppercase;margin:4px 0 6px 9px">
+              C2 · ${esc(n.nhan)} <span style="text-transform:none;font-weight:400;font-style:italic">— ${esc(n.hoi)}</span></div>
+            <div class="luoi c3g" style="margin:0 0 14px 9px">`;
+      for (const m of MODULE.filter(x => x.nhom === n.ma)){
+        const ng = NHAN_NGUON[m.nguon];
+        h += `<div class="the-mod"><h4>${bieuTuong(m.nhom)} ${esc(m.nhan)} <span class="chip ${ng[0]}" style="margin-left:auto">${ng[1]}</span></h4>
+                <div class="mo">${esc(m.mo)}</div>`;
+        for (const x of m.con){
+          const co = duoc(x.quyen || m.quyen);
+          h += `<button ${co ? `onclick="dongPhu();di('${x.id}')"` : 'disabled'}>${esc(x.nhan)}${co ? '' : ' · thiếu quyền'}</button>`;
+        }
+        h += '</div>';
+      }
+      h += '</div>';
+    }
+  }
+  moPhu('Toàn bộ chức năng', h);
+}
+
+/* ── Trợ lý (VỎ) ───────────────────────────────────────────────────────── */
+function doiTroLy(){ $('#tro-ly-bang').classList.toggle('hien'); }
+function veTroLy(){
+  $('#tl-than').innerHTML = `
+    <p style="margin:0 0 10px"><b style="color:var(--ink)">Trợ lý nằm ở vỏ, không phải một nhánh của cây.</b></p>
+    <p style="margin:0 0 10px">Tóm tắt và soạn thảo là chức năng của <b>Tác nghiệp › Xử lý văn bản</b>.
+    Không có nhóm "AI" nào: không cán bộ nào đi tìm "một màn có AI", họ tìm "tóm tắt văn bản này".</p>
+    <p style="margin:0;color:var(--faint);font-size:11.5px">Bản mẫu không gọi mô hình. Ở bản chạy:
+    <code>POST /api/assistant/ask/stream</code> (SSE), trả lời kèm câu SQL đã chạy và mốc số liệu.</p>
+    <div class="tl-goi">
+      <button onclick="di('qh-sla')">Dự án nào đang quá hạn?</button>
+      <button onclick="di('dt-tiep-nhan')">Đơn nào sắp hết hạn thụ lý?</button>
+      <button onclick="di('nk-tat-ca')">Ai vừa sửa gì?</button>
+    </div>`;
+}
+
+function moPhu(ten, html){ $('#phu-ten').textContent = ten; $('#phu-than').innerHTML = html; $('#lop-phu').classList.add('hien'); }
+function dongPhu(){ $('#lop-phu').classList.remove('hien'); }
+</script>
+</body>
+</html>

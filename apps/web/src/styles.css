@@ -1,0 +1,59 @@
+@import 'tailwindcss';
+
+/*
+ * Design token — khai MỘT lần ở đây, component chỉ dùng class token
+ * (bg-nen, text-ink…), không viết mã màu thẳng vào JSX.
+ * Mốc 1 thay bằng bộ token đầy đủ port từ GDOS (globals.css).
+ */
+:root {
+  --brand: #1b66e0;
+  --ok: #0f9d58;
+  --danger: #d93025;
+  --warn: #b7791f;
+  --bg: #eef1f6;
+  --nen: #ffffff;
+  --ink: #16222e;
+  --body: #41505f;
+  --faint: #8494a5;
+  --line: #dfe5ec;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --brand: #5b9bff;
+    --ok: #4cc38a;
+    --danger: #ff6b60;
+    --warn: #e0a458;
+    --bg: #0e141b;
+    --nen: #161e27;
+    --ink: #e8eef5;
+    --body: #b3c0cd;
+    --faint: #7d8c9c;
+    --line: #26313d;
+  }
+}
+
+@theme inline {
+  --color-brand: var(--brand);
+  --color-ok: var(--ok);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --color-bg: var(--bg);
+  --color-nen: var(--nen);
+  --color-ink: var(--ink);
+  --color-body: var(--body);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+}

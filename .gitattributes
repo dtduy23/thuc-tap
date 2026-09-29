@@ -1,0 +1,8 @@
+# Một kiểu xuống dòng cho cả đội — máy Windows không đẻ ra diff toàn file vì CRLF.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
+*.pdf binary
+*.xlsx binary
+*.docx binary

@@ -1,0 +1,33 @@
+# Phụ thuộc
+node_modules/
+
+# Bản build
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Cache công cụ
+.vite/
+.cache/
+.turbo/
+.eslintcache
+
+# Log
+*.log
+logs/
+
+# Biến môi trường — KHÔNG BAO GIỜ commit
+.env
+.env.*
+!.env.example
+
+# Dữ liệu cục bộ của Docker Compose
+.data/
+
+# Hệ điều hành / trình soạn thảo
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
