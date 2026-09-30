@@ -261,6 +261,10 @@ export interface DuAnDong {
   quyTrinhMa: string | null
   canBo: { id: string; hoTen: string } | null
   thongKe: ThongKeTienDo
+  /** Vướng mắc chưa giải quyết. */
+  vuongMacMo: number
+  /** Tổng các đợt giải ngân, triệu đồng. */
+  daGiaiNgan: number
 }
 
 export interface ThanhVienDuAn {
@@ -280,6 +284,11 @@ export interface HoSoDuAn extends DuAnDong {
   phienBan: PhienBanKeHoach[]
   /** Hạn từng bước ở lần chốt gần nhất — so với hạn hiện tại để thấy lệch. Bước vắng mặt = thêm sau lần chốt. */
   hanDaChot: Record<string, string | null>
+  vanBan: VanBanDuAn[]
+  von: VonDuAn[]
+  giaiNgan: DotGiaiNgan[]
+  vuongMac: VuongMacDuAn[]
+  taiChinh: TaiChinhDuAn
   /** Người xem được làm gì trên CHÍNH dự án này — API tính, web chỉ để ẩn/hiện nút. */
   quyen: {
     /** Sửa thông tin, ghi nhận bước, xác nhận cập nhật — đơn vị chủ đầu tư. */
@@ -358,4 +367,104 @@ export function ngayKetThucDuKien(buoc: readonly { han: string | null; laNhap: b
   let max: string | null = null
   for (const b of buoc) if (!b.laNhap && b.han && (!max || b.han > max)) max = b.han
   return max
+}
+
+// ── Văn bản, vốn, giải ngân, vướng mắc ───────────────────────────────────────
+
+/** Tệp nhận: văn bản hành chính, bảng tính, ảnh chụp, bản vẽ nén. Không nhận tệp chạy được. */
+export const DUOI_TEP_CHO_PHEP = [
+  'pdf',
+  'doc',
+  'docx',
+  'xls',
+  'xlsx',
+  'ppt',
+  'pptx',
+  'jpg',
+  'jpeg',
+  'png',
+  'zip',
+  'rar',
+  'dwg',
+] as const
+export const KICH_THUOC_TEP_TOI_DA = 25 * 1024 * 1024
+
+export interface VanBanDuAn {
+  id: string
+  buocId: string | null
+  giaiNganId: string | null
+  tenTep: string
+  loaiTep: string
+  kichThuoc: number
+  tieuDe: string | null
+  soKyHieu: string | null
+  ngayKy: string | null
+  nguoiKy: string | null
+  toSo: string | null
+  ghiChu: string | null
+  nguoiTai: string | null
+  taiLuc: string
+}
+
+export interface VonDuAn {
+  id: string
+  nam: number
+  nguonVonId: string
+  nguonVonTen: string
+  keHoach: number
+  ghiChu: string | null
+}
+
+export interface DotGiaiNgan {
+  id: string
+  nam: number
+  nguonVonId: string
+  nguonVonTen: string
+  ngay: string
+  soTien: number
+  dot: string | null
+  soKyHieu: string | null
+  ghiChu: string | null
+}
+
+export interface VuongMacDuAn {
+  id: string
+  buocId: string | null
+  noiDung: string
+  ngayNeu: string
+  ngayGiaiQuyet: string | null
+  ketQua: string | null
+  nguoiNeu: string | null
+}
+
+export interface TaiChinhDuAn {
+  /** Tổng kế hoạch vốn các năm. */
+  keHoach: number
+  /** Kế hoạch vốn từ đầu tới hết năm nay — mốc để so tiến độ giải ngân. */
+  keHoachDenNay: number
+  daGiaiNgan: number
+  /** % giải ngân so với tổng mức đầu tư. */
+  phanTramTongMuc: number
+  /** % giải ngân so với kế hoạch vốn tới năm nay (KPI giải ngân của PMS). */
+  phanTramKeHoach: number
+}
+
+/** Cách PMS tính: giải ngân = tổng các đợt; so với tổng mức và với kế hoạch lũy kế tới năm nay. */
+export function tinhTaiChinh(
+  tongMuc: number,
+  von: readonly { nam: number; keHoach: number }[],
+  dot: readonly { soTien: number }[],
+  namNay: number,
+): TaiChinhDuAn {
+  const keHoach = von.reduce((t, v) => t + v.keHoach, 0)
+  const keHoachDenNay = von.filter((v) => v.nam <= namNay).reduce((t, v) => t + v.keHoach, 0)
+  const daGiaiNgan = dot.reduce((t, d) => t + d.soTien, 0)
+  const pt = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 1000) / 10 : 0)
+  return {
+    keHoach,
+    keHoachDenNay,
+    daGiaiNgan,
+    phanTramTongMuc: pt(daGiaiNgan, tongMuc),
+    phanTramKeHoach: pt(daGiaiNgan, keHoachDenNay),
+  }
 }

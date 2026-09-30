@@ -12,6 +12,7 @@ import {
   homNay,
   ngayKetThucDuKien,
   soNgayGiua,
+  tinhTaiChinh,
   type BenThucHien,
   type GiaiDoan,
   type PhienBanKeHoach,
@@ -52,8 +53,12 @@ import {
   donVi,
   duAn,
   duAnBuoc,
+  duAnGiaiNgan,
   duAnPhienBan,
   duAnThanhVien,
+  duAnVanBan,
+  duAnVon,
+  duAnVuongMac,
   quyTrinhMau,
 } from '../db/schema/index.js'
 import type { NguoiDungPhien } from '../xac-thuc/bao-ve.js'
@@ -85,6 +90,10 @@ const COT_DU_AN = {
   canBoTen: sql<string | null>`ten_tai_khoan(${duAn.canBoId})`,
   canCu: duAn.canCu,
   tienDoMoTa: duAn.tienDoMoTa,
+  vuongMacMo: sql<number>`(select count(*)::int from du_an_vuong_mac v
+                            where v.du_an_id = "du_an"."id" and v.ngay_giai_quyet is null and v.deleted_at is null)`,
+  daGiaiNgan: sql<number>`(select coalesce(sum(g.so_tien), 0)::float8 from du_an_giai_ngan g
+                            where g.du_an_id = "du_an"."id" and g.deleted_at is null)`,
 }
 
 const COT_BUOC = {
@@ -507,8 +516,11 @@ export class DuAnService {
 
   // ── nội bộ ─────────────────────────────────────────────────────────────
 
-  /** Mở dự án (RLS: không thấy → 404), kiểm quyền trên CHÍNH dự án, làm việc, tính lại hạn, trả hồ sơ. */
-  private voiDuAn(
+  /**
+   * Mở dự án (RLS: không thấy → 404), kiểm quyền trên CHÍNH dự án, làm việc, tính lại
+   * hạn, trả hồ sơ. Dùng chung cho mọi thao tác ghi của hồ sơ (cả HoSoDuAnService).
+   */
+  voiDuAn(
     nd: NguoiDungPhien,
     id: string,
     can: keyof HoSoDuAn['quyen'],
@@ -652,6 +664,7 @@ async function docHoSo(tx: GiaoDich, nd: NguoiDungPhien, id: string): Promise<Ho
     thanhVien: tv.map((t) => ({ ...t, vaiTro: t.vaiTro as VaiTroThanhVien })),
     phienBan,
     hanDaChot: Object.fromEntries(anh.map((a) => [a.id, a.han])),
+    ...(await docHoSoPhu(tx, id, Number(da.tongMuc))),
     quyen: quyenTren(nd, da, vaiToi),
   }
 }
@@ -685,10 +698,89 @@ function chuyenDuAn(d: DongDuAn, buoc: DongBuoc[], hn: string): DuAnDong {
     capNhatNgay: d.capNhatNgay,
     quyTrinhMa: d.quyTrinhMa,
     canBo: d.canBoId && d.canBoTen ? { id: d.canBoId, hoTen: d.canBoTen } : null,
+    vuongMacMo: Number(d.vuongMacMo),
+    daGiaiNgan: Number(d.daGiaiNgan),
     thongKe: thongKeTienDo(
       buoc.map((b) => ({ ...b, giaiDoan: b.giaiDoan as BuocDuAn['giaiDoan'] })),
       hn,
     ),
+  }
+}
+
+/** Văn bản, vốn, giải ngân, vướng mắc của một dự án (RLS lọc như mọi bảng khác). */
+async function docHoSoPhu(tx: GiaoDich, id: string, tongMuc: number) {
+  const [vanBan, von, giaiNgan, vuongMac] = [
+    await tx
+      .select({
+        id: duAnVanBan.id,
+        buocId: duAnVanBan.buocId,
+        giaiNganId: duAnVanBan.giaiNganId,
+        tenTep: duAnVanBan.tenTep,
+        loaiTep: duAnVanBan.loaiTep,
+        kichThuoc: duAnVanBan.kichThuoc,
+        tieuDe: duAnVanBan.tieuDe,
+        soKyHieu: duAnVanBan.soKyHieu,
+        ngayKy: duAnVanBan.ngayKy,
+        nguoiKy: duAnVanBan.nguoiKy,
+        toSo: duAnVanBan.toSo,
+        ghiChu: duAnVanBan.ghiChu,
+        nguoiTai: sql<string | null>`ten_tai_khoan(${duAnVanBan.nguoiTai})`,
+        taiLuc: duAnVanBan.createdAt,
+      })
+      .from(duAnVanBan)
+      .where(and(eq(duAnVanBan.duAnId, id), isNull(duAnVanBan.deletedAt)))
+      .orderBy(desc(duAnVanBan.createdAt)),
+    await tx
+      .select({
+        id: duAnVon.id,
+        nam: duAnVon.nam,
+        nguonVonId: duAnVon.nguonVonId,
+        nguonVonTen: danhMucGiaTri.ten,
+        keHoach: duAnVon.keHoach,
+        ghiChu: duAnVon.ghiChu,
+      })
+      .from(duAnVon)
+      .innerJoin(danhMucGiaTri, eq(danhMucGiaTri.id, duAnVon.nguonVonId))
+      .where(and(eq(duAnVon.duAnId, id), isNull(duAnVon.deletedAt)))
+      .orderBy(asc(duAnVon.nam), asc(danhMucGiaTri.thuTu)),
+    await tx
+      .select({
+        id: duAnGiaiNgan.id,
+        nam: duAnGiaiNgan.nam,
+        nguonVonId: duAnGiaiNgan.nguonVonId,
+        nguonVonTen: danhMucGiaTri.ten,
+        ngay: duAnGiaiNgan.ngay,
+        soTien: duAnGiaiNgan.soTien,
+        dot: duAnGiaiNgan.dot,
+        soKyHieu: duAnGiaiNgan.soKyHieu,
+        ghiChu: duAnGiaiNgan.ghiChu,
+      })
+      .from(duAnGiaiNgan)
+      .innerJoin(danhMucGiaTri, eq(danhMucGiaTri.id, duAnGiaiNgan.nguonVonId))
+      .where(and(eq(duAnGiaiNgan.duAnId, id), isNull(duAnGiaiNgan.deletedAt)))
+      .orderBy(asc(duAnGiaiNgan.ngay)),
+    await tx
+      .select({
+        id: duAnVuongMac.id,
+        buocId: duAnVuongMac.buocId,
+        noiDung: duAnVuongMac.noiDung,
+        ngayNeu: duAnVuongMac.ngayNeu,
+        ngayGiaiQuyet: duAnVuongMac.ngayGiaiQuyet,
+        ketQua: duAnVuongMac.ketQua,
+        nguoiNeu: sql<string | null>`ten_tai_khoan(${duAnVuongMac.nguoiNeu})`,
+      })
+      .from(duAnVuongMac)
+      .where(and(eq(duAnVuongMac.duAnId, id), isNull(duAnVuongMac.deletedAt)))
+      .orderBy(sql`${duAnVuongMac.ngayGiaiQuyet} is not null`, desc(duAnVuongMac.ngayNeu)),
+  ]
+  const vonSo = von.map((v) => ({ ...v, keHoach: Number(v.keHoach) }))
+  const dotSo = giaiNgan.map((g) => ({ ...g, soTien: Number(g.soTien) }))
+  return {
+    vanBan: vanBan.map((v) => ({ ...v, taiLuc: v.taiLuc.toISOString() })),
+    von: vonSo,
+    giaiNgan: dotSo,
+    vuongMac,
+    taiChinh: tinhTaiChinh(tongMuc, vonSo, dotSo, Number(homNay().slice(0, 4))),
   }
 }
 

@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common'
 import { TEN_BANG, TEN_HANH_DONG_NHAT_KY, type TrangNhatKy } from '@gdos/shared'
-import { and, desc, eq, gte, lt, type SQL } from 'drizzle-orm'
+import { and, desc, eq, gte, lt, sql, type SQL } from 'drizzle-orm'
+import { maUuid } from '../chung/kiem-than.js'
 import { CoSoDuLieu, dbCua } from '../db/co-so-du-lieu.js'
 import { trongPhamVi } from '../db/pham-vi.js'
 import { donVi, nhatKyThaoTac, taiKhoan } from '../db/schema/index.js'
@@ -15,6 +16,8 @@ export interface LocNhatKy {
   /** Mã dòng cuối của trang trước — phân trang theo mã, không OFFSET. */
   truoc?: string
   gioiHan?: string
+  /** Chỉ các thao tác trên MỘT dự án (thẻ Nhật ký trong hồ sơ dự án). */
+  duAnId?: string
 }
 
 const NGAY = /^\d{4}-\d{2}-\d{2}$/
@@ -46,6 +49,7 @@ export class NhatKyService {
     const truoc = loc.truoc === undefined ? undefined : Number(loc.truoc)
     if (truoc !== undefined && (!Number.isSafeInteger(truoc) || truoc < 1))
       throw new BadRequestException('"truoc" không hợp lệ')
+    if (loc.duAnId !== undefined) maUuid(loc.duAnId, 'duAnId')
 
     const dk: (SQL | undefined)[] = [
       loc.bang ? eq(nhatKyThaoTac.bang, loc.bang) : undefined,
@@ -53,6 +57,11 @@ export class NhatKyService {
       loc.tu ? gte(nhatKyThaoTac.luc, dauNgay('tu', loc.tu)) : undefined,
       loc.den ? lt(nhatKyThaoTac.luc, new Date(dauNgay('den', loc.den).getTime() + MOT_NGAY_MS)) : undefined,
       truoc ? lt(nhatKyThaoTac.id, truoc) : undefined,
+      loc.duAnId
+        ? sql`(${nhatKyThaoTac.banGhiId} = ${loc.duAnId}
+              or ${nhatKyThaoTac.giaTriMoi} ->> 'du_an_id' = ${loc.duAnId}
+              or ${nhatKyThaoTac.giaTriCu} ->> 'du_an_id' = ${loc.duAnId})`
+        : undefined,
     ]
 
     const ds = await trongPhamVi(dbCua(this.csdl), nd.nguCanh, (tx) =>

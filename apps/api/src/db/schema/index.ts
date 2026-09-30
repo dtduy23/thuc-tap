@@ -376,3 +376,106 @@ export const duAnPhienBan = pgTable(
   },
   (t) => [uniqueIndex('du_an_phien_ban_so_uq').on(t.duAnId, t.so)],
 )
+
+// ── Hồ sơ dự án: văn bản, vốn, giải ngân, vướng mắc (ADR-0008) ─────────────
+// Cùng luật như bước: don_vi_id do trigger lấy theo dự án; thấy khi trong phạm vi
+// hoặc là thành viên; chỉ đơn vị chủ đầu tư ghi (migration 0014).
+
+/** Văn bản / tài liệu đính kèm. Tệp nằm ở kho tệp; bảng chỉ giữ khóa và thông tin văn bản. */
+export const duAnVanBan = pgTable(
+  'du_an_van_ban',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    duAnId: uuid('du_an_id')
+      .notNull()
+      .references(() => duAn.id),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    buocId: uuid('buoc_id').references(() => duAnBuoc.id),
+    giaiNganId: uuid('giai_ngan_id'),
+    tenTep: text('ten_tep').notNull(),
+    khoaTep: text('khoa_tep').notNull(),
+    loaiTep: text('loai_tep').notNull(),
+    kichThuoc: integer('kich_thuoc').notNull(),
+    tieuDe: text('tieu_de'),
+    soKyHieu: text('so_ky_hieu'),
+    ngayKy: date('ngay_ky', { mode: 'string' }),
+    nguoiKy: text('nguoi_ky'),
+    toSo: text('to_so'),
+    ghiChu: text('ghi_chu'),
+    nguoiTai: uuid('nguoi_tai'),
+    ...thoiDiem,
+  },
+  (t) => [index('du_an_van_ban_du_an_idx').on(t.duAnId)],
+)
+
+/** Kế hoạch vốn theo năm × nguồn vốn (triệu đồng). Giải ngân KHÔNG nhập ở đây — cộng từ các đợt. */
+export const duAnVon = pgTable(
+  'du_an_von',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    duAnId: uuid('du_an_id')
+      .notNull()
+      .references(() => duAn.id),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    nam: integer('nam').notNull(),
+    nguonVonId: uuid('nguon_von_id')
+      .notNull()
+      .references(() => danhMucGiaTri.id),
+    keHoach: numeric('ke_hoach', { precision: 15, scale: 0, mode: 'number' }).notNull().default(0),
+    ghiChu: text('ghi_chu'),
+    ...thoiDiem,
+  },
+  (t) => [index('du_an_von_du_an_idx').on(t.duAnId, t.nam)],
+)
+
+/** Một đợt giải ngân: ngày + số tiền (triệu đồng) + chứng từ (văn bản gắn qua giai_ngan_id). */
+export const duAnGiaiNgan = pgTable(
+  'du_an_giai_ngan',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    duAnId: uuid('du_an_id')
+      .notNull()
+      .references(() => duAn.id),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    nam: integer('nam').notNull(),
+    nguonVonId: uuid('nguon_von_id')
+      .notNull()
+      .references(() => danhMucGiaTri.id),
+    ngay: date('ngay', { mode: 'string' }).notNull(),
+    soTien: numeric('so_tien', { precision: 15, scale: 0, mode: 'number' }).notNull(),
+    dot: text('dot'),
+    soKyHieu: text('so_ky_hieu'),
+    ghiChu: text('ghi_chu'),
+    nguoiTao: uuid('nguoi_tao'),
+    ...thoiDiem,
+  },
+  (t) => [index('du_an_giai_ngan_du_an_idx').on(t.duAnId, t.ngay)],
+)
+
+/** Vướng mắc — khó khăn của dự án, có thể gắn một bước. Giải quyết xong thì hết cảnh báo. */
+export const duAnVuongMac = pgTable(
+  'du_an_vuong_mac',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    duAnId: uuid('du_an_id')
+      .notNull()
+      .references(() => duAn.id),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    buocId: uuid('buoc_id').references(() => duAnBuoc.id),
+    noiDung: text('noi_dung').notNull(),
+    ngayNeu: date('ngay_neu', { mode: 'string' }).notNull(),
+    ngayGiaiQuyet: date('ngay_giai_quyet', { mode: 'string' }),
+    ketQua: text('ket_qua'),
+    nguoiNeu: uuid('nguoi_neu'),
+    ...thoiDiem,
+  },
+  (t) => [index('du_an_vuong_mac_du_an_idx').on(t.duAnId)],
+)

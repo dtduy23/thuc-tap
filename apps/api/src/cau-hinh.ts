@@ -6,7 +6,8 @@
  * JWT_SECRET dự phòng công khai — cả hai đều chạy "được" cho tới ngày chạy sai.
  */
 import { randomBytes } from 'node:crypto'
-import { resolve } from 'node:path'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
 
 export type MoiTruong = 'development' | 'test' | 'production'
 
@@ -23,6 +24,8 @@ export interface CauHinh {
   phienBan: string
   /** Khóa ký vé đăng nhập. Production bắt buộc; dev thiếu thì sinh tạm mỗi lần chạy. */
   khoaKyVe: string
+  /** Thư mục kho tệp đính kèm (KHO_TEP_THU_MUC). Production bắt buộc đặt tường minh. */
+  thuMucTep: string
   /** Cookie chỉ gửi qua HTTPS. Bật ở production; máy dev chạy http://localhost nên tắt. */
   cookieAnToan: boolean
 }
@@ -70,8 +73,21 @@ export function docCauHinh(env: NodeJS.ProcessEnv = process.env): CauHinh {
     throw new Error(`AUTH_SECRET phải dài ít nhất ${DO_DAI_KHOA_TOI_THIEU} ký tự`)
   }
 
+  // Kho tệp: production phải nói rõ lưu ở đâu (ổ đĩa gắn vào container); dev mặc định
+  // <gốc repo>/.data/tep (đã gitignore); test dùng thư mục tạm, không bẩn repo.
+  const thuMucTep =
+    env.KHO_TEP_THU_MUC?.trim() ||
+    (laProduction
+      ? (() => {
+          throw new Error('Thiếu KHO_TEP_THU_MUC — production phải chỉ rõ thư mục lưu tệp đính kèm')
+        })()
+      : moiTruong === 'test'
+        ? join(tmpdir(), 'gdos-tep-test')
+        : resolve('../../.data/tep'))
+
   return {
     moiTruong,
+    thuMucTep,
     cong,
     duongDanDb,
     dbNhung,

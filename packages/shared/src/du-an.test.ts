@@ -139,3 +139,26 @@ describe('khoảng bước & ngày kết thúc', () => {
     ).toBe('2026-10-09')
   })
 })
+
+describe('tài chính dự án', () => {
+  it('giải ngân = tổng các đợt; % theo tổng mức và theo kế hoạch vốn tới năm nay', async () => {
+    const { tinhTaiChinh } = await import('./du-an.js')
+    const tc = tinhTaiChinh(
+      1000,
+      [
+        { nam: 2026, keHoach: 400 },
+        { nam: 2027, keHoach: 600 },
+      ],
+      [{ soTien: 150 }, { soTien: 50 }],
+      2026,
+    )
+    expect(tc).toEqual({
+      keHoach: 1000,
+      keHoachDenNay: 400,
+      daGiaiNgan: 200,
+      phanTramTongMuc: 20,
+      phanTramKeHoach: 50,
+    })
+    expect(tinhTaiChinh(0, [], [], 2026).phanTramTongMuc).toBe(0)
+  })
+})

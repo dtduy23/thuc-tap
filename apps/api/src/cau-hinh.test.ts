@@ -45,7 +45,12 @@ describe('docCauHinh', () => {
 
   it('cookie chỉ bắt buộc HTTPS ở production', () => {
     expect(docCauHinh({}).cookieAnToan).toBe(false)
-    const ch = docCauHinh({ NODE_ENV: 'production', DATABASE_URL: DB, AUTH_SECRET: 'k'.repeat(40) })
+    const ch = docCauHinh({
+      NODE_ENV: 'production',
+      DATABASE_URL: DB,
+      AUTH_SECRET: 'k'.repeat(40),
+      KHO_TEP_THU_MUC: '/srv/tep',
+    })
     expect(ch.cookieAnToan).toBe(true)
   })
 
@@ -61,5 +66,13 @@ describe('docCauHinh', () => {
 
   it('database nhúng: không đặt cùng DATABASE_URL — tránh tưởng đang ghi vào Postgres thật', () => {
     expect(() => docCauHinh({ DB_NHUNG: '1', DATABASE_URL: DB })).toThrow(/không đặt cả hai/)
+  })
+})
+
+describe('kho tệp', () => {
+  it('production thiếu KHO_TEP_THU_MUC thì DỪNG — không tự chọn chỗ lưu tệp', () => {
+    expect(() =>
+      docCauHinh({ NODE_ENV: 'production', DATABASE_URL: 'postgres://u:p@h/d', AUTH_SECRET: 'k'.repeat(40) }),
+    ).toThrow(/KHO_TEP_THU_MUC/)
   })
 })
