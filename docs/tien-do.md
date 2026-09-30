@@ -27,6 +27,9 @@
 - `apps/api/Dockerfile`, `apps/web/Dockerfile` — hai chặng, bối cảnh build là **gốc repo** (image cần
   `packages/shared`). Bản chạy không mang tsc, drizzle-kit, PGlite. API chạy non-root, có HEALTHCHECK
   gọi `/api/health` (không chạm DB — Postgres chậm một nhịp không làm Docker giết container).
+- Máy thử phục vụ ở **https://gdosfox.fox.ai.vn** (người dùng chốt 30/09/2026). TLS + tên miền do
+  nginx CỦA MÁY CHỦ lo — mẫu vhost ở `nginx.may-thu.conf`, còn trống đường dẫn chứng thư; container
+  web chỉ nghe `127.0.0.1:8080`.
 - `apps/web/nginx.conf` — phục vụ bản tĩnh, `try_files` cho SPA, chuyển tiếp đúng một tiền tố `/api`,
   cache dài cho `/assets/` và `no-cache` cho `index.html`, kèm CSP + `X-Frame-Options: DENY`.
 - `compose.trien-khai.yaml` — api · web · postgres · minio + service `di-tru` (profile `cong-cu`).
@@ -428,7 +431,8 @@ thật → GDOS dùng 5433.
 | -------------------------------------------------------------------------------------------------------- | --------------------- | ---------- |
 | Kết quả pipeline CI / runner là docker hay shell executor                                                | Người dùng xem GitLab | Trộn Mốc 0 |
 | ~~GDOS gọi Native thay mặt người dùng bằng cách nào?~~ — liên kết tài khoản Native theo người (ADR-0009) | —                     | —          |
-| Server + tên miền phụ cho máy thử                                                                        | Hạ tầng               | Mốc 2      |
+| ~~Tên miền phụ cho máy thử~~ — `gdosfox.fox.ai.vn` (chốt 30/09/2026)                                     | —                     | —          |
+| Máy thử nằm ở server nào; chứng thư TLS cho `gdosfox.fox.ai.vn` lấy ở đâu                                | Hạ tầng               | Mốc 2      |
 | Triển khai bằng SSH hay bằng runner đặt trên máy thử                                                     | Hạ tầng               | Mốc 2      |
 | Có lên pnpm 11.13.1 (11.12.0 là bản lỗi) không                                                           | Người dùng            | —          |
 | ~~Ngưỡng khóa tài khoản~~ — đã chỉnh được trên màn Cấu hình hệ thống (phiên 5)                           | —                     | —          |

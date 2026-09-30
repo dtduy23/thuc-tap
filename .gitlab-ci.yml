@@ -71,6 +71,9 @@ build:
 #                         ssh-keyscan -t ed25519 <máy thử>
 #   TRIEN_KHAI_THU_MUC    thư mục trên máy thử, ví dụ /srv/gdos
 #
+# Máy thử phục vụ ở https://gdosfox.fox.ai.vn. TLS và tên miền do nginx CỦA MÁY
+# CHỦ lo (mẫu: nginx.may-thu.conf), container web chỉ nghe 127.0.0.1:8080.
+#
 # Mật khẩu DB, AUTH_SECRET, NATIVE_URL… KHÔNG đi qua CI: nằm trong
 # `$TRIEN_KHAI_THU_MUC/.env` do kỹ thuật FOXAI đặt một lần trên máy thử
 # (xem compose.trien-khai.yaml). CI không bao giờ nhìn thấy chúng.
@@ -79,7 +82,7 @@ deploy:
   when: manual
   environment:
     name: may-thu
-    url: $TRIEN_KHAI_URL
+    url: https://gdosfox.fox.ai.vn
   script:
     - |
       thieu=''

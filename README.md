@@ -35,7 +35,8 @@ Trước khi đẩy mã: `pnpm kiem-tra` phải xanh.
 
 ## Triển khai (Mốc 2)
 
-CI/CD chạy ở nhánh **`develop`** và chỉ ở đó (`.gitlab-ci.yml`):
+Máy thử phục vụ ở **https://gdosfox.fox.ai.vn**. CI/CD chạy ở nhánh **`develop`** và chỉ ở đó
+(`.gitlab-ci.yml`):
 
 | Chặng    | Làm gì                                                                       |
 | -------- | ---------------------------------------------------------------------------- |
@@ -54,6 +55,9 @@ docker build -f apps/web/Dockerfile -t gdos-web .
 
 Trên máy thử chỉ cần `compose.trien-khai.yaml` (CI tự chép sang) và một file `.env` do kỹ thuật
 đặt một lần — danh sách biến ghi ở đầu `compose.trien-khai.yaml`. Bí mật **không** đi qua CI.
+
+TLS và tên miền do nginx **của máy chủ** lo, container web chỉ nghe `127.0.0.1:8080`. Mẫu vhost:
+[nginx.may-thu.conf](nginx.may-thu.conf) — còn phải điền đường dẫn chứng thư.
 
 Lệnh `di-tru` chỉ chạy migration; `khoi-tao` (tạo đơn vị gốc + quản trị viên đầu tiên) vẫn là việc
 làm tay đúng một lần, vì có nhập mật khẩu.
