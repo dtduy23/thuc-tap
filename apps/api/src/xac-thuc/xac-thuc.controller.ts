@@ -26,15 +26,15 @@ export class XacThucController {
   ) {}
 
   private datCookie(res: Response, kq: KetQuaPhien): ThongTinToi {
-    res.cookie(COOKIE_VE, kq.ve, tuyChonCookieVe(this.cauHinh.cookieAnToan))
-    res.cookie(COOKIE_PHIEN, kq.tokenPhien, tuyChonCookiePhien(this.cauHinh.cookieAnToan))
+    res.cookie(COOKIE_VE, kq.ve, tuyChonCookieVe(this.cauHinh.cookieAnToan, kq.hanVeGiay))
+    res.cookie(COOKIE_PHIEN, kq.tokenPhien, tuyChonCookiePhien(this.cauHinh.cookieAnToan, kq.hanPhienNgay))
     return kq.thongTin
   }
 
   private xoaCookie(res: Response) {
     // clearCookie phải trùng path với lúc đặt, không thì trình duyệt giữ nguyên cookie cũ.
-    const { maxAge: _a, ...ve } = tuyChonCookieVe(this.cauHinh.cookieAnToan)
-    const { maxAge: _b, ...phien } = tuyChonCookiePhien(this.cauHinh.cookieAnToan)
+    const { maxAge: _a, ...ve } = tuyChonCookieVe(this.cauHinh.cookieAnToan, 0)
+    const { maxAge: _b, ...phien } = tuyChonCookiePhien(this.cauHinh.cookieAnToan, 0)
     res.clearCookie(COOKIE_VE, ve)
     res.clearCookie(COOKIE_PHIEN, phien)
   }
@@ -92,7 +92,7 @@ export class XacThucController {
       docCookie(req.headers.cookie)[COOKIE_PHIEN],
     )
     // Chỉ thay vé; token phiên hiện tại giữ nguyên (các phiên KHÁC đã bị thu hồi).
-    res.cookie(COOKIE_VE, kq.ve, tuyChonCookieVe(this.cauHinh.cookieAnToan))
+    res.cookie(COOKIE_VE, kq.ve, tuyChonCookieVe(this.cauHinh.cookieAnToan, kq.hanVeGiay))
     return kq.thongTin
   }
 }

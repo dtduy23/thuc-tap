@@ -24,6 +24,7 @@ import { trongPhamVi } from '../db/pham-vi.js'
 import { donVi, taiKhoan } from '../db/schema/index.js'
 import { NhatKyController } from '../nhat-ky/nhat-ky.controller.js'
 import { MAU, napMau, taoCoSoThu, type CoSoThu, type TenMau } from '../test/co-so-thu.js'
+import { ThietLapController } from '../thiet-lap/thiet-lap.controller.js'
 import { XacThucController } from '../xac-thuc/xac-thuc.controller.js'
 import { DonViController } from './don-vi.controller.js'
 import { TaiKhoanController } from './tai-khoan.controller.js'
@@ -403,7 +404,13 @@ describe('mã quyền khai ở controller', () => {
       true,
     )
     const khai: string[] = []
-    for (const C of [TaiKhoanController, DonViController, NhatKyController, XacThucController]) {
+    for (const C of [
+      TaiKhoanController,
+      DonViController,
+      NhatKyController,
+      XacThucController,
+      ThietLapController,
+    ]) {
       for (const ten of Object.getOwnPropertyNames(C.prototype)) {
         const q = Reflect.getMetadata(
           'gdos:can-quyen',

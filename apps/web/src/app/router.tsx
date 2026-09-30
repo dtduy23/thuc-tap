@@ -6,6 +6,7 @@
  *   └── (portal)            khung portal — GUARD đặt ở đây, một chỗ cho mọi màn
  *       ├── /               trang chủ
  *       ├── /doi-mat-khau
+ *       ├── /cai-dat        cài đặt cá nhân (tông màu, sáng/tối)
  *       └── /$chucNang      MỘT route động phủ toàn bộ registry — thêm chức năng
  *                           không phải sửa file này
  */
@@ -22,6 +23,7 @@ import { KhungPortal } from '@/khung/khung-portal'
 import { duongDanNoiBo } from '@/lib/duong-dan'
 import { goiApi, LoiApi } from '@/lib/http'
 import { KHOA_TOI, truyVanToi } from '@/lib/phien'
+import { TrangCaiDat } from '@/trang/cai-dat'
 import { TrangChucNang, KhongTimThay } from '@/trang/chuc-nang'
 import { TrangDangNhap } from '@/trang/dang-nhap'
 import { TrangDoiMatKhau } from '@/trang/doi-mat-khau'
@@ -94,6 +96,8 @@ const doiMatKhau = createRoute({
   component: TrangDoiMatKhau,
 })
 
+const caiDat = createRoute({ getParentRoute: () => portal, path: '/cai-dat', component: TrangCaiDat })
+
 const chucNang = createRoute({
   getParentRoute: () => portal,
   path: '/$chucNang',
@@ -103,7 +107,7 @@ const chucNang = createRoute({
   },
 })
 
-const cayRoute = goc.addChildren([dangNhap, portal.addChildren([trangChu, doiMatKhau, chucNang])])
+const cayRoute = goc.addChildren([dangNhap, portal.addChildren([trangChu, doiMatKhau, caiDat, chucNang])])
 
 export function taoRouter(queryClient: QueryClient) {
   return createRouter({ routeTree: cayRoute, context: { queryClient }, defaultPreload: 'intent' })

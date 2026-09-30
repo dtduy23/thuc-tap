@@ -2,16 +2,76 @@
 
 /*
  * Design token — khai MỘT lần ở đây, component chỉ dùng class token
- * (bg-nen, text-ink, border-line…), không viết mã màu thẳng vào JSX.
- * Nguồn: docs/khung-mau.html. Riêng --faint đậm hơn bản mẫu để chữ phụ
- * đạt tương phản WCAG AA (~4,6:1) — bản mẫu chỉ ~3,1:1.
+ * (bg-nen, text-ink…), không viết mã màu thẳng vào JSX.
  *
- * Sáng/tối: theo hệ điều hành; người dùng chọn tay thì ghi data-theme lên <html>.
+ * Ba lớp:
+ *   1. TÔNG MÀU (--t-*, --dam-*): mỗi người tự chọn ở "Cài đặt cá nhân" → data-tone
+ *      trên <html>. Mặc định "Xanh nhà nước" — cùng bộ màu với PMS (navy + vàng kim).
+ *   2. SÁNG / TỐI: theo hệ điều hành, hoặc người dùng chọn → data-theme.
+ *   3. Token dùng trong component (--brand, --nen, --ink…) suy ra từ hai lớp trên.
+ *
+ * --faint đủ đậm để chữ phụ đạt tương phản WCAG AA (~4,6:1).
  */
+
+/* ── 1. Tông màu ─────────────────────────────────────────────────────────── */
+:root,
+:root[data-tone='nha-nuoc'] {
+  --t-600: #1d4585;
+  --t-700: #14366b;
+  --t-50: #e6edf8;
+  --t-300: #8fb0ea;
+  --t-400: #6f95d8;
+  --t-900: #172642;
+  --dam-1: #0c2347;
+  --dam-2: #14366b;
+}
+:root[data-tone='do-co'] {
+  --t-600: #b3261e;
+  --t-700: #8e1b20;
+  --t-50: #fbeaea;
+  --t-300: #ff8a80;
+  --t-400: #e86a61;
+  --t-900: #3a1714;
+  --dam-1: #4f0c10;
+  --dam-2: #86171d;
+}
+:root[data-tone='xanh-la'] {
+  --t-600: #1a7a4a;
+  --t-700: #13603a;
+  --t-50: #e7f4ec;
+  --t-300: #5ccb91;
+  --t-400: #43b07a;
+  --t-900: #12301f;
+  --dam-1: #0a2e1d;
+  --dam-2: #145235;
+}
+:root[data-tone='xanh-duong'] {
+  --t-600: #1b66e0;
+  --t-700: #1552bb;
+  --t-50: #e8f0fe;
+  --t-300: #5b9bff;
+  --t-400: #3f7fe0;
+  --t-900: #16273f;
+  --dam-1: #0d1f3c;
+  --dam-2: #173c73;
+}
+:root[data-tone='tim-than'] {
+  --t-600: #4b3a8c;
+  --t-700: #3a2c70;
+  --t-50: #efebf9;
+  --t-300: #b3a2f0;
+  --t-400: #9582dc;
+  --t-900: #231b3d;
+  --dam-1: #1c1438;
+  --dam-2: #34276a;
+}
+
+/* ── 2–3. Sáng / tối ─────────────────────────────────────────────────────── */
 :root {
-  --brand: #1b66e0;
-  --brand-dim: #1552bb;
-  --tint-brand: #e8f0fe;
+  --brand: var(--t-600);
+  --brand-dim: var(--t-700);
+  --tint-brand: var(--t-50);
+  --vang: #c9a227;
   --ok: #0b7d46;
   --tint-ok: #e6f4ec;
   --warn: #9a6614;
@@ -20,23 +80,23 @@
   --tint-danger: #fce8e6;
   --tim: #6a3de8;
   --tint-tim: #f0eaff;
-  --bg: #eef1f6;
+  --bg: #f2f4f7;
   --nen: #ffffff;
   --nen-2: #f7f9fc;
-  --ink: #16222e;
-  --body: #41505f;
-  --faint: #66768a;
-  --line: #dfe5ec;
-  --line-2: #eef2f7;
+  --ink: #1b2430;
+  --body: #414e5f;
+  --faint: #5f6b7d;
+  --line: #e2e6ed;
+  --line-2: #eef1f6;
   --nav-hover: #f0f4fa;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --brand: #5b9bff;
-    --brand-dim: #3f7fe0;
-    --tint-brand: #16273f;
+    --brand: var(--t-300);
+    --brand-dim: var(--t-400);
+    --tint-brand: var(--t-900);
     --ok: #4cc38a;
     --tint-ok: #123024;
     --warn: #e0a458;
@@ -58,9 +118,9 @@
   }
 }
 :root[data-theme='dark'] {
-  --brand: #5b9bff;
-  --brand-dim: #3f7fe0;
-  --tint-brand: #16273f;
+  --brand: var(--t-300);
+  --brand-dim: var(--t-400);
+  --tint-brand: var(--t-900);
   --ok: #4cc38a;
   --tint-ok: #123024;
   --warn: #e0a458;
@@ -85,6 +145,7 @@
   --color-brand: var(--brand);
   --color-brand-dim: var(--brand-dim);
   --color-tint-brand: var(--tint-brand);
+  --color-vang: var(--vang);
   --color-ok: var(--ok);
   --color-tint-ok: var(--tint-ok);
   --color-warn: var(--warn);
@@ -102,6 +163,46 @@
   --color-line: var(--line);
   --color-line-2: var(--line-2);
   --color-nav-hover: var(--nav-hover);
+  --font-sans: 'Be Vietnam Pro', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+  --font-serif: 'Noto Serif', Georgia, 'Times New Roman', serif;
+}
+
+/*
+ * Mặt nền ĐẬM theo tông (cây phân hệ, khối logo) — như sidebar PMS. Đặt lại token
+ * cho mọi thứ bên trong, nên component bên trong không phải biết mình nằm trên nền đậm.
+ */
+@utility be-mat-dam {
+  --ink: #ffffff;
+  --body: #d2dcee;
+  --faint: #9fb2d3;
+  --line: rgb(255 255 255 / 0.16);
+  --line-2: rgb(255 255 255 / 0.1);
+  --nav-hover: rgb(255 255 255 / 0.08);
+  --tint-brand: rgb(255 255 255 / 0.13);
+  --brand: #ffd64d;
+  --tim: #d6c8ff;
+  background: linear-gradient(180deg, var(--dam-1), var(--dam-2) 45%);
+  color: var(--body);
+}
+
+/* Luôn sáng dù người dùng đang để tối — thẻ đăng nhập (nền trắng cố định). */
+@utility be-mat-sang {
+  --brand: var(--t-600);
+  --brand-dim: var(--t-700);
+  --tint-brand: var(--t-50);
+  --ok: #0b7d46;
+  --tint-ok: #e6f4ec;
+  --danger: #c5221f;
+  --tint-danger: #fce8e6;
+  --nen: #ffffff;
+  --nen-2: #f7f9fc;
+  --ink: #1b2430;
+  --body: #414e5f;
+  --faint: #5f6b7d;
+  --line: #e2e6ed;
+  --line-2: #eef1f6;
+  --nav-hover: #f0f4fa;
+  color-scheme: light;
 }
 
 html,
@@ -114,10 +215,10 @@ body {
   background: var(--bg);
   color: var(--ink);
   font:
-    14px/1.5 'Segoe UI',
+    14px/1.5 'Be Vietnam Pro',
+    'Segoe UI',
     system-ui,
     -apple-system,
-    'Helvetica Neue',
     Arial,
     sans-serif;
   -webkit-font-smoothing: antialiased;

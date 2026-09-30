@@ -5,6 +5,7 @@
  * Kết quả lưu dạng chuẩn PHC: `$argon2id$v=19$m=…,t=…,p=…$<muối>$<băm>`. Tham số
  * nằm ngay trong chuỗi, nên đổi tham số về sau vẫn kiểm được mật khẩu cũ.
  */
+import { CHINH_SACH_MAC_DINH } from '@gdos/shared'
 import { argon2, randomBytes, timingSafeEqual } from 'node:crypto'
 import { promisify } from 'node:util'
 
@@ -55,13 +56,15 @@ export const layBamGia = () => (bamGia ??= bamMatKhau(randomBytes(24).toString('
 /**
  * Luật mật khẩu mới. Chỉ đòi ĐỘ DÀI — theo NIST SP 800-63B, độ dài chống dò tốt hơn
  * luật "phải có chữ hoa, số, ký tự đặc biệt" (người dùng sẽ viết `Abc@1234`).
- * Trả câu lỗi tiếng Việt, hoặc null nếu hợp lệ.
+ * Độ dài tối thiểu do quản trị đặt (Cấu hình hệ thống). Trả câu lỗi tiếng Việt,
+ * hoặc null nếu hợp lệ.
  */
-export const DO_DAI_MAT_KHAU_TOI_THIEU = 10
-
-export function kiemTraMatKhauMoi(matKhau: string, tenDangNhap: string): string | null {
-  if (matKhau.length < DO_DAI_MAT_KHAU_TOI_THIEU)
-    return `Mật khẩu phải dài ít nhất ${DO_DAI_MAT_KHAU_TOI_THIEU} ký tự`
+export function kiemTraMatKhauMoi(
+  matKhau: string,
+  tenDangNhap: string,
+  toiThieu: number = CHINH_SACH_MAC_DINH.matKhauToiThieu,
+): string | null {
+  if (matKhau.length < toiThieu) return `Mật khẩu phải dài ít nhất ${toiThieu} ký tự`
   if (matKhau.length > 256) return 'Mật khẩu quá dài'
   if (matKhau.toLowerCase().includes(tenDangNhap.toLowerCase()))
     return 'Mật khẩu không được chứa tên đăng nhập'

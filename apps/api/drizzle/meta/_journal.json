@@ -43,6 +43,20 @@
       "when": 1790728551881,
       "tag": "0005_quan-tri",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790730240228,
+      "tag": "0006_cau-hinh",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790730242906,
+      "tag": "0007_cau-hinh-bao-mat",
+      "breakpoints": true
     }
   ]
 }

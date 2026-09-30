@@ -5,6 +5,7 @@
 import { Controller, Get, type INestApplication } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import { isNotNull, sql } from 'drizzle-orm'
+import { CHINH_SACH_MAC_DINH } from '@gdos/shared'
 import request from 'supertest'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { AppModule } from '../app.module.js'
@@ -112,8 +113,9 @@ describe('đăng nhập', () => {
     expect(res.body).toMatchObject({ tenDangNhap: 'chutich.a', hoTen: 'Chủ tịch xã An Hòa' })
   })
 
-  it('sai 5 lần thì khóa tạm — mật khẩu đúng cũng không vào được', async () => {
-    for (let i = 0; i < 5; i++) expect((await dangNhap('khoa.thu', 'sai-lan-nua-roi')).res.status).toBe(401)
+  it('sai quá số lần cho phép thì khóa tạm — mật khẩu đúng cũng không vào được', async () => {
+    for (let i = 0; i < CHINH_SACH_MAC_DINH.soLanSaiToiDa; i++)
+      expect((await dangNhap('khoa.thu', 'sai-lan-nua-roi')).res.status).toBe(401)
     const { res } = await dangNhap('khoa.thu')
     expect(res.status).toBe(423)
     expect((res.body as { message: string }).message).toMatch(/tạm khóa/)

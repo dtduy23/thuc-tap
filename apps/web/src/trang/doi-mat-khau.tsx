@@ -1,18 +1,20 @@
-import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { CHINH_SACH_MAC_DINH } from '@gdos/shared'
+import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useState, type FormEvent } from 'react'
+import { truyVanCongKhai } from '@/lib/cau-hinh'
 import { LoiApi } from '@/lib/http'
 import { doiMatKhau, truyVanToi } from '@/lib/phien'
 import { Nut, ONhap, The, ThongBao } from '@/ui/co-ban'
-
-/** Khớp luật ở API (mat-khau.ts). Kiểm trước ở đây chỉ để báo sớm — API mới là chốt chặn. */
-const DO_DAI_TOI_THIEU = 10
 
 export function TrangDoiMatKhau() {
   const qc = useQueryClient()
   const dieuHuong = useNavigate()
   const { data: toi } = useSuspenseQuery(truyVanToi)
   const batBuoc = toi.phaiDoiMatKhau
+  // Độ dài tối thiểu do quản trị đặt. Kiểm trước ở đây chỉ để báo sớm — API mới là chốt chặn.
+  const DO_DAI_TOI_THIEU =
+    useQuery(truyVanCongKhai).data?.matKhauToiThieu ?? CHINH_SACH_MAC_DINH.matKhauToiThieu
   const [cu, datCu] = useState('')
   const [moi, datMoi] = useState('')
   const [nhapLai, datNhapLai] = useState('')

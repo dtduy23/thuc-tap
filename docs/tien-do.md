@@ -23,6 +23,32 @@
 | **2** | Đăng nhập (argon2id của Node, cookie HttpOnly, refresh xoay vòng, khóa khi sai) · CLI tạo quản trị viên · guard quyền ở API | ✅ 30/09/2026 |
 | **3** | Web: khung portal + cây 4 cấp lọc quyền (mang từ `docs/khung-mau.html` + GDOS cũ) · màn đăng nhập                           | ✅ 30/09/2026 |
 | **4** | Tầng 2: Tài khoản · Phân công · Đơn vị · Ma trận quyền · Nhật ký thao tác (API + màn hình)                                  | ✅ 30/09/2026 |
+| **5** | Cấu hình hệ thống (chính sách bảo mật, tên & nhận diện) · tông màu kiểu PMS · cài đặt cá nhân                               | ✅ 30/09/2026 |
+
+### Phiên 5 — cấu hình hệ thống, giao diện (30/09/2026)
+
+Theo góp ý của người dùng sau phiên 4: chính sách bảo mật phải chỉnh được trên màn hình, mặc định
+nới lỏng hơn; giao diện giống PMS (sản phẩm nhà nước, cờ đỏ sao vàng); mỗi người tự chọn tông màu.
+
+**Đã làm**
+
+- Module mới Tầng 2 › Cấu hình & Vận hành › **Cấu hình hệ thống** (`QT_CAU_HINH`), hai màn:
+  - **Đăng nhập & mật khẩu** — form dựng từ khai báo `CHINH_SACH` trong `@gdos/shared`; API kiểm
+    cùng khai báo. Mặc định mới: khóa tạm sau **10** lần sai trong **10** phút · vé **30** phút · giữ
+    đăng nhập **30** ngày · mật khẩu ≥ **8** ký tự (trước: 5 lần/15 phút · 15 phút · 7 ngày · 10 ký tự).
+  - **Tên & nhận diện** — tên cơ quan, tên hệ thống, mô tả; xem trước màn đăng nhập ngay trên form.
+- Bảng `cau_hinh` (migration 0006, 0007). App chỉ ĐỌC; ghi qua hàm `cau_hinh_ghi` — database tự kiểm
+  người ghi là quản trị ở **đơn vị gốc** (hệ nhiều xã: quản trị xã không đổi được chính sách chung).
+  Mọi lần sửa vào nhật ký thao tác; màn nhật ký đọc được từng tham số đổi từ gì sang gì.
+- API đọc chính sách có bộ nhớ đệm 10 giây; đổi xong áp dụng ngay cho lần đăng nhập / làm mới /
+  đổi mật khẩu tiếp theo. `GET /api/cau-hinh/cong-khai` (không cần đăng nhập) cho màn đăng nhập.
+- Giao diện theo PMS: phông Be Vietnam Pro + Noto Serif, bộ màu navy #14366B + vàng kim #C9A227;
+  cây phân hệ nền đậm như sidebar PMS; màn đăng nhập nền navy, **cờ đỏ sao vàng**, tên cơ quan.
+- **Cài đặt cá nhân** (`/cai-dat`, nút bánh răng trên thanh trên): 5 tông màu (Xanh nhà nước — mặc
+  định, Đỏ cờ, Xanh lục, Xanh dương, Tím than) × Sáng / Tối / Theo máy. Lưu ở máy, theo từng tài khoản.
+- Test: shared 42 · API 108 (thêm 7 test đầu cuối cấu hình) · web 22.
+- **Đã kiểm trên trình duyệt**: màn đăng nhập mới; lưu tên cơ quan → màn đăng nhập đổi theo; đổi
+  tông Đỏ cờ + Tối áp dụng ngay.
 
 ### Phiên 4 — màn quản trị Tầng 2 và nhật ký (30/09/2026)
 
@@ -165,4 +191,4 @@ thật → GDOS dùng 5433.
 | Kết quả pipeline CI / runner là docker hay shell executor                                     | Người dùng xem GitLab | Trộn Mốc 0 |
 | GDOS gọi Native thay mặt người dùng bằng cách nào? Quyền phía Native kiểm theo tài khoản nào? | Đội Native            | Mốc 5      |
 | Server + tên miền phụ cho máy thử                                                             | Hạ tầng               | Mốc 2      |
-| Ngưỡng khóa tài khoản (đang 5 lần / 15 phút)                                                  | Người dùng            | Không chặn |
+| ~~Ngưỡng khóa tài khoản~~ — đã chỉnh được trên màn Cấu hình hệ thống (phiên 5)                | —                     | —          |

@@ -24,7 +24,7 @@ describe('khoiTaoHeThong', () => {
   it('từ chối mật khẩu yếu — kể cả của quản trị viên', async () => {
     await expect(
       khoiTaoHeThong(db.coSo, { ...TS, quanTri: { ...TS.quanTri, matKhau: 'ngan' } }),
-    ).rejects.toThrow(/ít nhất 10/)
+    ).rejects.toThrow(/ít nhất 8/)
   })
 
   it('tạo đơn vị gốc và quản trị viên — đăng nhập được bằng mật khẩu vừa đặt', async () => {

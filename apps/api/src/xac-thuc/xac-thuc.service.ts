@@ -15,10 +15,10 @@ import { CAU_HINH, type CauHinh } from '../cau-hinh.js'
 import { CoSoDuLieu } from '../db/co-so-du-lieu.js'
 import { khongNguCanh, trongPhamVi, truyVan, type CoSo, type NguCanh } from '../db/pham-vi.js'
 import { donVi, phanCong, phienDangNhap, taiKhoan } from '../db/schema/index.js'
+import { ThietLapService } from '../thiet-lap/thiet-lap.service.js'
 import type { NguoiDungPhien } from './bao-ve.js'
-import { THOI_HAN_PHIEN_NGAY } from './cookie.js'
 import { bamMatKhau, kiemMatKhau, kiemTraMatKhauMoi, layBamGia } from './mat-khau.js'
-import { kyVe, THOI_HAN_VE_GIAY, type NoiDungVe } from './ve.js'
+import { kyVe, type NoiDungVe } from './ve.js'
 
 export interface ThietBi {
   ip: string | undefined
@@ -31,6 +31,9 @@ export interface KetQuaPhien {
   ve: string
   tokenPhien: string
   thongTin: ThongTinToi
+  /** Hạn cookie — theo chính sách lúc cấp. */
+  hanVeGiay: number
+  hanPhienNgay: number
 }
 
 interface DongDangNhap {
@@ -53,6 +56,7 @@ export class XacThucService {
   constructor(
     @Inject(CoSoDuLieu) private readonly csdl: CoSoDuLieu,
     @Inject(CAU_HINH) private readonly cauHinh: CauHinh,
+    @Inject(ThietLapService) private readonly thietLap: ThietLapService,
   ) {}
 
   private get db(): CoSo {
@@ -78,7 +82,12 @@ export class XacThucService {
     }
 
     const dung = await kiemMatKhau(matKhau, tk.mat_khau_bam)
-    await khongNguCanh(this.db, (tx) => tx.execute(sql`select dang_nhap_ghi(${tk.id}::uuid, ${dung})`))
+    const cs = await this.thietLap.baoMat()
+    await khongNguCanh(this.db, (tx) =>
+      tx.execute(
+        sql`select dang_nhap_ghi(${tk.id}::uuid, ${dung}, ${cs.soLanSaiToiDa}::int, ${cs.khoaTamPhut}::int)`,
+      ),
+    )
     if (!dung) throw new UnauthorizedException(SAI_DANG_NHAP)
     // Báo "bị khóa" chỉ SAU khi mật khẩu đúng — người lạ không dò được tài khoản nào bị khóa.
     if (tk.trang_thai !== 'hoat-dong')
@@ -89,16 +98,23 @@ export class XacThucService {
 
   async lamMoi(tokenCu: string, tb: ThietBi): Promise<KetQuaPhien> {
     const tokenMoi = randomBytes(32).toString('base64url')
+    const cs = await this.thietLap.baoMat()
     const [p] = await khongNguCanh(this.db, (tx) =>
       truyVan<{ tai_khoan_id: string; don_vi_id: string; la_quan_tri: boolean }>(
         tx,
-        sql`select * from phien_doi(${bamToken(tokenCu)}, ${bamToken(tokenMoi)}, ${hetHanPhien()},
+        sql`select * from phien_doi(${bamToken(tokenCu)}, ${bamToken(tokenMoi)}, ${hetHanPhien(cs.phienHanNgay)},
                                     ${tb.ip ?? null}, ${tb.trinhDuyet ?? null})`,
       ),
     )
     if (!p) throw new UnauthorizedException('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
-    const nd = await this.dungVe(p.tai_khoan_id, p.don_vi_id, p.la_quan_tri)
-    return { ve: kyVe(nd, this.cauHinh.khoaKyVe), tokenPhien: tokenMoi, thongTin: await this.thongTin(nd) }
+    const nd = await this.dungVe(p.tai_khoan_id, p.don_vi_id, p.la_quan_tri, cs.veHanPhut)
+    return {
+      ve: kyVe(nd, this.cauHinh.khoaKyVe),
+      tokenPhien: tokenMoi,
+      thongTin: await this.thongTin(nd),
+      hanVeGiay: cs.veHanPhut * 60,
+      hanPhienNgay: cs.phienHanNgay,
+    }
   }
 
   async dangXuat(token: string): Promise<void> {
@@ -127,7 +143,7 @@ export class XacThucService {
     matKhauCu: string,
     matKhauMoi: string,
     tokenHienTai?: string,
-  ): Promise<Omit<KetQuaPhien, 'tokenPhien'>> {
+  ): Promise<Omit<KetQuaPhien, 'tokenPhien' | 'hanPhienNgay'>> {
     const [tk] = await trongPhamVi(this.db, nd.nguCanh, (tx) =>
       tx
         .select({ ten: taiKhoan.tenDangNhap, donViId: taiKhoan.donViId })
@@ -141,7 +157,8 @@ export class XacThucService {
     if (!dong || !(await kiemMatKhau(matKhauCu, dong.mat_khau_bam)))
       throw new BadRequestException('Mật khẩu hiện tại không đúng')
     if (matKhauMoi === matKhauCu) throw new BadRequestException('Mật khẩu mới phải khác mật khẩu hiện tại')
-    const loi = kiemTraMatKhauMoi(matKhauMoi, tk.ten)
+    const cs = await this.thietLap.baoMat()
+    const loi = kiemTraMatKhauMoi(matKhauMoi, tk.ten, cs.matKhauToiThieu)
     if (loi) throw new BadRequestException(loi)
 
     const bamMoi = await bamMatKhau(matKhauMoi)
@@ -161,29 +178,50 @@ export class XacThucService {
           ),
         )
     })
-    const moi = await this.dungVe(nd.taiKhoanId, tk.donViId, nd.laQuanTri)
-    return { ve: kyVe(moi, this.cauHinh.khoaKyVe), thongTin: await this.thongTin(moi) }
+    const moi = await this.dungVe(nd.taiKhoanId, tk.donViId, nd.laQuanTri, cs.veHanPhut)
+    return {
+      ve: kyVe(moi, this.cauHinh.khoaKyVe),
+      thongTin: await this.thongTin(moi),
+      hanVeGiay: cs.veHanPhut * 60,
+    }
   }
 
   // ── nội bộ ──────────────────────────────────────────────────────────────
 
-  private async moPhien(taiKhoanId: string, donViId: string, laQuanTri: boolean, tb: ThietBi) {
-    const nd = await this.dungVe(taiKhoanId, donViId, laQuanTri)
+  private async moPhien(
+    taiKhoanId: string,
+    donViId: string,
+    laQuanTri: boolean,
+    tb: ThietBi,
+  ): Promise<KetQuaPhien> {
+    const cs = await this.thietLap.baoMat()
+    const nd = await this.dungVe(taiKhoanId, donViId, laQuanTri, cs.veHanPhut)
     const tokenPhien = randomBytes(32).toString('base64url')
     await trongPhamVi(this.db, nguCanhCua(nd), (tx) =>
       tx.insert(phienDangNhap).values({
         taiKhoanId,
         tokenBam: bamToken(tokenPhien),
-        hetHan: hetHanPhien(),
+        hetHan: hetHanPhien(cs.phienHanNgay),
         diaChiIp: tb.ip ?? null,
         trinhDuyet: tb.trinhDuyet?.slice(0, 300) ?? null,
       }),
     )
-    return { ve: kyVe(nd, this.cauHinh.khoaKyVe), tokenPhien, thongTin: await this.thongTin(nd) }
+    return {
+      ve: kyVe(nd, this.cauHinh.khoaKyVe),
+      tokenPhien,
+      thongTin: await this.thongTin(nd),
+      hanVeGiay: cs.veHanPhut * 60,
+      hanPhienNgay: cs.phienHanNgay,
+    }
   }
 
   /** Nội dung vé: phạm vi đơn vị (kể cả cấp dưới) + phân công còn hiệu lực. */
-  private async dungVe(taiKhoanId: string, donViId: string, laQuanTri: boolean): Promise<NoiDungVe> {
+  private async dungVe(
+    taiKhoanId: string,
+    donViId: string,
+    laQuanTri: boolean,
+    hanPhut: number,
+  ): Promise<NoiDungVe> {
     const [pv] = await khongNguCanh(this.db, (tx) =>
       truyVan<{ ids: string[] }>(tx, sql`select don_vi_pham_vi(${donViId}::uuid) as ids`),
     )
@@ -205,7 +243,7 @@ export class XacThucService {
       qt: laQuanTri,
       pc: ds.map((p) => ({ v: p.vai as MaVai, p: p.phamVi })),
       dmk: tk?.dmk === true,
-      het: Math.floor(Date.now() / 1000) + THOI_HAN_VE_GIAY,
+      het: Math.floor(Date.now() / 1000) + hanPhut * 60,
     }
   }
 
@@ -241,4 +279,4 @@ export class XacThucService {
 }
 
 const nguCanhCua = (nd: NoiDungVe): NguCanh => ({ taiKhoanId: nd.tk, donViIds: nd.dv })
-const hetHanPhien = () => new Date(Date.now() + THOI_HAN_PHIEN_NGAY * 24 * 3600 * 1000)
+const hetHanPhien = (ngay: number) => new Date(Date.now() + ngay * 24 * 3600 * 1000)

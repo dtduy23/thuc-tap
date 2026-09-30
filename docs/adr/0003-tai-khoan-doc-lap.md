@@ -29,6 +29,10 @@ một xã không có FOXAI Native thì vẫn chạy.
    dùng tự đổi, API từ chối mọi route cần quyền (chỉ còn xem mình và đổi mật khẩu). Khóa tài khoản
    hay đặt lại mật khẩu thì thu hồi mọi phiên của người đó ngay. _(Bổ sung ở Mốc 1 phiên 4 — chưa
    trộn vào `main` nên thêm thẳng.)_
+7. **Chính sách đăng nhập là cấu hình, không phải hằng số trong mã**: ngưỡng khóa tạm, hạn vé,
+   hạn phiên, độ dài mật khẩu tối thiểu — quản trị ở đơn vị gốc chỉnh trên màn Cấu hình hệ
+   thống. Mã chỉ giữ giá trị mặc định và khoảng cho phép (`@gdos/shared` › `CHINH_SACH`), để
+   không ai đặt được giá trị vô lý (vd khóa sau 1 lần sai). _(Bổ sung ở Mốc 1 phiên 5.)_
 
 ## Hệ quả
 

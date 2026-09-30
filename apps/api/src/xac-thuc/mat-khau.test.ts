@@ -29,8 +29,9 @@ describe('bamMatKhau / kiemMatKhau', () => {
 })
 
 describe('kiemTraMatKhauMoi', () => {
-  it('đòi độ dài tối thiểu 10', () => {
-    expect(kiemTraMatKhauMoi('ngan', 'canbo')).toMatch(/ít nhất 10/)
+  it('đòi độ dài tối thiểu — mặc định 8, quản trị đặt khác được', () => {
+    expect(kiemTraMatKhauMoi('ngan', 'canbo')).toMatch(/ít nhất 8/)
+    expect(kiemTraMatKhauMoi('du-dai-roi-day', 'canbo', 20)).toMatch(/ít nhất 20/)
     expect(kiemTraMatKhauMoi('du-dai-roi-day', 'canbo')).toBeNull()
   })
 

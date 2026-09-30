@@ -146,3 +146,17 @@ export const nhatKyThaoTac = pgTable(
     index('nhat_ky_ban_ghi_idx').on(t.bang, t.banGhiId),
   ],
 )
+
+/**
+ * Cấu hình chung của cả hệ thống (chính sách bảo mật, tên hiển thị) — một dòng
+ * một nhóm. Không có gì bí mật nên không cần RLS; app chỉ ĐỌC, ghi qua hàm
+ * `cau_hinh_ghi` (migration 0007) — hàm tự kiểm người ghi là quản trị ở đơn vị gốc.
+ */
+export const cauHinh = pgTable('cau_hinh', {
+  khoa: text('khoa').primaryKey(),
+  giaTri: jsonb('gia_tri').notNull(),
+  /** Đơn vị của người sửa gần nhất — để nhật ký thao tác hiện được dòng này. */
+  donViId: uuid('don_vi_id').references(() => donVi.id),
+  taiKhoanId: uuid('tai_khoan_id'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})

@@ -1,32 +1,29 @@
 import type { CookieOptions } from 'express'
-import { THOI_HAN_VE_GIAY } from './ve.js'
 
 /** Vé đăng nhập — gửi kèm MỌI request tới /api. */
 export const COOKIE_VE = 'gdos_ve'
 /** Token làm mới — CHỈ gửi tới /api/xac-thuc, các route khác không bao giờ thấy nó. */
 export const COOKIE_PHIEN = 'gdos_phien'
 
-export const THOI_HAN_PHIEN_NGAY = 7
-
 /**
  * HttpOnly: JavaScript trên trang không đọc được → XSS không lấy được phiên
  * (GDOS cũ để token 7 ngày trong localStorage). SameSite chặn phần lớn giả mạo
  * request từ trang lạ; phần còn lại do header X-GDOS (xem bao-ve.guard.ts).
  */
-export const tuyChonCookieVe = (anToan: boolean): CookieOptions => ({
+export const tuyChonCookieVe = (anToan: boolean, hanGiay: number): CookieOptions => ({
   httpOnly: true,
   secure: anToan,
   sameSite: 'lax',
   path: '/api',
-  maxAge: THOI_HAN_VE_GIAY * 1000,
+  maxAge: hanGiay * 1000,
 })
 
-export const tuyChonCookiePhien = (anToan: boolean): CookieOptions => ({
+export const tuyChonCookiePhien = (anToan: boolean, hanNgay: number): CookieOptions => ({
   httpOnly: true,
   secure: anToan,
   sameSite: 'strict',
   path: '/api/xac-thuc',
-  maxAge: THOI_HAN_PHIEN_NGAY * 24 * 3600 * 1000,
+  maxAge: hanNgay * 24 * 3600 * 1000,
 })
 
 /** Đọc header Cookie. Viết tay cho hai cookie của mình — không cần cả một thư viện. */

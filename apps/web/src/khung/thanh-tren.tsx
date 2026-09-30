@@ -1,9 +1,11 @@
 import { VAI, type NhanhTang, type ThongTinToi } from '@gdos/shared'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
-import { doiGiaoDien } from '@/lib/giao-dien'
+import { truyVanCongKhai } from '@/lib/cau-hinh'
+import { doiSangToi } from '@/lib/giao-dien'
 import { dangXuat } from '@/lib/phien'
+import { CoDoSaoVang } from '@/ui/co-do-sao-vang'
 import { BieuTuong } from './bieu-tuong'
 
 const khongDau = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase()
@@ -19,6 +21,7 @@ export function ThanhTren({ toi, cay, moMenu }: { toi: ThongTinToi; cay: NhanhTa
   const qc = useQueryClient()
   const di = useNavigate()
   const [tim, datTim] = useState('')
+  const { data: cauHinh } = useQuery(truyVanCongKhai)
 
   // Tìm trong đúng những chức năng người này thấy — không lộ tên màn không có quyền.
   const chucNang = useMemo(
@@ -50,16 +53,18 @@ export function ThanhTren({ toi, cay, moMenu }: { toi: ThongTinToi; cay: NhanhTa
         <BieuTuong ten="menu" />
       </button>
 
-      <Link to="/" className="flex flex-none items-center gap-2.5 md:w-[238px]">
-        <span
-          aria-hidden="true"
-          className="grid h-[30px] w-[30px] place-items-center rounded-[7px] bg-brand text-[13px] font-extrabold text-white"
-        >
-          G
-        </span>
-        <span className="hidden leading-tight sm:block">
-          <span className="block text-[14px] font-bold text-ink">Điều hành số</span>
-          <span className="block text-[10.5px] text-faint">{toi.donVi.ten}</span>
+      {/* Khối logo nền đậm, liền với cây phân hệ bên dưới — như sidebar PMS. */}
+      <Link
+        to="/"
+        title={cauHinh?.nhanDien.tenHeThong}
+        className="flex min-w-0 flex-none items-center gap-2.5 md:-ml-3.5 md:w-[252px] md:self-stretch md:border-b-2 md:border-vang md:px-3.5 md:be-mat-dam"
+      >
+        <CoDoSaoVang rong={33} />
+        <span className="hidden min-w-0 leading-tight sm:block">
+          <span className="block truncate text-[13px] font-bold text-ink">
+            {cauHinh?.nhanDien.tenHeThong ?? 'Điều hành số'}
+          </span>
+          <span className="block truncate text-[10.5px] text-faint">{toi.donVi.ten}</span>
         </span>
       </Link>
 
@@ -97,8 +102,9 @@ export function ThanhTren({ toi, cay, moMenu }: { toi: ThongTinToi; cay: NhanhTa
       <div className="ml-auto flex items-center gap-1.5">
         <button
           type="button"
-          onClick={doiGiaoDien}
+          onClick={() => doiSangToi(toi.id)}
           aria-label="Đổi giao diện sáng / tối"
+          title="Sáng / tối"
           className="rounded-lg p-2 text-body hover:bg-nav-hover"
         >
           <BieuTuong ten="mat-troi" />
@@ -111,6 +117,14 @@ export function ThanhTren({ toi, cay, moMenu }: { toi: ThongTinToi; cay: NhanhTa
             <span className="block text-[12.5px] font-semibold">{toi.hoTen}</span>
             <span className="block text-[10.5px] text-faint">{moTaVai(toi)}</span>
           </span>
+          <Link
+            to="/cai-dat"
+            aria-label="Cài đặt cá nhân"
+            title="Cài đặt cá nhân: tông màu, giao diện"
+            className="rounded-lg p-2 text-body hover:bg-nav-hover"
+          >
+            <BieuTuong ten="cai-dat" />
+          </Link>
           <Link
             to="/doi-mat-khau"
             aria-label="Đổi mật khẩu"

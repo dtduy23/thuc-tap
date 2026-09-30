@@ -6,13 +6,11 @@
  * này, nên một thuật toán cố định là đủ và không có gì để khai sai.
  *
  * Vé mang sẵn phân công, nên mỗi request không phải hỏi database để tính quyền.
- * Đánh đổi: đổi phân công / khóa tài khoản có hiệu lực chậm tối đa 15 phút (lúc
- * vé được làm mới) — xem ADR-0003.
+ * Đánh đổi: đổi phân công / khóa tài khoản có hiệu lực chậm tối đa bằng hạn vé
+ * (lúc vé được làm mới). Hạn vé do quản trị đặt ở Cấu hình hệ thống.
  */
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { MA_VAI, type MaVai, type PhanCong } from '@gdos/shared'
-
-export const THOI_HAN_VE_GIAY = 15 * 60
 
 export interface NoiDungVe {
   /** Mã tài khoản. */

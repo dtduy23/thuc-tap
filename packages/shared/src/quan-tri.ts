@@ -64,6 +64,7 @@ export const TEN_BANG: Record<string, string> = {
   don_vi: 'Đơn vị',
   tai_khoan: 'Tài khoản',
   phan_cong: 'Phân công',
+  cau_hinh: 'Cấu hình hệ thống',
 }
 
 export const TEN_HANH_DONG_NHAT_KY: Record<string, string> = {

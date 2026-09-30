@@ -8,17 +8,22 @@ import { maLoiPg, trongPhamVi, TRUNG_KHOA, type GiaoDich } from '../db/pham-vi.j
 import { donVi, phanCong, taiKhoan } from '../db/schema/index.js'
 import type { NguoiDungPhien } from '../xac-thuc/bao-ve.js'
 import { bamMatKhau, kiemTraMatKhauMoi } from '../xac-thuc/mat-khau.js'
+import { ThietLapService } from '../thiet-lap/thiet-lap.service.js'
 import { docPhanCong } from './phan-cong.js'
 
 /** Bỏ các chữ dễ đọc nhầm (l/1, o/0, i) — mật khẩu tạm hay được đọc qua điện thoại. */
 const BANG_CHU = 'abcdefghjkmnpqrstuvwxyz23456789'
 
-/** Mật khẩu tạm dạng `xxxx-xxxx-xxxx`: 14 ký tự, ~59 bit ngẫu nhiên. */
-export function sinhMatKhauTam(tenDangNhap: string): string {
+/**
+ * Mật khẩu tạm dạng `xxxx-xxxx-xxxx`: ít nhất 14 ký tự (~59 bit ngẫu nhiên), dài
+ * thêm từng nhóm 4 nếu chính sách đòi độ dài tối thiểu lớn hơn.
+ */
+export function sinhMatKhauTam(tenDangNhap: string, toiThieu: number): string {
   const nhom = () => Array.from({ length: 4 }, () => BANG_CHU[randomInt(BANG_CHU.length)]).join('')
+  const soNhom = Math.max(3, Math.ceil((toiThieu + 1) / 5))
   for (;;) {
-    const mk = `${nhom()}-${nhom()}-${nhom()}`
-    if (!kiemTraMatKhauMoi(mk, tenDangNhap)) return mk
+    const mk = Array.from({ length: soNhom }, nhom).join('-')
+    if (!kiemTraMatKhauMoi(mk, tenDangNhap, toiThieu)) return mk
   }
 }
 
@@ -32,7 +37,14 @@ export function sinhMatKhauTam(tenDangNhap: string): string {
  */
 @Injectable()
 export class TaiKhoanService {
-  constructor(@Inject(CoSoDuLieu) private readonly csdl: CoSoDuLieu) {}
+  constructor(
+    @Inject(CoSoDuLieu) private readonly csdl: CoSoDuLieu,
+    @Inject(ThietLapService) private readonly thietLap: ThietLapService,
+  ) {}
+
+  private async matKhauMoi(tenDangNhap: string) {
+    return sinhMatKhauTam(tenDangNhap, (await this.thietLap.baoMat()).matKhauToiThieu)
+  }
 
   private get db() {
     return dbCua(this.csdl)
@@ -52,7 +64,7 @@ export class TaiKhoanService {
     const nativeUserId = chuoiHoacRong(than, 'nativeUserId', 100) ?? null
     const pc = docPhanCong(mang(than, 'phanCong'))
 
-    const matKhauTam = sinhMatKhauTam(tenDangNhap)
+    const matKhauTam = await this.matKhauMoi(tenDangNhap)
     const bam = await bamMatKhau(matKhauTam)
     const id = randomUUID()
 
@@ -138,7 +150,7 @@ export class TaiKhoanService {
       throw new BadRequestException('Tài khoản của chính mình thì dùng "Đổi mật khẩu"')
     return trongPhamVi(this.db, nd.nguCanh, async (tx) => {
       const tk = await motTaiKhoan(tx, id)
-      const matKhauTam = sinhMatKhauTam(tk.tenDangNhap)
+      const matKhauTam = await this.matKhauMoi(tk.tenDangNhap)
       await capNhat(tx, id, {
         matKhauBam: await bamMatKhau(matKhauTam),
         phaiDoiMatKhau: true,

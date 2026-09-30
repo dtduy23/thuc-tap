@@ -2,7 +2,7 @@
  * Đọc một dòng nhật ký thành chữ cho người: đối tượng nào, trường nào đổi từ gì
  * sang gì. Dữ liệu thô (jsonb) do trigger ghi, tên cột là tên trong database.
  */
-import { DANH_SACH_MODULE, VAI, type MaVai, type NhatKyDong } from '@gdos/shared'
+import { CHINH_SACH, DANH_SACH_MODULE, NHAN_DIEN, VAI, type MaVai, type NhatKyDong } from '@gdos/shared'
 import { ngayGio } from './ngay'
 
 const TEN_COT: Record<string, string> = {
@@ -44,6 +44,24 @@ function giaTri(cot: string, v: unknown): string {
   return JSON.stringify(v)
 }
 
+/** Cấu hình hệ thống lưu cả nhóm trong một ô jsonb — so từng tham số bên trong. */
+const TEN_THAM_SO: Record<string, string> = {
+  ...Object.fromEntries(Object.entries(CHINH_SACH).map(([k, d]) => [k, d.nhan])),
+  ...Object.fromEntries(Object.entries(NHAN_DIEN).map(([k, d]) => [k, d.nhan])),
+}
+const TEN_NHOM_CAU_HINH: Record<string, string> = {
+  'bao-mat': 'Đăng nhập & mật khẩu',
+  'nhan-dien': 'Tên & nhận diện',
+}
+
+function thayDoiCauHinh(d: NhatKyDong): ThayDoi[] {
+  const cu = (d.giaTriCu?.gia_tri ?? {}) as Record<string, unknown>
+  const moi = (d.giaTriMoi?.gia_tri ?? {}) as Record<string, unknown>
+  return [...new Set([...Object.keys(cu), ...Object.keys(moi)])]
+    .filter((k) => JSON.stringify(cu[k]) !== JSON.stringify(moi[k]))
+    .map((k) => ({ truong: TEN_THAM_SO[k] ?? k, cu: giaTri(k, cu[k]), moi: giaTri(k, moi[k]) }))
+}
+
 export interface ThayDoi {
   truong: string
   cu: string
@@ -52,6 +70,7 @@ export interface ThayDoi {
 
 /** Các trường đổi (sửa), hoặc các trường có giá trị (thêm mới). */
 export function thayDoiCua(d: NhatKyDong): ThayDoi[] {
+  if (d.bang === 'cau_hinh') return thayDoiCauHinh(d)
   const cu = d.giaTriCu ?? {}
   const moi = d.giaTriMoi ?? {}
   const kq: ThayDoi[] = []
@@ -70,6 +89,7 @@ export function thayDoiCua(d: NhatKyDong): ThayDoi[] {
 /** Tên đối tượng bị tác động: họ tên / tên đơn vị / vai của phân công. */
 export function doiTuongCua(d: NhatKyDong): string {
   const g = d.giaTriMoi ?? d.giaTriCu ?? {}
+  if (d.bang === 'cau_hinh' && typeof g.khoa === 'string') return TEN_NHOM_CAU_HINH[g.khoa] ?? g.khoa
   if (typeof g.ho_ten === 'string') return g.ho_ten
   if (typeof g.ten === 'string') return g.ten
   if (typeof g.vai === 'string') return `Vai ${giaTri('vai', g.vai)}`

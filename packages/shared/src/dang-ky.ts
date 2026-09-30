@@ -53,4 +53,18 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     mo: 'Ba vai cố định (ADR-0006) và ma trận quyền sinh ra từ đó. Chỉ xem — vai đổi bằng ADR, không đổi bằng màn hình.',
     con: [{ id: 'vt-ma-tran', nhan: 'Ma trận quyền' }],
   },
+
+  // ── Tầng 2 · Cấu hình & Vận hành ────────────────────────────────────────
+  {
+    id: 'qt-cau-hinh',
+    nhan: 'Cấu hình hệ thống',
+    nhom: 'qt-cau-hinh',
+    maQuyen: 'QT_CAU_HINH',
+    nguon: 'db',
+    mo: 'Chính sách đăng nhập, mật khẩu và tên hiển thị của hệ thống. Chỉ quản trị ở đơn vị gốc được sửa.',
+    con: [
+      { id: 'ch-bao-mat', nhan: 'Đăng nhập & mật khẩu' },
+      { id: 'ch-nhan-dien', nhan: 'Tên & nhận diện' },
+    ],
+  },
 ]

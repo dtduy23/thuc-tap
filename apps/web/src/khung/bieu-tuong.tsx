@@ -43,13 +43,14 @@ export function MuiTen({ mo }: { mo: boolean }) {
   )
 }
 
-export function BieuTuong({ ten }: { ten: 'tim' | 'menu' | 'thoat' | 'khoa' | 'mat-troi' }) {
+export function BieuTuong({ ten }: { ten: 'tim' | 'menu' | 'thoat' | 'khoa' | 'mat-troi' | 'cai-dat' }) {
   const d = {
     tim: 'M11 4a7 7 0 1 0 0 14 7 7 0 1 0 0-14 M20 20l-3.5-3.5',
     menu: 'M4 6h16 M4 12h16 M4 18h16',
     thoat: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9',
     khoa: 'M5 11h14v10H5Z M8 11V7a4 4 0 0 1 8 0v4',
     'mat-troi': 'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z',
+    'cai-dat': QUAN_TRI,
   }[ten]
   return (
     <svg
