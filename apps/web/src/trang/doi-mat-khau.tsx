@@ -1,12 +1,18 @@
+import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
 import { useState, type FormEvent } from 'react'
 import { LoiApi } from '@/lib/http'
-import { doiMatKhau } from '@/lib/phien'
+import { doiMatKhau, truyVanToi } from '@/lib/phien'
 import { Nut, ONhap, The, ThongBao } from '@/ui/co-ban'
 
 /** Khớp luật ở API (mat-khau.ts). Kiểm trước ở đây chỉ để báo sớm — API mới là chốt chặn. */
 const DO_DAI_TOI_THIEU = 10
 
 export function TrangDoiMatKhau() {
+  const qc = useQueryClient()
+  const dieuHuong = useNavigate()
+  const { data: toi } = useSuspenseQuery(truyVanToi)
+  const batBuoc = toi.phaiDoiMatKhau
   const [cu, datCu] = useState('')
   const [moi, datMoi] = useState('')
   const [nhapLai, datNhapLai] = useState('')
@@ -17,10 +23,15 @@ export function TrangDoiMatKhau() {
     e.preventDefault()
     if (moi.length < DO_DAI_TOI_THIEU)
       return datKq({ ok: false, cau: `Mật khẩu mới phải dài ít nhất ${DO_DAI_TOI_THIEU} ký tự.` })
+    if (moi === cu) return datKq({ ok: false, cau: 'Mật khẩu mới phải khác mật khẩu hiện tại.' })
     if (moi !== nhapLai) return datKq({ ok: false, cau: 'Hai lần nhập mật khẩu mới không khớp.' })
     datDangGui(true)
     try {
-      await doiMatKhau(cu, moi)
+      await doiMatKhau(qc, cu, moi)
+      if (batBuoc) {
+        await dieuHuong({ to: '/' })
+        return
+      }
       datKq({ ok: true, cau: 'Đã đổi mật khẩu. Các phiên đăng nhập ở máy khác đã bị đăng xuất.' })
       datCu('')
       datMoi('')
@@ -36,12 +47,18 @@ export function TrangDoiMatKhau() {
     <>
       <h1 className="mt-0 mb-4 text-[21px] font-bold">Đổi mật khẩu</h1>
       <div className="max-w-[440px]">
+        {batBuoc && !kq && (
+          <ThongBao>
+            Mật khẩu hiện tại do quản trị hệ thống cấp. Hãy đặt mật khẩu của riêng bạn trước khi bắt đầu làm
+            việc.
+          </ThongBao>
+        )}
         {kq && <ThongBao kieu={kq.ok ? 'ok' : 'loi'}>{kq.cau}</ThongBao>}
         <The>
           <form onSubmit={(e) => void gui(e)}>
             <ONhap
               id="mk-cu"
-              nhan="Mật khẩu hiện tại"
+              nhan={batBuoc ? 'Mật khẩu được cấp' : 'Mật khẩu hiện tại'}
               type="password"
               autoComplete="current-password"
               required

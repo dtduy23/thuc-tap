@@ -123,3 +123,35 @@ export function Chip({
     </span>
   )
 }
+
+export function ODanhDau({
+  nhan,
+  id,
+  mo,
+  ...p
+}: Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> & { nhan: ReactNode; id: string; mo?: string }) {
+  return (
+    <div className="mb-2 flex items-start gap-2">
+      <input id={id} type="checkbox" {...p} className="mt-[3px] size-3.5 accent-brand" />
+      <label htmlFor={id} className="text-[13px] text-body">
+        {nhan}
+        {mo && <span className="block text-[11.5px] text-faint">{mo}</span>}
+      </label>
+    </div>
+  )
+}
+
+/** Bảng dữ liệu: cuộn ngang trên màn hẹp thay vì vỡ khung. */
+export function KhungBang({ children, nhan }: { children: ReactNode; nhan: string }) {
+  return (
+    <div className="overflow-x-auto rounded-[10px] border border-line bg-nen">
+      <table aria-label={nhan} className="w-full border-collapse text-left text-[13px]">
+        {children}
+      </table>
+    </div>
+  )
+}
+
+export const LOP_TH =
+  'border-b border-line bg-nen-2 px-3 py-2 text-[11.5px] font-semibold tracking-[.2px] text-faint whitespace-nowrap'
+export const LOP_TD = 'border-b border-line-2 px-3 py-2 align-top'

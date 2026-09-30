@@ -61,3 +61,20 @@ export async function khongNguCanh<T>(db: CoSo, viec: (tx: GiaoDich) => Promise<
     return viec(tx)
   })
 }
+
+/** Mã lỗi Postgres của một lỗi từ Drizzle (Drizzle bọc lỗi gốc trong `cause`). */
+export function maLoiPg(e: unknown): string | undefined {
+  let x: unknown = e
+  for (
+    let sau = 0;
+    sau < 5 && x !== null && typeof x === 'object';
+    sau++, x = (x as { cause?: unknown }).cause
+  ) {
+    const ma = (x as { code?: unknown }).code
+    if (typeof ma === 'string' && /^[0-9A-Z]{5}$/.test(ma)) return ma
+  }
+  return undefined
+}
+
+/** 23505 — trùng giá trị của một chỉ mục duy nhất. */
+export const TRUNG_KHOA = '23505'

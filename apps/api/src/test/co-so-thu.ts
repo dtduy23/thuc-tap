@@ -37,11 +37,18 @@ export const MAU = {
 } as const
 
 export type TenMau =
-  'chutich.a' | 'chuyenvien.a' | 'quantri' | 'canbo.b' | 'lanhdao.tinh' | 'khoa.thu' | 'bikhoa'
+  | 'chutich.a'
+  | 'chuyenvien.a'
+  | 'quantri'
+  | 'quantri.tinh'
+  | 'canbo.b'
+  | 'lanhdao.tinh'
+  | 'khoa.thu'
+  | 'bikhoa'
 
 /**
  * Nạp tỉnh + hai xã + các tài khoản đủ vai. Mọi tài khoản cùng một mật khẩu
- * (băm một lần — argon2 cố ý chậm, băm 7 lần là phí thời gian test).
+ * (băm một lần — argon2 cố ý chậm, băm 8 lần là phí thời gian test).
  */
 export async function napMau({ chuBang }: CoSoThu): Promise<void> {
   const { donVi, taiKhoan, phanCong } = schema
@@ -72,6 +79,7 @@ export async function napMau({ chuBang }: CoSoThu): Promise<void> {
       tk('quantri', MAU.XA_A, 'Quản trị hệ thống', { laQuanTri: true }),
       tk('canbo.b', MAU.XA_B, 'Cán bộ xã Bình Minh'),
       tk('lanhdao.tinh', MAU.TINH, 'Lãnh đạo tỉnh'),
+      tk('quantri.tinh', MAU.TINH, 'Quản trị cấp tỉnh', { laQuanTri: true }),
       tk('khoa.thu', MAU.XA_A, 'Tài khoản thử khóa tạm'),
       tk('bikhoa', MAU.XA_A, 'Tài khoản bị quản trị khóa', { trangThai: 'khoa' }),
     ])

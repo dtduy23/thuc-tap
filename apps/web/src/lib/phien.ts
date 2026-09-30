@@ -27,6 +27,12 @@ export async function dangXuat(qc: QueryClient) {
   qc.clear()
 }
 
-export function doiMatKhau(matKhauCu: string, matKhauMoi: string) {
-  return goiApi<void>('/xac-thuc/doi-mat-khau', { method: 'POST', body: { matKhauCu, matKhauMoi } })
+/** Đổi mật khẩu; API trả vé mới (bỏ cờ phải đổi mật khẩu) kèm thông tin mới. */
+export async function doiMatKhau(qc: QueryClient, matKhauCu: string, matKhauMoi: string) {
+  const toi = await goiApi<ThongTinToi>('/xac-thuc/doi-mat-khau', {
+    method: 'POST',
+    body: { matKhauCu, matKhauMoi },
+  })
+  qc.setQueryData(KHOA_TOI, toi)
+  return toi
 }

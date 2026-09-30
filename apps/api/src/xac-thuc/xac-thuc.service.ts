@@ -111,6 +111,7 @@ export class XacThucService {
       dv: nd.donViIds,
       qt: nd.laQuanTri,
       pc: nd.phanCong.map((p) => ({ v: p.vai, p: p.phamVi === 'tat-ca' ? null : [...p.phamVi] })),
+      dmk: nd.phaiDoiMatKhau,
       het: 0,
     })
   }
@@ -118,10 +119,20 @@ export class XacThucService {
   /**
    * Đổi mật khẩu của chính mình. Xong thì thu hồi MỌI phiên khác — nếu đổi vì
    * nghi bị lộ, kẻ đang cầm phiên cũ phải bị đá ra ngay.
+   *
+   * Trả vé MỚI: vé cũ còn mang cờ `dmk` (phải đổi mật khẩu) thêm tối đa 15 phút.
    */
-  async doiMatKhau(nd: NguoiDungPhien, matKhauCu: string, matKhauMoi: string, tokenHienTai?: string) {
+  async doiMatKhau(
+    nd: NguoiDungPhien,
+    matKhauCu: string,
+    matKhauMoi: string,
+    tokenHienTai?: string,
+  ): Promise<Omit<KetQuaPhien, 'tokenPhien'>> {
     const [tk] = await trongPhamVi(this.db, nd.nguCanh, (tx) =>
-      tx.select({ ten: taiKhoan.tenDangNhap }).from(taiKhoan).where(eq(taiKhoan.id, nd.taiKhoanId)),
+      tx
+        .select({ ten: taiKhoan.tenDangNhap, donViId: taiKhoan.donViId })
+        .from(taiKhoan)
+        .where(eq(taiKhoan.id, nd.taiKhoanId)),
     )
     if (!tk) throw new UnauthorizedException('Không tìm thấy tài khoản')
     const [dong] = await khongNguCanh(this.db, (tx) =>
@@ -129,6 +140,7 @@ export class XacThucService {
     )
     if (!dong || !(await kiemMatKhau(matKhauCu, dong.mat_khau_bam)))
       throw new BadRequestException('Mật khẩu hiện tại không đúng')
+    if (matKhauMoi === matKhauCu) throw new BadRequestException('Mật khẩu mới phải khác mật khẩu hiện tại')
     const loi = kiemTraMatKhauMoi(matKhauMoi, tk.ten)
     if (loi) throw new BadRequestException(loi)
 
@@ -136,7 +148,7 @@ export class XacThucService {
     await trongPhamVi(this.db, nd.nguCanh, async (tx) => {
       await tx
         .update(taiKhoan)
-        .set({ matKhauBam: bamMoi, doiMatKhauLuc: new Date() })
+        .set({ matKhauBam: bamMoi, doiMatKhauLuc: new Date(), phaiDoiMatKhau: false })
         .where(eq(taiKhoan.id, nd.taiKhoanId))
       await tx
         .update(phienDangNhap)
@@ -149,6 +161,8 @@ export class XacThucService {
           ),
         )
     })
+    const moi = await this.dungVe(nd.taiKhoanId, tk.donViId, nd.laQuanTri)
+    return { ve: kyVe(moi, this.cauHinh.khoaKyVe), thongTin: await this.thongTin(moi) }
   }
 
   // ── nội bộ ──────────────────────────────────────────────────────────────
@@ -176,17 +190,21 @@ export class XacThucService {
     const donViIds = pv?.ids ?? []
     if (donViIds.length === 0) throw new ForbiddenException('Đơn vị của tài khoản không còn hoạt động')
 
-    const ds = await trongPhamVi(this.db, { taiKhoanId, donViIds }, (tx) =>
-      tx
+    const { ds, tk } = await trongPhamVi(this.db, { taiKhoanId, donViIds }, async (tx) => ({
+      ds: await tx
         .select({ vai: phanCong.vai, phamVi: phanCong.phamVi })
         .from(phanCong)
         .where(and(eq(phanCong.taiKhoanId, taiKhoanId), isNull(phanCong.deletedAt))),
-    )
+      tk: (
+        await tx.select({ dmk: taiKhoan.phaiDoiMatKhau }).from(taiKhoan).where(eq(taiKhoan.id, taiKhoanId))
+      )[0],
+    }))
     return {
       tk: taiKhoanId,
       dv: donViIds,
       qt: laQuanTri,
       pc: ds.map((p) => ({ v: p.vai as MaVai, p: p.phamVi })),
+      dmk: tk?.dmk === true,
       het: Math.floor(Date.now() / 1000) + THOI_HAN_VE_GIAY,
     }
   }
@@ -214,6 +232,7 @@ export class XacThucService {
       tenDangNhap: dong.tenDangNhap,
       hoTen: dong.hoTen,
       laQuanTri: dong.laQuanTri,
+      phaiDoiMatKhau: nd.dmk === true,
       donVi: { id: dong.donViId, ten: dong.donViTen, cap: dong.donViCap },
       phanCong: pc,
       quyen: [...tinhQuyen(DANH_SACH_MODULE, pc, nd.qt)].sort(),

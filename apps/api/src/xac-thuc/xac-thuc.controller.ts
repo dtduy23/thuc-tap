@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
@@ -12,17 +11,10 @@ import {
 } from '@nestjs/common'
 import type { Response } from 'express'
 import { CAU_HINH, type CauHinh } from '../cau-hinh.js'
+import { chuoi } from '../chung/kiem-than.js'
 import { ChiCanDangNhap, CongKhai, NguoiDung, type NguoiDungPhien, type YeuCau } from './bao-ve.js'
 import { COOKIE_PHIEN, COOKIE_VE, docCookie, tuyChonCookiePhien, tuyChonCookieVe } from './cookie.js'
 import { XacThucService, type KetQuaPhien, type ThietBi, type ThongTinToi } from './xac-thuc.service.js'
-
-/** Kiểm thân request bằng tay — hai trường chuỗi, không đáng kéo cả thư viện validate. */
-function chuoi(than: unknown, ten: string, toiDa = 256): string {
-  const v = (than as Record<string, unknown> | null)?.[ten]
-  if (typeof v !== 'string' || v.length === 0) throw new BadRequestException(`Thiếu trường "${ten}"`)
-  if (v.length > toiDa) throw new BadRequestException(`Trường "${ten}" quá dài`)
-  return v
-}
 
 const thietBi = (req: YeuCau): ThietBi => ({ ip: req.ip, trinhDuyet: req.headers['user-agent'] })
 
@@ -86,13 +78,21 @@ export class XacThucController {
 
   @Post('doi-mat-khau')
   @ChiCanDangNhap()
-  @HttpCode(204)
-  async doiMatKhau(@NguoiDung() nd: NguoiDungPhien, @Body() than: unknown, @Req() req: YeuCau) {
-    await this.dv.doiMatKhau(
+  @HttpCode(200)
+  async doiMatKhau(
+    @NguoiDung() nd: NguoiDungPhien,
+    @Body() than: unknown,
+    @Req() req: YeuCau,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const kq = await this.dv.doiMatKhau(
       nd,
       chuoi(than, 'matKhauCu'),
       chuoi(than, 'matKhauMoi'),
       docCookie(req.headers.cookie)[COOKIE_PHIEN],
     )
+    // Chỉ thay vé; token phiên hiện tại giữ nguyên (các phiên KHÁC đã bị thu hồi).
+    res.cookie(COOKIE_VE, kq.ve, tuyChonCookieVe(this.cauHinh.cookieAnToan))
+    return kq.thongTin
   }
 }

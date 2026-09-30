@@ -94,3 +94,9 @@ export async function goiApi<T>(duongDan: string, tc: TuyChon = {}, daThuLai = f
   const text = await res.text()
   return (text ? JSON.parse(text) : undefined) as T
 }
+
+/**
+ * Làm mới phiên NGAY — dùng khi phạm vi của chính mình vừa đổi (vd vừa tạo đơn
+ * vị mới: vé đang cầm chưa có đơn vị đó). Dùng chung khóa với lần làm mới tự động.
+ */
+export const lamMoiPhienNgay = () => lamMoiPhien(fetch)

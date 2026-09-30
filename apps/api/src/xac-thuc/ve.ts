@@ -23,6 +23,8 @@ export interface NoiDungVe {
   qt: boolean
   /** Phân công: vai + phạm vi (null = tất cả). */
   pc: { v: MaVai; p: string[] | null }[]
+  /** Phải đổi mật khẩu trước khi làm việc (mật khẩu do quản trị cấp). Vắng = không. */
+  dmk?: boolean
   /** Hết hạn — giây kể từ 1970. */
   het: number
 }
@@ -61,7 +63,8 @@ export function docVe(ve: string, khoa: string, bayGioMs = Date.now()): NoiDungV
     typeof v.qt === 'boolean' &&
     Array.isArray(v.pc) &&
     v.pc.every((p) => MA_VAI.includes(p.v) && (p.p === null || (Array.isArray(p.p) && p.p.every(laChuoi)))) &&
-    typeof v.het === 'number'
+    typeof v.het === 'number' &&
+    (v.dmk === undefined || typeof v.dmk === 'boolean')
   if (!hopLe) return null
   if (v.het! * 1000 <= bayGioMs) return null
   return v as NoiDungVe

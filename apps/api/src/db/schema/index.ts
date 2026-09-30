@@ -71,6 +71,8 @@ export const taiKhoan = pgTable(
     soLanSai: integer('so_lan_sai').notNull().default(0),
     khoaDen: timestamp('khoa_den', { withTimezone: true }),
     doiMatKhauLuc: timestamp('doi_mat_khau_luc', { withTimezone: true }),
+    /** Mật khẩu do quản trị cấp (tạo mới / đặt lại) — phải tự đổi trước khi làm việc. */
+    phaiDoiMatKhau: boolean('phai_doi_mat_khau').notNull().default(false),
     ...thoiDiem,
   },
   (t) => [

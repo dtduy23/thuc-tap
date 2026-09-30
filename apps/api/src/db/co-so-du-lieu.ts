@@ -1,4 +1,4 @@
-import type { OnApplicationShutdown } from '@nestjs/common'
+import { ServiceUnavailableException, type OnApplicationShutdown } from '@nestjs/common'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import pg from 'pg'
 import type { CauHinh } from '../cau-hinh.js'
@@ -62,4 +62,10 @@ export class CoSoDuLieu implements OnApplicationShutdown {
   async onApplicationShutdown(): Promise<void> {
     await this.ketNoi?.dong()
   }
+}
+
+/** Kết nối để dùng trong service; chưa cấu hình database thì 503 thay vì lỗi khó hiểu. */
+export function dbCua(csdl: Pick<CoSoDuLieu, 'db'>): CoSo {
+  if (!csdl.db) throw new ServiceUnavailableException('Chưa nối cơ sở dữ liệu')
+  return csdl.db
 }

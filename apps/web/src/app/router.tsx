@@ -72,14 +72,17 @@ const portal = createRoute({
   id: 'portal',
   component: KhungPortal,
   beforeLoad: async ({ context, location }) => {
+    let toi: ThongTinToi
     try {
-      await context.queryClient.ensureQueryData(truyVanToi)
+      toi = await context.queryClient.ensureQueryData(truyVanToi)
     } catch (e) {
       if (e instanceof LoiApi && e.ma === 401) {
         throw redirect({ to: '/dang-nhap', search: { tiep: duongDanNoiBo(location.href) } })
       }
       throw e
     }
+    // Mật khẩu do quản trị cấp: người khác đã biết, nên phải đổi trước khi làm gì khác.
+    if (toi.phaiDoiMatKhau && location.pathname !== '/doi-mat-khau') throw redirect({ to: '/doi-mat-khau' })
   },
 })
 

@@ -1,0 +1,1 @@
+ALTER TABLE "tai_khoan" ADD COLUMN "phai_doi_mat_khau" boolean DEFAULT false NOT NULL;

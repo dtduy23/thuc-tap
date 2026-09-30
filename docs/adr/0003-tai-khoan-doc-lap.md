@@ -24,6 +24,11 @@ một xã không có FOXAI Native thì vẫn chạy.
    Access token ngắn hạn + refresh token xoay vòng.
 5. **Quản trị viên đầu tiên tạo bằng lệnh CLI** trên server, không qua màn hình, không có mật
    khẩu mặc định.
+6. **Quản trị viên không đặt mật khẩu cho người khác.** Tạo tài khoản hoặc đặt lại mật khẩu thì
+   hệ thống sinh **mật khẩu tạm**, hiện đúng một lần, và bật cờ `phai_doi_mat_khau`: tới khi người
+   dùng tự đổi, API từ chối mọi route cần quyền (chỉ còn xem mình và đổi mật khẩu). Khóa tài khoản
+   hay đặt lại mật khẩu thì thu hồi mọi phiên của người đó ngay. _(Bổ sung ở Mốc 1 phiên 4 — chưa
+   trộn vào `main` nên thêm thẳng.)_
 
 ## Hệ quả
 

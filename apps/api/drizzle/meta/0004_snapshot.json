@@ -1,0 +1,609 @@
+{
+  "id": "a2f4578f-09de-44d8-aa86-925790f0fa69",
+  "prevId": "6c72c8f7-fed0-4e7a-82cb-21f8b7f6b4a1",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.don_vi": {
+      "name": "don_vi",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "ma": {
+          "name": "ma",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ten": {
+          "name": "ten",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cap": {
+          "name": "cap",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cha_id": {
+          "name": "cha_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "don_vi_ma_uq": {
+          "name": "don_vi_ma_uq",
+          "columns": [
+            {
+              "expression": "ma",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "don_vi_cha_id_don_vi_id_fk": {
+          "name": "don_vi_cha_id_don_vi_id_fk",
+          "tableFrom": "don_vi",
+          "tableTo": "don_vi",
+          "columnsFrom": [
+            "cha_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "don_vi_cap_ck": {
+          "name": "don_vi_cap_ck",
+          "value": "\"don_vi\".\"cap\" in ('tinh', 'xa')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.nhat_ky_thao_tac": {
+      "name": "nhat_ky_thao_tac",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "luc": {
+          "name": "luc",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "tai_khoan_id": {
+          "name": "tai_khoan_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "don_vi_id": {
+          "name": "don_vi_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hanh_dong": {
+          "name": "hanh_dong",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bang": {
+          "name": "bang",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ban_ghi_id": {
+          "name": "ban_ghi_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gia_tri_cu": {
+          "name": "gia_tri_cu",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gia_tri_moi": {
+          "name": "gia_tri_moi",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "nhat_ky_don_vi_luc_idx": {
+          "name": "nhat_ky_don_vi_luc_idx",
+          "columns": [
+            {
+              "expression": "don_vi_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "luc",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "nhat_ky_ban_ghi_idx": {
+          "name": "nhat_ky_ban_ghi_idx",
+          "columns": [
+            {
+              "expression": "bang",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "ban_ghi_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.phan_cong": {
+      "name": "phan_cong",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tai_khoan_id": {
+          "name": "tai_khoan_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "don_vi_id": {
+          "name": "don_vi_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vai": {
+          "name": "vai",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pham_vi": {
+          "name": "pham_vi",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "phan_cong_tai_khoan_idx": {
+          "name": "phan_cong_tai_khoan_idx",
+          "columns": [
+            {
+              "expression": "tai_khoan_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "phan_cong_tai_khoan_id_tai_khoan_id_fk": {
+          "name": "phan_cong_tai_khoan_id_tai_khoan_id_fk",
+          "tableFrom": "phan_cong",
+          "tableTo": "tai_khoan",
+          "columnsFrom": [
+            "tai_khoan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "phan_cong_don_vi_id_don_vi_id_fk": {
+          "name": "phan_cong_don_vi_id_don_vi_id_fk",
+          "tableFrom": "phan_cong",
+          "tableTo": "don_vi",
+          "columnsFrom": [
+            "don_vi_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "phan_cong_vai_ck": {
+          "name": "phan_cong_vai_ck",
+          "value": "\"phan_cong\".\"vai\" in ('LANH_DAO', 'CHUYEN_VIEN', 'THANH_TRA')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.phien_dang_nhap": {
+      "name": "phien_dang_nhap",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tai_khoan_id": {
+          "name": "tai_khoan_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token_bam": {
+          "name": "token_bam",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "het_han": {
+          "name": "het_han",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "thu_hoi_luc": {
+          "name": "thu_hoi_luc",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dia_chi_ip": {
+          "name": "dia_chi_ip",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "trinh_duyet": {
+          "name": "trinh_duyet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "phien_token_bam_uq": {
+          "name": "phien_token_bam_uq",
+          "columns": [
+            {
+              "expression": "token_bam",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "phien_tai_khoan_idx": {
+          "name": "phien_tai_khoan_idx",
+          "columns": [
+            {
+              "expression": "tai_khoan_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "phien_dang_nhap_tai_khoan_id_tai_khoan_id_fk": {
+          "name": "phien_dang_nhap_tai_khoan_id_tai_khoan_id_fk",
+          "tableFrom": "phien_dang_nhap",
+          "tableTo": "tai_khoan",
+          "columnsFrom": [
+            "tai_khoan_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tai_khoan": {
+      "name": "tai_khoan",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "don_vi_id": {
+          "name": "don_vi_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ten_dang_nhap": {
+          "name": "ten_dang_nhap",
+          "type": "citext",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ho_ten": {
+          "name": "ho_ten",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mat_khau_bam": {
+          "name": "mat_khau_bam",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "la_quan_tri": {
+          "name": "la_quan_tri",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "native_user_id": {
+          "name": "native_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "trang_thai": {
+          "name": "trang_thai",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'hoat-dong'"
+        },
+        "so_lan_sai": {
+          "name": "so_lan_sai",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "khoa_den": {
+          "name": "khoa_den",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "doi_mat_khau_luc": {
+          "name": "doi_mat_khau_luc",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phai_doi_mat_khau": {
+          "name": "phai_doi_mat_khau",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "tai_khoan_ten_dang_nhap_uq": {
+          "name": "tai_khoan_ten_dang_nhap_uq",
+          "columns": [
+            {
+              "expression": "ten_dang_nhap",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "tai_khoan_don_vi_idx": {
+          "name": "tai_khoan_don_vi_idx",
+          "columns": [
+            {
+              "expression": "don_vi_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "tai_khoan_don_vi_id_don_vi_id_fk": {
+          "name": "tai_khoan_don_vi_id_don_vi_id_fk",
+          "tableFrom": "tai_khoan",
+          "tableTo": "don_vi",
+          "columnsFrom": [
+            "don_vi_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "tai_khoan_trang_thai_ck": {
+          "name": "tai_khoan_trang_thai_ck",
+          "value": "\"tai_khoan\".\"trang_thai\" in ('hoat-dong', 'khoa')"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

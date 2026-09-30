@@ -39,6 +39,7 @@ export interface NguoiDungPhien {
   taiKhoanId: string
   donViIds: string[]
   laQuanTri: boolean
+  phaiDoiMatKhau: boolean
   phanCong: PhanCong[]
   quyen: ReadonlySet<string>
   /** Đưa thẳng vào trongPhamVi(). */
@@ -96,10 +97,15 @@ export class BaoVeGuard implements CanActivate {
       taiKhoanId: nd.tk,
       donViIds: nd.dv,
       laQuanTri: nd.qt,
+      phaiDoiMatKhau: nd.dmk === true,
       phanCong,
       quyen,
       nguCanh: { taiKhoanId: nd.tk, donViIds: nd.dv },
     }
+
+    // Mật khẩu do quản trị cấp (người khác đã biết): chỉ được xem mình và đổi mật khẩu.
+    if (canQuyen.length > 0 && nd.dmk)
+      throw new ForbiddenException('Cần đổi mật khẩu được cấp trước khi làm việc')
 
     const thieu = canQuyen.filter((q) => !quyen.has(q))
     if (thieu.length) throw new ForbiddenException(`Tài khoản không có quyền: ${thieu.join(', ')}`)

@@ -7,7 +7,7 @@
 | Mốc   | Nội dung                                                                             | Trạng thái                                         |
 | ----- | ------------------------------------------------------------------------------------ | -------------------------------------------------- |
 | **0** | Khởi tạo repo, CI, ADR, khung dùng chung                                             | ✅ Xong — **CI/CD giao kỹ thuật FOXAI** (xem dưới) |
-| **1** | Nền móng: tài khoản, đơn vị, vai trò & quyền, RLS, nhật ký, khung portal + cây 4 cấp | 🔄 Phiên 3/4 xong (khung web, đăng nhập)           |
+| **1** | Nền móng: tài khoản, đơn vị, vai trò & quyền, RLS, nhật ký, khung portal + cây 4 cấp | ✅ Xong — nhánh `moc-1-nen-mong`, chưa đẩy         |
 | **2** | Đưa lên máy thử (image, nginx, CI/CD)                                                | Chưa bắt đầu                                       |
 | **3** | Module Dự án (từ PMS)                                                                | Chưa bắt đầu                                       |
 | **4** | Module Khiếu nại đất đai                                                             | Chưa bắt đầu                                       |
@@ -22,7 +22,45 @@
 | **1** | Vai trò & tính quyền · lược đồ · RLS · nhật ký · test bảo mật DB                                                            | ✅ 30/09/2026 |
 | **2** | Đăng nhập (argon2id của Node, cookie HttpOnly, refresh xoay vòng, khóa khi sai) · CLI tạo quản trị viên · guard quyền ở API | ✅ 30/09/2026 |
 | **3** | Web: khung portal + cây 4 cấp lọc quyền (mang từ `docs/khung-mau.html` + GDOS cũ) · màn đăng nhập                           | ✅ 30/09/2026 |
-| 4     | Web Tầng 2: Tài khoản · Phân công · Đơn vị · Nhật ký thao tác                                                               |               |
+| **4** | Tầng 2: Tài khoản · Phân công · Đơn vị · Ma trận quyền · Nhật ký thao tác (API + màn hình)                                  | ✅ 30/09/2026 |
+
+### Phiên 4 — màn quản trị Tầng 2 và nhật ký (30/09/2026)
+
+**Đã làm**
+
+- API (mọi route khai `@CanQuyen`; có test chặn mã quyền gõ sai):
+  - `/api/tai-khoan`: danh sách · tạo · sửa (họ tên, mã Native, cờ quản trị) · thay phân công ·
+    khóa / mở khóa · đặt lại mật khẩu. Không có xóa — thôi dùng thì khóa.
+  - `/api/don-vi`: danh sách (kèm số tài khoản) · thêm xã dưới tỉnh · sửa mã, tên.
+  - `/api/nhat-ky`: lọc theo đối tượng, hành động, khoảng ngày (giờ Việt Nam); phân trang theo mã.
+- **Mật khẩu tạm** (ADR-0003 mục 6): quản trị không bao giờ biết mật khẩu thật của ai. Người nhận
+  mật khẩu tạm bị API chặn mọi route cần quyền cho tới khi tự đổi; web đưa thẳng vào màn đổi mật
+  khẩu. Đổi xong API trả vé mới luôn, không phải chờ 15 phút.
+- Migration `0004` (cột `phai_doi_mat_khau`) và `0005`: policy `them_cap_duoi` (thêm đơn vị khi CHA
+  nằm trong phạm vi); hàm `phien_thu_hoi_tai_khoan` tự kiểm bằng database rằng người gọi có cờ quản
+  trị và tài khoản đích nằm trong phạm vi.
+- Chặn tự hại: không tự khóa mình, không tự bỏ cờ quản trị, không tự "đặt lại" mật khẩu của mình.
+- Web: 5 màn (`tk-ds`, `tk-tao`, `dv-ds`, `vt-ma-tran`, `nk-tat-ca`), tách bundle theo màn. Bộ soạn
+  phân công dùng CHÍNH `kiemTraPhanCong()` của API để báo lỗi tại chỗ. Ma trận quyền sinh từ
+  `tinhQuyen()` — không thể lệch quyền thật. Nhật ký đọc thành chữ: trường nào đổi từ gì sang gì.
+  Test chặn: chức năng nào trong registry cũng phải có màn.
+- Test: shared 39 · API 101 (thêm 29 test đầu cuối Tầng 2 + nhật ký) · web 22.
+- **Đã kiểm trên trình duyệt** (DB nhúng): tạo tài khoản → mật khẩu tạm hiện một lần → đăng nhập
+  bằng nó bị đưa vào màn đổi mật khẩu → đổi xong vào được nhật ký; khóa / mở khóa; nhật ký ghi đủ ai
+  làm gì.
+
+**Chưa làm (để sau, không chặn Mốc 2)**
+
+- Ngừng dùng (xóa mềm) đơn vị; chuyển tài khoản sang đơn vị khác.
+- Xuất nhật ký ra tệp (quyền `NHAT_KY.EXPORT` đã có, chưa có nút).
+- "Thêm xã" mới kiểm bằng test — DB nhúng ở máy dev chỉ có một xã, không có tỉnh.
+
+**Phát hiện**
+
+- `INSERT … RETURNING` bị RLS chặn khi dòng mới chưa nằm trong phạm vi ĐỌC (đơn vị vừa tạo) → sinh
+  mã ở API, không dùng RETURNING.
+- Quyền đọc theo cột của `tai_khoan` (0002) phải cấp lại cho mỗi cột mới — quên thì API báo
+  "permission denied" ngay ở test đầu tiên, không lặng lẽ rò.
 
 ### Phiên 3 — khung web (30/09/2026)
 

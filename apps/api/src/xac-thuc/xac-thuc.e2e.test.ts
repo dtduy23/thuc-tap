@@ -108,7 +108,7 @@ describe('đăng nhập', () => {
 
   it('không trả bất cứ thứ gì về mật khẩu', async () => {
     const { res } = await dangNhap('chutich.a')
-    expect(JSON.stringify(res.body)).not.toMatch(/mat_?khau|argon2/i)
+    expect(JSON.stringify(res.body)).not.toMatch(/mat_?khau_?bam|argon2/i)
     expect(res.body).toMatchObject({ tenDangNhap: 'chutich.a', hoTen: 'Chủ tịch xã An Hòa' })
   })
 
@@ -241,7 +241,7 @@ describe('đổi mật khẩu', () => {
       .post('/api/xac-thuc/doi-mat-khau')
       .set(GHI)
       .send({ matKhauCu: MAU.MAT_KHAU, matKhauMoi: 'mat-khau-moi-du-dai' })
-    expect(doi.status).toBe(204)
+    expect(doi.status).toBe(200)
 
     expect((await dangNhap('lanhdao.tinh')).res.status).toBe(401)
     expect((await dangNhap('lanhdao.tinh', 'mat-khau-moi-du-dai')).res.status).toBe(200)

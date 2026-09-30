@@ -29,6 +29,20 @@
       "when": 1790726670266,
       "tag": "0003_phien",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790728549581,
+      "tag": "0004_phai-doi-mat-khau",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790728551881,
+      "tag": "0005_quan-tri",
+      "breakpoints": true
     }
   ]
 }
