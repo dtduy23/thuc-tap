@@ -5,11 +5,12 @@
  *
  * Ba bản cài:
  *   NativeGia       — máy dev / test (NATIVE_GIA=1): tóm tắt giả ngay tại chỗ.
- *   NativeThat      — HTTP theo đặc tả Document Service. Cách lấy token (`CapToken`)
- *                     CHƯA chọn: chờ đội Native trả lời câu hỏi mở của ADR-0003.
+ *   NativeThat      — HTTP theo đặc tả Document Service, token của CHÍNH người dùng
+ *                     (liên kết tài khoản Native — như GDOS cũ ở gdos.fox.ai.vn).
  *   NativeChuaNoi   — chưa cấu hình: mọi lời gọi báo "chưa kết nối" (503).
  */
 import { ServiceUnavailableException } from '@nestjs/common'
+import type { NguCanh } from '../db/pham-vi.js'
 
 export type TrangThaiNative = 'cho' | 'dang-xu-ly' | 'xong' | 'loi'
 
@@ -18,6 +19,8 @@ export interface NguoiGoi {
   taiKhoanId: string
   nativeUserId: string
   hoTen: string
+  /** Ngữ cảnh của chính người này — kho token đọc liên kết của họ qua RLS. */
+  nguCanh: NguCanh
 }
 
 export interface KetQuaTomTat {
@@ -183,10 +186,7 @@ export class NativeGia implements KetNoiNative {
 
 // ── Bản thật (HTTP) ─────────────────────────────────────────────────────────
 
-/**
- * Lấy token Bearer để gọi Native THAY MẶT một người. CHƯA có bản cài: chờ đội Native
- * chốt (tài khoản dịch vụ + native_user_id, hay đổi token theo người) — ADR-0003/0009.
- */
+/** Lấy token Bearer để gọi Native THAY MẶT một người — bản cài: LienKetNativeService. */
 export interface CapToken {
   layToken(ai: NguoiGoi): Promise<string>
 }
@@ -287,17 +287,12 @@ export class NativeThat implements KetNoiNative {
   }
 }
 
-/** Chọn bản cài theo cấu hình. Bản thật chỉ bật khi đã có `CapToken` (chờ đội Native). */
+/** Chọn bản cài theo cấu hình. */
 export function taoKetNoiNative(
   cauHinh: { gia: boolean; url: string | undefined },
-  token?: CapToken,
+  token: CapToken,
 ): KetNoiNative {
   if (cauHinh.gia) return new NativeGia()
-  if (cauHinh.url && token) return new NativeThat(cauHinh.url, token)
-  return new NativeChuaNoi(
-    cauHinh.url ?? null,
-    cauHinh.url
-      ? 'Đã có địa chỉ Native nhưng chưa chốt cách xác thực với đội Native (ADR-0009).'
-      : 'Chưa cấu hình NATIVE_URL.',
-  )
+  if (cauHinh.url) return new NativeThat(cauHinh.url, token)
+  return new NativeChuaNoi(null, 'Chưa cấu hình NATIVE_URL.')
 }

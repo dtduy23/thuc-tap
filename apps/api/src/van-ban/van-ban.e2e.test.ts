@@ -3,15 +3,28 @@
  */
 import type { INestApplication } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
-import type { KetNoiDong, KetQuaKiemTraKetNoi, VanBanChiTiet, VanBanDong } from '@gdos/shared'
+import type {
+  KetNoiDong,
+  KetQuaKiemTraKetNoi,
+  LienKetNativeDong,
+  VanBanChiTiet,
+  VanBanDong,
+} from '@gdos/shared'
 import { eq } from 'drizzle-orm'
 import request from 'supertest'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { AppModule } from '../app.module.js'
 import { CAU_HINH, docCauHinh } from '../cau-hinh.js'
 import { CoSoDuLieu } from '../db/co-so-du-lieu.js'
-import { taiKhoan } from '../db/schema/index.js'
+import { lienKetNative, taiKhoan } from '../db/schema/index.js'
 import { KET_NOI_NATIVE, NativeChuaNoi, NativeGia, NativeThat, tuDto } from '../native/ket-noi-native.js'
+import { LienKetNativeService } from '../native/lien-ket.service.js'
+import {
+  MaHoaBiMat,
+  XAC_THUC_NATIVE,
+  XacThucNativeGia,
+  XacThucNativeHttp,
+} from '../native/xac-thuc-native.js'
 import { MAU, napMau, taoCoSoThu, type CoSoThu } from '../test/co-so-thu.js'
 
 const GHI = { 'X-GDOS': '1' }
@@ -20,14 +33,19 @@ const VAN_BAN =
 let db: CoSoThu
 let app: INestApplication
 
+/** Bản giả đếm số lần làm mới — kiểm tra refresh token xoay vòng không bị gọi trùng. */
+class DemLamMoi extends XacThucNativeGia {
+  soLan = 0
+  override lamMoi(r: string) {
+    this.soLan++
+    return super.lamMoi(r)
+  }
+}
+const xacThuc = new DemLamMoi()
+
 beforeAll(async () => {
   db = await taoCoSoThu()
   await napMau(db)
-  // Chỉ chuyên viên xã A được liên kết Native.
-  await db.chuBang
-    .update(taiKhoan)
-    .set({ nativeUserId: 'native-cv-a' })
-    .where(eq(taiKhoan.tenDangNhap, 'chuyenvien.a'))
   const mod = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(CAU_HINH)
     .useValue(docCauHinh({ NODE_ENV: 'test' }))
@@ -35,10 +53,16 @@ beforeAll(async () => {
     .useValue({ db: db.coSo, kiemTra: () => Promise.resolve('ok') })
     .overrideProvider(KET_NOI_NATIVE)
     .useValue(new NativeGia())
+    .overrideProvider(XAC_THUC_NATIVE)
+    .useValue(xacThuc)
     .compile()
   app = mod.createNestApplication()
   app.setGlobalPrefix('api')
   await app.init()
+  // Chỉ chuyên viên xã A tự liên kết tài khoản Native (bản giả nhận mọi mật khẩu).
+  const cv = await vao('chuyenvien.a')
+  const lk = await cv.post('/api/native/lien-ket').set(GHI).send({ tenDangNhap: 'cv.a', matKhau: 'mk-thu' })
+  expect(lk.status).toBe(200)
 }, 60_000)
 
 afterAll(async () => {
@@ -163,7 +187,7 @@ describe('bản kết nối', () => {
         noiDung: Buffer.from('x'),
         tuDong: true,
       },
-      { taiKhoanId: 't', nativeUserId: 'u', hoTen: 'A' },
+      { taiKhoanId: 't', nativeUserId: 'u', hoTen: 'A', nguCanh: { taiKhoanId: 't', donViIds: [] } },
     )
     expect(kq).toMatchObject({ nativeId: 'n-1', trangThai: 'cho', soKyTuGoc: 10 })
     expect(goi[0]!.url).toBe('https://native.vd/api/document/summarize/file')
@@ -200,5 +224,67 @@ describe('bản giả', () => {
     const { tomTatGia } = await import('../native/ket-noi-native.js')
     const t = tomTatGia('[Bản giả — chưa nối FOXAI Native] Bản giả không đọc được nội dung tệp DOCX.')
     expect(t.match(/\[Bản giả/g)).toHaveLength(1)
+  })
+})
+
+describe('liên kết tài khoản FOXAI Native (ADR-0009)', () => {
+  it('trạng thái: đã liên kết, native_user_id ghi lên tài khoản; token lưu ĐÃ MÃ HÓA, không lưu mật khẩu', async () => {
+    const cv = await vao('chuyenvien.a')
+    const tt = (await cv.get('/api/native/lien-ket')).body as LienKetNativeDong
+    expect(tt).toMatchObject({ coTheLienKet: true, daLienKet: true, nativeUserId: 'gia-cv.a' })
+    const [tk] = await db.chuBang.select().from(taiKhoan).where(eq(taiKhoan.tenDangNhap, 'chuyenvien.a'))
+    expect(tk!.nativeUserId).toBe('gia-cv.a')
+    const [lk] = await db.chuBang.select().from(lienKetNative).where(eq(lienKetNative.taiKhoanId, tk!.id))
+    expect(lk!.refreshMaHoa).not.toContain('gia-r-')
+    expect(JSON.stringify(lk)).not.toContain('mk-thu')
+  })
+
+  it('mỗi người chỉ thấy liên kết của mình (RLS)', async () => {
+    const ct = await vao('chutich.a')
+    expect(((await ct.get('/api/native/lien-ket')).body as LienKetNativeDong).daLienKet).toBe(false)
+  })
+
+  it('nhiều yêu cầu cùng lúc khi token hết hạn: chỉ làm mới MỘT lần (refresh token xoay vòng)', async () => {
+    const dv = app.get(LienKetNativeService)
+    const [tk] = await db.chuBang.select().from(taiKhoan).where(eq(taiKhoan.tenDangNhap, 'chuyenvien.a'))
+    ;(dv as unknown as { boNho: Map<string, unknown> }).boNho.clear()
+    const ai = {
+      taiKhoanId: tk!.id,
+      nativeUserId: 'gia-cv.a',
+      hoTen: 'CV',
+      nguCanh: { taiKhoanId: tk!.id, donViIds: [MAU.XA_A] },
+    }
+    const truoc = xacThuc.soLan
+    const ds = await Promise.all([dv.layToken(ai), dv.layToken(ai), dv.layToken(ai)])
+    expect(new Set(ds).size).toBe(1)
+    expect(xacThuc.soLan - truoc).toBe(1)
+  })
+
+  it('hủy liên kết: không gửi văn bản được nữa; liên kết lại thì được', async () => {
+    const cv = await vao('chuyenvien.a')
+    const huy = (await cv.post('/api/native/lien-ket/huy').set(GHI)).body as LienKetNativeDong
+    expect(huy.daLienKet).toBe(false)
+    expect((await guiTep(cv)).status).toBe(403)
+    expect(
+      (await cv.post('/api/native/lien-ket').set(GHI).send({ tenDangNhap: 'cv.a', matKhau: '' })).status,
+    ).toBe(400)
+    await cv.post('/api/native/lien-ket').set(GHI).send({ tenDangNhap: 'cv.a', matKhau: 'mk-thu' })
+    expect((await guiTep(cv)).status).toBe(201)
+  })
+
+  it('đăng nhập Native thật: đúng đường dẫn cổng v3, sai mật khẩu → 400; mã hóa đổi khóa → không giải được', async () => {
+    const goi: string[] = []
+    const fetchGia = ((url: string, init: RequestInit) => {
+      goi.push(`${url} ${init.body as string}`)
+      return Promise.resolve(new Response('{}', { status: 401 }))
+    }) as unknown as typeof fetch
+    await expect(new XacThucNativeHttp('https://native.vd', fetchGia).dangNhap('a', 'b')).rejects.toThrow(
+      /Sai tên đăng nhập/,
+    )
+    expect(goi[0]).toContain('https://native.vd/api/auth/login')
+    expect(goi[0]).toContain('"username":"a"')
+    const m = new MaHoaBiMat('khoa-mot'.repeat(5))
+    expect(m.giai(m.ma('bi-mat'))).toBe('bi-mat')
+    expect(new MaHoaBiMat('khoa-hai'.repeat(5)).giai(m.ma('bi-mat'))).toBeNull()
   })
 })

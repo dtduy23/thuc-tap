@@ -7,7 +7,7 @@ import {
   type VanBanDong,
 } from '@gdos/shared'
 import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { useRef, useState, type FormEvent } from 'react'
 import { LoiApi } from '@/lib/http'
 import { truyVanToi } from '@/lib/phien'
@@ -106,8 +106,11 @@ export default function TomTatVanBan() {
       )}
       {tt.cheDo !== 'chua' && !tt.daLienKet && coTao && (
         <ThongBao kieu="loi">
-          Tài khoản của bạn chưa liên kết FOXAI Native — nhờ quản trị điền “Mã tài khoản FOXAI Native” ở Quản
-          trị › Tài khoản.
+          Tài khoản của bạn chưa liên kết FOXAI Native.{' '}
+          <Link to="/cai-dat" className="font-semibold underline">
+            Liên kết ở Cài đặt cá nhân
+          </Link>{' '}
+          (đăng nhập tài khoản Native của bạn một lần).
         </ThongBao>
       )}
 

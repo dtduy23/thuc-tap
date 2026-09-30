@@ -92,3 +92,13 @@ export interface KetQuaKiemTraKetNoi {
   msPhanHoi: number
   luc: string
 }
+
+/** Liên kết tài khoản FOXAI Native của người đang xem (ADR-0009). */
+export interface LienKetNativeDong {
+  /** Máy chủ có nối Native (thật hoặc giả) để liên kết không. */
+  coTheLienKet: boolean
+  daLienKet: boolean
+  nativeUserId: string | null
+  nativeTen: string | null
+  lienKetLuc: string | null
+}

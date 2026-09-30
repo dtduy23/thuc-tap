@@ -17,7 +17,8 @@ import type { Response } from 'express'
 import { maUuid } from '../chung/kiem-than.js'
 import type { TepTaiLen } from '../du-an/ho-so.service.js'
 import { KET_NOI_NATIVE, type KetNoiNative } from '../native/ket-noi-native.js'
-import { CanQuyen, NguoiDung, type NguoiDungPhien } from '../xac-thuc/bao-ve.js'
+import { LienKetNativeService } from '../native/lien-ket.service.js'
+import { CanQuyen, ChiCanDangNhap, NguoiDung, type NguoiDungPhien } from '../xac-thuc/bao-ve.js'
 import { VanBanService } from './van-ban.service.js'
 
 /** Tác nghiệp › Xử lý văn bản (ADR-0009). Quyền VAN_BAN.*; gọi Native còn cần tài khoản đã liên kết. */
@@ -110,5 +111,34 @@ export class KetNoiController {
     const kq =
       ma === 'foxai-native' ? await this.native.kiemTra() : { ok: false, thongDiep: 'Không có kết nối này.' }
     return { ma, ...kq, msPhanHoi: Date.now() - batDau, luc: new Date().toISOString() }
+  }
+}
+
+/**
+ * Liên kết tài khoản FOXAI Native của CHÍNH người đang đăng nhập (ADR-0009) — Cài đặt
+ * cá nhân. Ai đăng nhập GDOS cũng tự liên kết / hủy được cho mình, không cho người khác.
+ */
+@Controller('native/lien-ket')
+export class LienKetNativeController {
+  constructor(@Inject(LienKetNativeService) private readonly dv: LienKetNativeService) {}
+
+  @Get()
+  @ChiCanDangNhap()
+  trangThai(@NguoiDung() nd: NguoiDungPhien) {
+    return this.dv.trangThai(nd)
+  }
+
+  @Post()
+  @HttpCode(200)
+  @ChiCanDangNhap()
+  lienKet(@NguoiDung() nd: NguoiDungPhien, @Body() than: unknown) {
+    return this.dv.lienKet(nd, than)
+  }
+
+  @Post('huy')
+  @HttpCode(200)
+  @ChiCanDangNhap()
+  huy(@NguoiDung() nd: NguoiDungPhien) {
+    return this.dv.huy(nd)
   }
 }

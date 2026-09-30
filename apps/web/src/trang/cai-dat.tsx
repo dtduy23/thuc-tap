@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { docGiaoDien, luuGiaoDien, TONG_MAU, type CheDo, type GiaoDien } from '@/lib/giao-dien'
 import { truyVanToi } from '@/lib/phien'
 import { The } from '@/ui/co-ban'
+import { LienKetNative } from './lien-ket-native'
 
 const CHE_DO: { ma: CheDo; ten: string; mo: string }[] = [
   { ma: 'theo-may', ten: 'Theo máy', mo: 'Tự đổi theo cài đặt sáng/tối của máy tính, điện thoại' },
@@ -91,6 +92,8 @@ export function TrangCaiDat() {
           </Link>
         </p>
       </The>
+
+      <LienKetNative />
     </>
   )
 }

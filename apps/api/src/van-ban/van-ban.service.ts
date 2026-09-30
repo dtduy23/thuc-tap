@@ -22,7 +22,7 @@ import type { Readable } from 'node:stream'
 import { chuoi, chuoiHoacRong, maUuid, motTrong } from '../chung/kiem-than.js'
 import { CoSoDuLieu, dbCua } from '../db/co-so-du-lieu.js'
 import { trongPhamVi, type GiaoDich } from '../db/pham-vi.js'
-import { taiKhoan, vanBan } from '../db/schema/index.js'
+import { lienKetNative, taiKhoan, vanBan } from '../db/schema/index.js'
 import type { TepTaiLen } from '../du-an/ho-so.service.js'
 import { KHO_TEP, type KhoTep } from '../kho-tep/kho-tep.js'
 import {
@@ -109,15 +109,21 @@ export class VanBanService {
 
   /** Người đang dùng + tài khoản Native liên kết (null: chưa liên kết → không gọi Native được). */
   private async toi(nd: NguoiDungPhien) {
+    // "Đã liên kết" = có liên kết Native của CHÍNH người này (kho bí mật, RLS chỉ thấy dòng mình).
     const [t] = await trongPhamVi(this.db, nd.nguCanh, (tx) =>
       tx
-        .select({ donViId: taiKhoan.donViId, hoTen: taiKhoan.hoTen, nativeUserId: taiKhoan.nativeUserId })
+        .select({
+          donViId: taiKhoan.donViId,
+          hoTen: taiKhoan.hoTen,
+          nativeUserId: lienKetNative.nativeUserId,
+        })
         .from(taiKhoan)
+        .leftJoin(lienKetNative, eq(lienKetNative.taiKhoanId, taiKhoan.id))
         .where(eq(taiKhoan.id, nd.taiKhoanId)),
     )
     if (!t) throw new ForbiddenException('Không đọc được tài khoản của bạn')
     const goi: NguoiGoi | null = t.nativeUserId
-      ? { taiKhoanId: nd.taiKhoanId, nativeUserId: t.nativeUserId, hoTen: t.hoTen }
+      ? { taiKhoanId: nd.taiKhoanId, nativeUserId: t.nativeUserId, hoTen: t.hoTen, nguCanh: nd.nguCanh }
       : null
     return { donViId: t.donViId, goi }
   }
@@ -125,7 +131,7 @@ export class VanBanService {
   private canGoi(goi: NguoiGoi | null): NguoiGoi {
     if (!goi)
       throw new ForbiddenException(
-        'Tài khoản chưa liên kết FOXAI Native — nhờ quản trị điền "Mã tài khoản FOXAI Native" ở Tài khoản.',
+        'Tài khoản chưa liên kết FOXAI Native — vào Cài đặt cá nhân › Liên kết FOXAI Native.',
       )
     return goi
   }
@@ -304,19 +310,17 @@ export class VanBanService {
    * Hỏi Native trạng thái các văn bản đang chạy — thay mặt NGƯỜI TẠO (Native kiểm quyền
    * theo tài khoản gửi). Không có Native / người tạo chưa liên kết thì để nguyên.
    */
+  /**
+   * Hỏi Native trạng thái các văn bản đang chạy — bằng token của NGƯỜI ĐANG XEM (đã
+   * liên kết). Chưa liên kết / chưa nối Native thì để nguyên, người khác xem sẽ cập nhật.
+   */
   private async dongBo(nd: NguoiDungPhien, chiId?: string) {
     if (this.native.cheDo === 'chua') return
+    const { goi } = await this.toi(nd)
+    if (!goi) return
     const ds = await trongPhamVi(this.db, nd.nguCanh, (tx) =>
       tx
-        .select({
-          id: vanBan.id,
-          nativeId: vanBan.nativeId,
-          nguoiTao: vanBan.nguoiTao,
-          nativeUserId: sql<
-            string | null
-          >`(select t.native_user_id from tai_khoan t where t.id = ${vanBan.nguoiTao})`,
-          hoTen: sql<string | null>`ten_tai_khoan(${vanBan.nguoiTao})`,
-        })
+        .select({ id: vanBan.id, nativeId: vanBan.nativeId })
         .from(vanBan)
         .where(
           and(
@@ -329,11 +333,9 @@ export class VanBanService {
         .limit(DONG_BO_TOI_DA),
     )
     for (const v of ds) {
-      if (!v.nativeUserId || !v.nguoiTao) continue
-      const ai = { taiKhoanId: v.nguoiTao, nativeUserId: v.nativeUserId, hoTen: v.hoTen ?? '' }
-      const kq = await this.thu(() => this.native.docTomTat(v.nativeId!, ai))
-      // Đọc trạng thái lỗi (mạng chập chờn) không đánh dấu văn bản là lỗi — lần sau đọc lại.
-      if ('loi' in kq && !('nativeId' in kq)) continue
+      const kq = await this.thu(() => this.native.docTomTat(v.nativeId!, goi))
+      // Đọc lỗi (mạng chập chờn, hết liên kết) không đánh dấu văn bản là lỗi — lần sau đọc lại.
+      if (!('nativeId' in kq)) continue
       await this.capNhat(nd, v.id, kq)
     }
   }

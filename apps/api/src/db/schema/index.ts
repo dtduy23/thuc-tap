@@ -574,3 +574,22 @@ export const vanBan = pgTable(
     check('van_ban_nguon_ck', sql`${t.nguon} in ('tai-len', 'qlvb', 'cong-dvc', 'email', 'khac')`),
   ],
 )
+
+/**
+ * Liên kết tài khoản FOXAI Native của TỪNG người (ADR-0009): người dùng đăng nhập
+ * Native một lần; GDOS KHÔNG lưu mật khẩu, chỉ giữ refresh token ĐÃ MÃ HÓA để gọi
+ * Native bằng chính danh tính người đó. Kho bí mật — chỉ chủ tài khoản thấy dòng của
+ * mình; không gắn trigger nhật ký (token xoay vòng mỗi lần làm mới). Việc liên kết /
+ * hủy vẫn có vết qua cột tai_khoan.native_user_id (có nhật ký).
+ */
+export const lienKetNative = pgTable('lien_ket_native', {
+  taiKhoanId: uuid('tai_khoan_id')
+    .primaryKey()
+    .references(() => taiKhoan.id),
+  nativeUserId: text('native_user_id').notNull(),
+  /** Tên / email phía Native — để người dùng biết mình đang liên kết tài khoản nào. */
+  nativeTen: text('native_ten').notNull(),
+  refreshMaHoa: text('refresh_ma_hoa').notNull(),
+  lienKetLuc: timestamp('lien_ket_luc', { withTimezone: true }).notNull().defaultNow(),
+  lamMoiLuc: timestamp('lam_moi_luc', { withTimezone: true }).notNull().defaultNow(),
+})

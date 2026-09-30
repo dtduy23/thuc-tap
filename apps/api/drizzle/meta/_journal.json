@@ -155,6 +155,20 @@
       "when": 1790751149627,
       "tag": "0021_van-ban-bao-mat",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790754625487,
+      "tag": "0022_lien-ket-native",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790754628044,
+      "tag": "0023_lien-ket-native-bao-mat",
+      "breakpoints": true
     }
   ]
 }

@@ -2,6 +2,7 @@
 import type {
   KetNoiDong,
   KetQuaKiemTraKetNoi,
+  LienKetNativeDong,
   TrangThaiXuLyVanBan,
   VanBanChiTiet,
   VanBanDong,
@@ -44,3 +45,13 @@ export const truyVanKetNoi = queryOptions({
 })
 export const kiemTraKetNoi = (ma: string) =>
   goiApi<KetQuaKiemTraKetNoi>(`/ket-noi/${ma}/kiem-tra`, { method: 'POST' })
+
+// ── Liên kết tài khoản FOXAI Native của chính mình (ADR-0009) ────────────────
+
+export const truyVanLienKetNative = queryOptions({
+  queryKey: ['native', 'lien-ket'],
+  queryFn: () => goiApi<LienKetNativeDong>('/native/lien-ket'),
+})
+export const lienKetNative = (tenDangNhap: string, matKhau: string) =>
+  goiApi<LienKetNativeDong>('/native/lien-ket', { method: 'POST', body: { tenDangNhap, matKhau } })
+export const huyLienKetNative = () => goiApi<LienKetNativeDong>('/native/lien-ket/huy', { method: 'POST' })

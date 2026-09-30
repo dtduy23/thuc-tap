@@ -11,7 +11,7 @@
 | **2** | Đưa lên máy thử (image, nginx, CI/CD)                                                | Chưa bắt đầu                                           |
 | **3** | Module Dự án (từ PMS)                                                                | ✅ Xong 30/09/2026 — đủ chức năng PMS, chưa đẩy        |
 | **4** | Module Khiếu nại đất đai                                                             | Chưa bắt đầu                                           |
-| **5** | Nối FOXAI Native (văn bản, tóm tắt, hỏi đáp)                                         | 🔄 Bước A xong (bản giả) — **chờ đội Native** xác thực |
+| **5** | Nối FOXAI Native (văn bản, tóm tắt, hỏi đáp)                                         | 🔄 Tóm tắt văn bản + liên kết Native theo người — xong |
 | **6** | Điều hành: dashboard, báo cáo                                                        | 🔄 Khung chung xong (Mốc 3) — chờ nghiệp vụ khác       |
 | **7** | Thiết lập: bật/tắt module theo đơn vị, cảnh báo, luồng duyệt                         | Chưa bắt đầu                                           |
 
@@ -29,8 +29,11 @@
   song, tự cập nhật khi đang chạy); Quản trị › Dịch vụ nền tảng (danh sách, kiểm tra).
 - Máy dev: `.env` có `NATIVE_GIA=1`; tài khoản dev "Quản trị hệ thống" đã điền mã Native
   `thu-nghiem-dev` để thử.
-- **Bước B chờ đội Native** — câu hỏi ở ADR-0009 mục "Còn mở". Có câu trả lời thì viết `CapToken`,
-  đặt `NATIVE_URL`, chuyển ADR-0009 sang "Đã chốt". Sau đó: Văn bản đến, Soạn thảo, Phân công, Mẫu.
+- **Bước B (30/09): liên kết tài khoản Native theo từng người** — như GDOS cũ ở gdos.fox.ai.vn
+  (anh Toàn chốt). `native/xac-thuc-native.ts` (đăng nhập `/api/auth/*`, mã hóa AES-GCM),
+  `native/lien-ket.service.ts` (token theo người, làm mới một lần), bảng `lien_ket_native` (0022/0023),
+  Cài đặt cá nhân › Liên kết FOXAI Native. Bật thật: `.env` đặt `NATIVE_URL`, bỏ `NATIVE_GIA`.
+  Tiếp: Văn bản đến, Soạn thảo, Phân công, Mẫu văn bản.
 
 ## Mốc 3 — Dự án (từ PMS)
 
@@ -373,9 +376,9 @@ thật → GDOS dùng 5433.
 
 ## Câu hỏi mở
 
-| Câu hỏi                                                                                       | Hỏi ai                | Chặn       |
-| --------------------------------------------------------------------------------------------- | --------------------- | ---------- |
-| Kết quả pipeline CI / runner là docker hay shell executor                                     | Người dùng xem GitLab | Trộn Mốc 0 |
-| GDOS gọi Native thay mặt người dùng bằng cách nào? Quyền phía Native kiểm theo tài khoản nào? | Đội Native            | Mốc 5      |
-| Server + tên miền phụ cho máy thử                                                             | Hạ tầng               | Mốc 2      |
-| ~~Ngưỡng khóa tài khoản~~ — đã chỉnh được trên màn Cấu hình hệ thống (phiên 5)                | —                     | —          |
+| Câu hỏi                                                                                                  | Hỏi ai                | Chặn       |
+| -------------------------------------------------------------------------------------------------------- | --------------------- | ---------- |
+| Kết quả pipeline CI / runner là docker hay shell executor                                                | Người dùng xem GitLab | Trộn Mốc 0 |
+| ~~GDOS gọi Native thay mặt người dùng bằng cách nào?~~ — liên kết tài khoản Native theo người (ADR-0009) | —                     | —          |
+| Server + tên miền phụ cho máy thử                                                                        | Hạ tầng               | Mốc 2      |
+| ~~Ngưỡng khóa tài khoản~~ — đã chỉnh được trên màn Cấu hình hệ thống (phiên 5)                           | —                     | —          |
