@@ -10,6 +10,7 @@ import { HoSoDuAnController } from './du-an/ho-so.controller.js'
 import { XuyenSuotController } from './xuyen-suot/xuyen-suot.controller.js'
 import { NGUON_DONG_GOP } from './xuyen-suot/nguon-dong-gop.js'
 import { HoSoDuAnService } from './du-an/ho-so.service.js'
+import { NhapDuAnService } from './du-an/nhap.service.js'
 import { KHO_TEP, KhoTepThuMuc } from './kho-tep/kho-tep.js'
 import { NhatKyController } from './nhat-ky/nhat-ky.controller.js'
 import { NhatKyService } from './nhat-ky/nhat-ky.service.js'
@@ -48,6 +49,7 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     DuAnService,
     HoSoDuAnService,
     DongGopDuAnService,
+    NhapDuAnService,
     // Nguồn đóng góp cho nhóm xuyên suốt (ADR-0007). Module nghiệp vụ mới: thêm vào đây.
     {
       provide: NGUON_DONG_GOP,

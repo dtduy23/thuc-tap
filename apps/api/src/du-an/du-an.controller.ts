@@ -1,4 +1,18 @@
-import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, Query, Res } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
 import { homNay, LOC_DU_AN, type LocDuAn } from '@gdos/shared'
 import type { Response } from 'express'
 import { maUuid } from '../chung/kiem-than.js'
@@ -7,6 +21,8 @@ import { headerTaiExcel, vietExcel } from '../xuyen-suot/bao-cao-chung.js'
 import { checklist } from './bao-cao.js'
 import { DongGopDuAnService } from './dong-gop.service.js'
 import { DuAnService } from './du-an.service.js'
+import type { TepTaiLen } from './ho-so.service.js'
+import { KICH_THUOC_TEP_NHAP, NhapDuAnService } from './nhap.service.js'
 
 /**
  * Dự án. Guard chặn theo QUYỀN VAI (DU_AN.*); service chặn theo VỊ TRÍ trên
@@ -18,6 +34,7 @@ export class DuAnController {
   constructor(
     @Inject(DuAnService) private readonly dv: DuAnService,
     @Inject(DongGopDuAnService) private readonly dongGop: DongGopDuAnService,
+    @Inject(NhapDuAnService) private readonly nhapDv: NhapDuAnService,
   ) {}
 
   @Get()
@@ -39,6 +56,30 @@ export class DuAnController {
   @CanQuyen('DU_AN.ASSIGN')
   guiDonDoc(@NguoiDung() nd: NguoiDungPhien, @Body() than: unknown) {
     return this.dongGop.guiDonDoc(nd, than)
+  }
+
+  // ── Nhập từ Excel: tải mẫu → kiểm (không ghi) → nhập (tất cả hoặc không) ──
+
+  @Get('nhap/mau')
+  @CanQuyen('DU_AN.CREATE')
+  async tepMauNhap(@NguoiDung() nd: NguoiDungPhien, @Res() res: Response) {
+    res.set(headerTaiExcel('Mau_nhap_du_an')).send(await this.nhapDv.tepMau(nd))
+  }
+
+  @Post('nhap/kiem-tra')
+  @HttpCode(200)
+  @CanQuyen('DU_AN.CREATE')
+  @UseInterceptors(FileInterceptor('tep', { limits: { fileSize: KICH_THUOC_TEP_NHAP, files: 1 } }))
+  kiemTraNhap(@NguoiDung() nd: NguoiDungPhien, @UploadedFile() tep: TepTaiLen | undefined) {
+    return this.nhapDv.kiemTra(nd, tep)
+  }
+
+  @Post('nhap')
+  @HttpCode(200)
+  @CanQuyen('DU_AN.CREATE')
+  @UseInterceptors(FileInterceptor('tep', { limits: { fileSize: KICH_THUOC_TEP_NHAP, files: 1 } }))
+  nhap(@NguoiDung() nd: NguoiDungPhien, @UploadedFile() tep: TepTaiLen | undefined) {
+    return this.nhapDv.nhap(nd, tep)
   }
 
   @Get('chu-dau-tu')

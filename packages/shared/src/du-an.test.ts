@@ -3,6 +3,7 @@ import {
   congNgay,
   homNay,
   kiemMaDuAn,
+  laNgay,
   soNgayGiua,
   thongKeTienDo,
   tinhHan,
@@ -31,6 +32,15 @@ describe('ngày', () => {
   it('hôm nay theo giờ Việt Nam: 17h UTC đã là ngày hôm sau', () => {
     expect(homNay(Date.parse('2026-09-30T17:30:00Z'))).toBe('2026-10-01')
     expect(homNay(Date.parse('2026-09-30T16:30:00Z'))).toBe('2026-09-30')
+  })
+
+  it('ngày phải có thật: 31/02, tháng 13 bị từ chối; 29/02 chỉ năm nhuận', () => {
+    expect(laNgay('2026-09-30')).toBe(true)
+    expect(laNgay('2026-02-31')).toBe(false)
+    expect(laNgay('2026-13-01')).toBe(false)
+    expect(laNgay('2028-02-29')).toBe(true)
+    expect(laNgay('2026-02-29')).toBe(false)
+    expect(laNgay('30/09/2026')).toBe(false)
   })
 })
 

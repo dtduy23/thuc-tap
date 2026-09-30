@@ -77,7 +77,7 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
       { id: 'da-cua-toi', nhan: 'Dự án tôi phụ trách' },
       { id: 'da-cho-xac-nhan', nhan: 'Chờ xác nhận bước' },
       { id: 'da-tao', nhan: 'Tạo dự án mới', hanhDong: 'CREATE' },
-      { id: 'da-nhap', nhan: 'Nhập từ Excel', hanhDong: 'CREATE', phac: true },
+      { id: 'da-nhap', nhan: 'Nhập từ Excel', hanhDong: 'CREATE' },
       {
         id: 'da-don-doc',
         nhan: 'Đôn đốc',

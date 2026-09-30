@@ -13,6 +13,7 @@ export const MAN_HINH: Partial<Record<string, LazyExoticComponent<ComponentType>
   'da-cua-toi': lazy(() => import('@/man/du-an/danh-sach').then((m) => ({ default: m.DuAnCuaToi }))),
   'da-cho-xac-nhan': lazy(() => import('@/man/du-an/danh-sach').then((m) => ({ default: m.DuAnChoXacNhan }))),
   'da-tao': lazy(() => import('@/man/du-an/tao')),
+  'da-nhap': lazy(() => import('@/man/du-an/nhap')),
   'da-don-doc': lazy(() => import('@/man/du-an/don-doc')),
   'da-bao-cao': lazy(() => import('@/man/bao-cao/danh-sach').then((m) => ({ default: m.BaoCaoDuAn }))),
   'bc-tat-ca': lazy(() => import('@/man/bao-cao/danh-sach').then((m) => ({ default: m.TatCaBaoCao }))),

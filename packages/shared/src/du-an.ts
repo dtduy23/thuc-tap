@@ -68,8 +68,12 @@ export interface BuocMau {
 // ── Ngày ───────────────────────────────────────────────────────────────────
 
 const NGAY = /^\d{4}-\d{2}-\d{2}$/
-export const laNgay = (s: unknown): s is string =>
-  typeof s === 'string' && NGAY.test(s) && !Number.isNaN(Date.parse(`${s}T00:00:00Z`))
+/** Ngày YYYY-MM-DD CÓ THẬT — Date.parse tự "lăn" 31/02 sang tháng 3 nên phải so lại. */
+export function laNgay(s: unknown): s is string {
+  if (typeof s !== 'string' || !NGAY.test(s)) return false
+  const d = new Date(`${s}T00:00:00Z`)
+  return !Number.isNaN(d.getTime()) && d.toISOString().startsWith(s)
+}
 
 export function congNgay(ngay: string, soNgay: number): string {
   const d = new Date(`${ngay}T00:00:00Z`)
@@ -532,3 +536,24 @@ export function tinhKpi(
     giaiNgan: Math.round(r4 * 100),
   }
 }
+
+// ── Nhập dự án từ Excel ─────────────────────────────────────────────────────
+
+/** Một dòng của tệp nhập sau khi kiểm. `loi` rỗng = dòng hợp lệ. */
+export interface DongNhapDuAn {
+  /** Số hàng trong Excel (để người dùng tìm lại). */
+  hang: number
+  ten: string
+  chuDauTu: string
+  quyTrinh: string
+  loi: string[]
+}
+
+export interface KetQuaNhapDuAn {
+  dong: DongNhapDuAn[]
+  soHopLe: number
+  soLoi: number
+}
+
+/** Tối đa số dòng một lần nhập — nhập nhiều hơn thì chia tệp. */
+export const SO_DONG_NHAP_TOI_DA = 500

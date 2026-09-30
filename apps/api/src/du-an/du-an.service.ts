@@ -70,6 +70,55 @@ const GD = Object.keys(GIAI_DOAN) as GiaiDoan[]
 const BEN = Object.keys(BEN_THUC_HIEN) as BenThucHien[]
 
 /** Cột đọc của dự án. Tên đơn vị, cán bộ qua hàm — nhà thầu vẫn thấy tên chủ đầu tư dù RLS che dòng đơn vị. */
+/** Dữ liệu tạo một dự án, đã kiểm kiểu (kiểm theo phạm vi làm trong taoMot). */
+export interface DuAnMoi {
+  ten: string
+  donViId: string
+  quyTrinhMa: string
+  loaiChi: LoaiChi
+  nhomDuAn: NhomDuAn | null
+  linhVucId: string | null
+  tongMuc: number
+  ngayBatDau: string
+  canCu: string | null
+  diaDiem: string | null
+  canBoId: string
+  ma: string | null
+}
+
+export function docDuAnMoi(than: unknown, macDinhCanBo: string): DuAnMoi {
+  const ten = chuoi(than, 'ten', 500, true)
+  const donViId = maUuid((than as { donViId?: unknown } | null)?.donViId, 'donViId')
+  const quyTrinhMa = chuoi(than, 'quyTrinhMa', 60, true)
+  const loaiChi = motTrong(than, 'loaiChi', LOAI) ?? 'dtpt'
+  const nhomDuAn = motTrong(than, 'nhomDuAn', NHOM_DU_AN) ?? null
+  const linhVucId = chuoiHoacRong(than, 'linhVucId', 40)
+  const tongMuc = soNguyen(than, 'tongMuc', 0, 1e12) ?? 0
+  const ngayBatDau = ngay(than, 'ngayBatDau')
+  const canCu = chuoiHoacRong(than, 'canCu', 500) ?? null
+  const diaDiem = chuoiHoacRong(than, 'diaDiem', 300) ?? null
+  const canBoId = chuoiHoacRong(than, 'canBoId', 40) ?? macDinhCanBo
+  const ma = chuoiHoacRong(than, 'ma', 40) ?? null
+  if (ma) {
+    const loi = kiemMaDuAn(ma)
+    if (loi) throw new BadRequestException(loi)
+  }
+  return {
+    ten,
+    donViId,
+    quyTrinhMa,
+    loaiChi,
+    nhomDuAn,
+    linhVucId: linhVucId ?? null,
+    tongMuc,
+    ngayBatDau,
+    canCu,
+    diaDiem,
+    canBoId,
+    ma,
+  }
+}
+
 const COT_DU_AN = {
   id: duAn.id,
   ma: duAn.ma,
@@ -169,110 +218,109 @@ export class DuAnService {
   }
 
   async tao(nd: NguoiDungPhien, than: unknown): Promise<HoSoDuAn> {
-    const ten = chuoi(than, 'ten', 500, true)
-    const donViId = maUuid((than as { donViId?: unknown } | null)?.donViId, 'donViId')
-    const quyTrinhMa = chuoi(than, 'quyTrinhMa', 60, true)
-    const loaiChi = motTrong(than, 'loaiChi', LOAI) ?? 'dtpt'
-    const nhomDuAn = motTrong(than, 'nhomDuAn', NHOM_DU_AN) ?? null
-    const linhVucId = chuoiHoacRong(than, 'linhVucId', 40)
-    const tongMuc = soNguyen(than, 'tongMuc', 0, 1e12) ?? 0
-    const ngayBatDau = ngay(than, 'ngayBatDau')
-    const canCu = chuoiHoacRong(than, 'canCu', 500) ?? null
-    const diaDiem = chuoiHoacRong(than, 'diaDiem', 300) ?? null
-    const canBoId = chuoiHoacRong(than, 'canBoId', 40) ?? nd.taiKhoanId
-    let ma = chuoiHoacRong(than, 'ma', 40) ?? null
-    if (ma) {
-      const loi = kiemMaDuAn(ma)
-      if (loi) throw new BadRequestException(loi)
-    }
-
-    const id = randomUUID()
+    const dl = docDuAnMoi(than, nd.taiKhoanId)
     try {
-      return await trongPhamVi(this.db, nd.nguCanh, async (tx) => {
-        const [dv] = await tx
-          .select({ cap: donVi.cap })
-          .from(donVi)
-          .where(and(eq(donVi.id, donViId), isNull(donVi.deletedAt)))
-        if (!dv) throw new BadRequestException('Chủ đầu tư không có trong phạm vi quản lý')
-        if (dv.cap === 'doanh-nghiep')
-          throw new BadRequestException(
-            'Chủ đầu tư phải là cơ quan, đơn vị — doanh nghiệp là nhà thầu, tư vấn',
-          )
-
-        const [qt] = await tx
-          .select({ hinhThuc: quyTrinhMau.hinhThuc, buoc: quyTrinhMau.buoc })
-          .from(quyTrinhMau)
-          .where(and(eq(quyTrinhMau.ma, quyTrinhMa), isNull(quyTrinhMau.deletedAt)))
-        if (!qt) throw new BadRequestException(`Không có quy trình mẫu "${quyTrinhMa}"`)
-
-        if (linhVucId) {
-          const [lv] = await tx
-            .select({ id: danhMucGiaTri.id })
-            .from(danhMucGiaTri)
-            .where(
-              and(eq(danhMucGiaTri.id, maUuid(linhVucId, 'linhVucId')), eq(danhMucGiaTri.loai, 'linh-vuc')),
-            )
-          if (!lv) throw new BadRequestException('Lĩnh vực không có')
-        }
-
-        if (!ma) {
-          const [so] = await truyVan<{ so: string }>(tx, sql`select nextval('du_an_so_thu_tu')::text as so`)
-          ma = `DA-${ngayBatDau.slice(0, 4)}-${so!.so.padStart(4, '0')}`
-        }
-
-        await tx.insert(duAn).values({
-          id,
-          donViId,
-          ma,
-          ten,
-          quyTrinhMa,
-          hinhThuc: qt.hinhThuc,
-          loaiChi,
-          nhomDuAn,
-          linhVucId: linhVucId ?? null,
-          canCu,
-          diaDiem,
-          tongMuc,
-          ngayBatDau,
-          canBoId: maUuid(canBoId, 'canBoId'),
-          capNhatNgay: homNay(),
-          nguoiTao: nd.taiKhoanId,
-        })
-
-        // Chép quy trình mẫu sang dự án — sửa mẫu về sau không ảnh hưởng dự án này.
-        const mau = qt.buoc as BuocMau[]
-        const ids = mau.map(() => randomUUID())
-        const han = tinhHan(
-          mau.map((b) => ({ soNgay: b.soNgay, hanGhiDe: null, laNhap: false })),
-          ngayBatDau,
-        )
-        if (mau.length)
-          await tx.insert(duAnBuoc).values(
-            mau.map((b, i) => ({
-              id: ids[i],
-              duAnId: id,
-              donViId, // trigger đặt lại theo dự án — ghi cho rõ
-              thuTu: i,
-              chaId: b.cha === null ? null : ids[b.cha]!,
-              giaiDoan: b.gd,
-              stt: b.stt,
-              laNhom: b.nhom,
-              ten: b.ten,
-              soNgay: b.soNgay,
-              han: han[i] ?? null,
-              donViThucHien: b.donVi || null,
-              benThucHien: b.ben,
-              soVanBan: null,
-              ghiChu: b.vanBan ? `Văn bản: ${b.vanBan}` : null,
-            })),
-          )
-        await ghiPhienBan(tx, nd, id, donViId, 'Kế hoạch gốc theo quy trình mẫu', null)
-        return docHoSo(tx, nd, id)
-      })
+      return await trongPhamVi(this.db, nd.nguCanh, async (tx) =>
+        docHoSo(tx, nd, await this.taoMot(tx, nd, dl)),
+      )
     } catch (e) {
-      if (maLoiPg(e) === TRUNG_KHOA) throw new ConflictException(`Mã dự án "${ma}" đã có`)
+      if (maLoiPg(e) === TRUNG_KHOA) throw new ConflictException(`Mã dự án "${dl.ma}" đã có`)
       throw e
     }
+  }
+
+  /** Tạo MỘT dự án trong giao dịch đang mở — tạo tay và nhập Excel dùng chung luật. Trả id. */
+  async taoMot(tx: GiaoDich, nd: NguoiDungPhien, dl: DuAnMoi): Promise<string> {
+    const {
+      ten,
+      donViId,
+      quyTrinhMa,
+      loaiChi,
+      nhomDuAn,
+      linhVucId,
+      tongMuc,
+      ngayBatDau,
+      canCu,
+      diaDiem,
+      canBoId,
+    } = dl
+    let ma = dl.ma
+    const id = randomUUID()
+    const [dv] = await tx
+      .select({ cap: donVi.cap })
+      .from(donVi)
+      .where(and(eq(donVi.id, donViId), isNull(donVi.deletedAt)))
+    if (!dv) throw new BadRequestException('Chủ đầu tư không có trong phạm vi quản lý')
+    if (dv.cap === 'doanh-nghiep')
+      throw new BadRequestException('Chủ đầu tư phải là cơ quan, đơn vị — doanh nghiệp là nhà thầu, tư vấn')
+
+    const [qt] = await tx
+      .select({ hinhThuc: quyTrinhMau.hinhThuc, buoc: quyTrinhMau.buoc })
+      .from(quyTrinhMau)
+      .where(and(eq(quyTrinhMau.ma, quyTrinhMa), isNull(quyTrinhMau.deletedAt)))
+    if (!qt) throw new BadRequestException(`Không có quy trình mẫu "${quyTrinhMa}"`)
+
+    if (linhVucId) {
+      const [lv] = await tx
+        .select({ id: danhMucGiaTri.id })
+        .from(danhMucGiaTri)
+        .where(and(eq(danhMucGiaTri.id, maUuid(linhVucId, 'linhVucId')), eq(danhMucGiaTri.loai, 'linh-vuc')))
+      if (!lv) throw new BadRequestException('Lĩnh vực không có')
+    }
+
+    if (!ma) {
+      const [so] = await truyVan<{ so: string }>(tx, sql`select nextval('du_an_so_thu_tu')::text as so`)
+      ma = `DA-${ngayBatDau.slice(0, 4)}-${so!.so.padStart(4, '0')}`
+    }
+
+    await tx.insert(duAn).values({
+      id,
+      donViId,
+      ma,
+      ten,
+      quyTrinhMa,
+      hinhThuc: qt.hinhThuc,
+      loaiChi,
+      nhomDuAn,
+      linhVucId: linhVucId ?? null,
+      canCu,
+      diaDiem,
+      tongMuc,
+      ngayBatDau,
+      canBoId: maUuid(canBoId, 'canBoId'),
+      capNhatNgay: homNay(),
+      nguoiTao: nd.taiKhoanId,
+    })
+
+    // Chép quy trình mẫu sang dự án — sửa mẫu về sau không ảnh hưởng dự án này.
+    const mau = qt.buoc as BuocMau[]
+    const ids = mau.map(() => randomUUID())
+    const han = tinhHan(
+      mau.map((b) => ({ soNgay: b.soNgay, hanGhiDe: null, laNhap: false })),
+      ngayBatDau,
+    )
+    if (mau.length)
+      await tx.insert(duAnBuoc).values(
+        mau.map((b, i) => ({
+          id: ids[i],
+          duAnId: id,
+          donViId, // trigger đặt lại theo dự án — ghi cho rõ
+          thuTu: i,
+          chaId: b.cha === null ? null : ids[b.cha]!,
+          giaiDoan: b.gd,
+          stt: b.stt,
+          laNhom: b.nhom,
+          ten: b.ten,
+          soNgay: b.soNgay,
+          han: han[i] ?? null,
+          donViThucHien: b.donVi || null,
+          benThucHien: b.ben,
+          soVanBan: null,
+          ghiChu: b.vanBan ? `Văn bản: ${b.vanBan}` : null,
+        })),
+      )
+    await ghiPhienBan(tx, nd, id, donViId, 'Kế hoạch gốc theo quy trình mẫu', null)
+    return id
   }
 
   /** Sửa thông tin chung. Đổi ngày bắt đầu thì tính lại hạn mọi bước. */
