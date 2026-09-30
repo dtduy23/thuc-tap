@@ -1,29 +1,26 @@
 # ============================================================================
 # GDOS — GitLab CI/CD
 #
-#   kiem-tra     lint · kiểm dữ liệu thật · định dạng · kiểu · test · build
-#   dong-goi     dựng image api + web, đẩy lên registry của GitLab
-#   trien-khai   đưa lên MÁY THỬ (bấm tay)
+#   build    dựng image api + web, đẩy lên registry của GitLab
+#   deploy   đưa lên MÁY THỬ (bấm tay)
 #
 # CHỈ CHẠY Ở NHÁNH `develop` (người dùng chốt 30/09/2026) — xem `workflow` dưới.
 #
+# KHÔNG có chặng kiểm tra: người dùng chốt 30/09/2026 bỏ cả `kiem-tra`
+# (lint · test · typecheck) lẫn `bao-mat` (gitleaks · pnpm audit) để pipeline
+# đi thẳng từ mã nguồn sang image. Hệ quả phải biết:
+#   - Test quyền và RLS KHÔNG còn chạy trong CI. `pnpm kiem-tra` ở máy vẫn là
+#     cửa duy nhất — CLAUDE.md §3: phải xanh trước khi báo xong.
+#   - Không còn ai quét bí mật lọt vào lịch sử git.
+#
 # RUNNER CỦA FOXAI LÀ SHELL EXECUTOR (docs/FOXAI-CICD-Runbook.md của repo cũ):
 #   tag `foxai-build`, chạy trên SRV-01, user chạy runner có quyền docker.
-#
-#   - Không gắn tag → không runner nào nhận → pipeline treo "stuck".
-#   - Shell executor BỎ QUA `image:` → job chạy thẳng trên máy chủ, không có
-#     Node. Nên job kiểm tra tự chạy trong container bằng `docker run`.
-#   - `--user $(id -u):$(id -g)`: file sinh ra trong thư mục build thuộc user
-#     của runner, không thuộc root — không thì lần clone sau runner không dọn
-#     được thư mục và job hỏng ở bước chuẩn bị.
-#   - node:24 bản ĐẦY ĐỦ (không phải alpine/slim) vì cần git: script
-#     kiem-du-lieu-that dùng `git ls-files`.
+#   Không gắn tag → không runner nào nhận → pipeline treo "stuck".
 # ============================================================================
 
 stages:
-  - kiem-tra
-  - dong-goi
-  - trien-khai
+  - build
+  - deploy
 
 # Pipeline chỉ nổ ở `develop`. Nhánh mốc (`moc-*`) và `main` không chạy — tránh
 # việc một nhánh đang làm dở cũng chiếm runner và đẩy image lên registry.
@@ -36,28 +33,14 @@ default:
   tags: ['foxai-build']
 
 variables:
-  NODE_IMAGE: 'node:24'
-  PNPM: 'pnpm@11.12.0'
   # Một image cho API, một cho web (nginx tĩnh). Thẻ = SHA ngắn của commit:
   # mỗi lần triển khai chỉ đúng một mã nguồn, không dùng `latest` mơ hồ.
   ANH_API: '$CI_REGISTRY_IMAGE/api'
   ANH_WEB: '$CI_REGISTRY_IMAGE/web'
   THE: '$CI_COMMIT_SHORT_SHA'
 
-kiem-tra:
-  stage: kiem-tra
-  script:
-    - >-
-      docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e CI=true
-      -v "$CI_PROJECT_DIR":/app -w /app "$NODE_IMAGE"
-      sh -c "npx --yes $PNPM install --frozen-lockfile --store-dir .pnpm-store && npx --yes $PNPM kiem-tra"
-  cache:
-    key:
-      files: [pnpm-lock.yaml]
-    paths: [.pnpm-store]
-
-dong-goi:
-  stage: dong-goi
+build:
+  stage: build
   script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login --username "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
     # `--cache-from` thẻ develop của lần trước: lớp `pnpm install` không đổi thì
@@ -78,7 +61,7 @@ dong-goi:
     - docker push "$ANH_WEB:$THE"
     - docker push "$ANH_WEB:develop"
 
-# ── Triển khai ───────────────────────────────────────────────────────────────
+# ── deploy ───────────────────────────────────────────────────────────────────
 # BẤM TAY (`when: manual`) — máy thử không tự đổi sau mỗi commit.
 #
 # Cần bốn biến CI/CD (Settings → CI/CD → Variables), tất cả `Protected`:
@@ -91,8 +74,8 @@ dong-goi:
 # Mật khẩu DB, AUTH_SECRET, NATIVE_URL… KHÔNG đi qua CI: nằm trong
 # `$TRIEN_KHAI_THU_MUC/.env` do kỹ thuật FOXAI đặt một lần trên máy thử
 # (xem compose.trien-khai.yaml). CI không bao giờ nhìn thấy chúng.
-trien-khai:
-  stage: trien-khai
+deploy:
+  stage: deploy
   when: manual
   environment:
     name: may-thu
@@ -105,7 +88,7 @@ trien-khai:
         [ -n "$gia_tri" ] || thieu="$thieu $bien"
       done
       if [ -n "$thieu" ]; then
-        echo "✗ Chưa đặt biến CI/CD:$thieu — xem chú thích job trien-khai trong .gitlab-ci.yml" >&2
+        echo "✗ Chưa đặt biến CI/CD:$thieu — xem chú thích job deploy trong .gitlab-ci.yml" >&2
         exit 1
       fi
       command -v ssh >/dev/null || { echo '✗ Runner chưa có ssh — cài openssh-client trên SRV-01' >&2; exit 1; }

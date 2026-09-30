@@ -19,11 +19,11 @@
 
 **Đã làm**
 
-- `.gitlab-ci.yml`: ba chặng `kiem-tra` → `dong-goi` → `trien-khai`. **Chỉ chạy ở nhánh `develop`**
+- `.gitlab-ci.yml`: hai chặng `build` → `deploy`. **Chỉ chạy ở nhánh `develop`**
   (`workflow.rules`) — người dùng chốt; `main` và nhánh mốc không nổ pipeline.
-- **Bỏ chặng `bao-mat`** (gitleaks + `pnpm audit`) — người dùng chốt 30/09/2026. Luật "không dữ liệu
-  cá nhân thật" vẫn được chặn vì `kiem-du-lieu-that.mjs` nằm trong `pnpm lint`; nhưng **không còn ai
-  quét bí mật lọt vào lịch sử git**.
+- **Bỏ cả `bao-mat` lẫn `kiem-tra`** — người dùng chốt 30/09/2026, pipeline đi thẳng từ mã nguồn
+  sang image. Hệ quả phải nhớ: **CI không còn chạy test quyền và RLS**, và **không còn ai quét bí
+  mật lọt vào lịch sử git**. `pnpm kiem-tra` ở máy là cửa duy nhất (CLAUDE.md §3).
 - `apps/api/Dockerfile`, `apps/web/Dockerfile` — hai chặng, bối cảnh build là **gốc repo** (image cần
   `packages/shared`). Bản chạy không mang tsc, drizzle-kit, PGlite. API chạy non-root, có HEALTHCHECK
   gọi `/api/health` (không chạm DB — Postgres chậm một nhịp không làm Docker giết container).

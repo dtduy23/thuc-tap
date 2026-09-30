@@ -37,11 +37,13 @@ Trước khi đẩy mã: `pnpm kiem-tra` phải xanh.
 
 CI/CD chạy ở nhánh **`develop`** và chỉ ở đó (`.gitlab-ci.yml`):
 
-| Chặng        | Làm gì                                                                       |
-| ------------ | ---------------------------------------------------------------------------- |
-| `kiem-tra`   | `pnpm kiem-tra` trong container Node                                         |
-| `dong-goi`   | dựng image `api` + `web`, đẩy lên registry GitLab, thẻ = SHA ngắn            |
-| `trien-khai` | **bấm tay** — SSH sang máy thử: pull, chạy migration, `up -d`, kiểm sức khỏe |
+| Chặng    | Làm gì                                                                       |
+| -------- | ---------------------------------------------------------------------------- |
+| `build`  | dựng image `api` + `web`, đẩy lên registry GitLab, thẻ = SHA ngắn            |
+| `deploy` | **bấm tay** — SSH sang máy thử: pull, chạy migration, `up -d`, kiểm sức khỏe |
+
+CI **không chạy kiểm tra gì** (người dùng chốt 30/09/2026): không lint, không test, không quét bí
+mật. `pnpm kiem-tra` ở máy là cửa duy nhất — phải xanh trước khi đẩy.
 
 Dựng image tại máy (bối cảnh build là **gốc repo**, vì image cần `packages/shared`):
 
