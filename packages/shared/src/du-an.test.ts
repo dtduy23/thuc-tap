@@ -162,3 +162,35 @@ describe('tài chính dự án', () => {
     expect(tinhTaiChinh(0, [], [], 2026).phanTramTongMuc).toBe(0)
   })
 })
+
+describe('KPI dự án — công thức PMS', () => {
+  const b = (han: string, xong: string | null) => ({
+    laNhom: false,
+    laNhap: false,
+    boQua: false,
+    choXacNhan: null,
+    ngayHoanThanh: xong,
+    han,
+  })
+
+  it('mọi thứ đúng hạn, không điều chỉnh, giải ngân đủ → 100 điểm, loại A', async () => {
+    const { tinhKpi } = await import('./du-an.js')
+    const k = tinhKpi([b('2026-10-05', '2026-10-04')], 1, 100, 100, '2026-10-10')
+    expect(k).toEqual({ diem: 100, xepLoai: 'A', dungHan: 100, treBinhQuan: 0, dieuChinh: 0, giaiNgan: 100 })
+  })
+
+  it('trễ, điều chỉnh 2 lần, giải ngân một nửa → trừ đúng từng phần', async () => {
+    const { tinhKpi } = await import('./du-an.js')
+    // 1 bước xong trễ 10 ngày + 1 bước đang trễ 20 ngày → đúng hạn 0/2, trễ BQ 15.
+    const k = tinhKpi([b('2026-09-01', '2026-09-11'), b('2026-09-20', null)], 3, 50, 100, '2026-10-10')
+    // 40·0 + 25·(1−15/30) + 15·(1−0,5) + 20·0,5 = 0 + 12,5 + 7,5 + 10 = 30
+    expect(k).toMatchObject({
+      diem: 30,
+      xepLoai: 'D',
+      dungHan: 0,
+      treBinhQuan: 15,
+      dieuChinh: 2,
+      giaiNgan: 50,
+    })
+  })
+})

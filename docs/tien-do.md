@@ -9,7 +9,7 @@
 | **0** | Khởi tạo repo, CI, ADR, khung dùng chung                                             | ✅ Xong — **CI/CD giao kỹ thuật FOXAI** (xem dưới) |
 | **1** | Nền móng: tài khoản, đơn vị, vai trò & quyền, RLS, nhật ký, khung portal + cây 4 cấp | ✅ Xong — nhánh `moc-1-nen-mong`, chưa đẩy         |
 | **2** | Đưa lên máy thử (image, nginx, CI/CD)                                                | Chưa bắt đầu                                       |
-| **3** | Module Dự án (từ PMS)                                                                | 🔄 Phiên 5a/6 — + cảnh báo, đôn đốc, việc của tôi  |
+| **3** | Module Dự án (từ PMS)                                                                | 🔄 Phiên 5b/6 — + tổng quan, bộ chỉ số KPI         |
 | **4** | Module Khiếu nại đất đai                                                             | Chưa bắt đầu                                       |
 | **5** | Nối FOXAI Native (văn bản, tóm tắt, hỏi đáp)                                         | Chưa bắt đầu — **chờ đội Native**                  |
 | **6** | Điều hành: dashboard, báo cáo                                                        | Chưa bắt đầu                                       |
@@ -20,14 +20,29 @@
 Người dùng chốt: làm **đủ chức năng PMS**, **không** chuyển dữ liệu dự án (tự nạp bằng Nhập Excel).
 Tổ chức theo ADR-0007 (một chủ — nhiều lối vào) và ADR-0008 (mô hình dữ liệu).
 
-| Phiên | Việc                                                                                                                       | Trạng thái    |
-| ----- | -------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| **1** | Lược đồ, RLS, 6 quy trình mẫu NĐ 45, tính hạn dùng chung, loại đơn vị mở rộng                                              | ✅ 30/09/2026 |
-| **2** | API + màn: danh sách (3 bộ lọc), tạo từ quy trình mẫu, hồ sơ (Tổng quan · Checklist · Thành viên), nhà thầu gửi → xác nhận | ✅ 30/09/2026 |
-| **3** | Kế hoạch & điều chỉnh (bước nháp, chốt kế hoạch, phiên bản), thêm/xóa bước tùy biến, Gantt                                 | ✅ 30/09/2026 |
-| **4** | Văn bản (kho tệp) · Kinh phí & giải ngân · Vướng mắc · thẻ Nhật ký                                                         | ✅ 30/09/2026 |
-| 5     | Đóng góp theo ADR-0007: báo cáo (Biểu 01/02/03, BC35), chỉ số KPI, cảnh báo, việc của tôi · Đôn đốc                        | 🔄 5a xong    |
-| 6     | Nhập / xuất Excel · giám sát theo lĩnh vực · màn quản lý Danh mục nghiệp vụ, Quy trình mẫu                                 |               |
+| Phiên | Việc                                                                                                                       | Trạng thái     |
+| ----- | -------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| **1** | Lược đồ, RLS, 6 quy trình mẫu NĐ 45, tính hạn dùng chung, loại đơn vị mở rộng                                              | ✅ 30/09/2026  |
+| **2** | API + màn: danh sách (3 bộ lọc), tạo từ quy trình mẫu, hồ sơ (Tổng quan · Checklist · Thành viên), nhà thầu gửi → xác nhận | ✅ 30/09/2026  |
+| **3** | Kế hoạch & điều chỉnh (bước nháp, chốt kế hoạch, phiên bản), thêm/xóa bước tùy biến, Gantt                                 | ✅ 30/09/2026  |
+| **4** | Văn bản (kho tệp) · Kinh phí & giải ngân · Vướng mắc · thẻ Nhật ký                                                         | ✅ 30/09/2026  |
+| 5     | Đóng góp theo ADR-0007: báo cáo (Biểu 01/02/03, BC35), chỉ số KPI, cảnh báo, việc của tôi · Đôn đốc                        | 🔄 5a, 5b xong |
+| 6     | Nhập / xuất Excel · giám sát theo lĩnh vực · màn quản lý Danh mục nghiệp vụ, Quy trình mẫu                                 |                |
+
+### Phiên 5b — Điều hành: Tổng quan, Bộ chỉ số (30/09/2026)
+
+**Đã làm**
+
+- Kiểu chung `KhoiSoLieu` (thẻ số + bảng): nghiệp vụ góp khối, màn Điều hành chỉ vẽ — không biết
+  nghiệp vụ nào (ADR-0007). Nguồn đóng góp có thêm `tongQuan?`, `chiSo?`.
+- API: `/api/tong-quan?theo=toan|don-vi|linh-vuc` (`TONG_QUAN.READ`), `/api/chi-so?loai=tat-ca|xep-hang`
+  (`BO_CHI_SO.READ`). Hàm thuần `du-an/dieu-hanh.ts` tính, dịch vụ chỉ nạp dữ liệu.
+- Dự án góp: toàn cảnh (thẻ tình trạng, giải ngân; ma trận giai đoạn × tình trạng; 10 dự án trễ nhất;
+  vướng mắc mở), gom theo đơn vị / lĩnh vực; **KPI 100 điểm** từng dự án (`tinhKpi`, cùng công thức
+  PMS), xếp hạng chủ đầu tư và nhà thầu theo KPI bình quân.
+- Web: 5 màn cấp 4 (`tq-toan`, `tq-don-vi`, `tq-lv`, `bcs-tat-ca`, `bcs-xep-hang`) dùng chung một
+  bộ vẽ `man/khoi-so-lieu.tsx`; bỏ phác hai module Tổng quan, Bộ chỉ số.
+- Test: 3 đơn vị (`dieu-hanh.test.ts`) + 3 đầu cuối. **Đã kiểm trên trình duyệt** cả 5 màn.
 
 ### Phiên 5a — đóng góp (ADR-0007): cảnh báo, đôn đốc, việc của tôi (30/09/2026)
 

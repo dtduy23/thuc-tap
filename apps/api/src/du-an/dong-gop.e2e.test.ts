@@ -170,3 +170,36 @@ describe('đôn đốc + việc của tôi', () => {
     expect((await qt.get('/api/viec-cua-toi')).body).toEqual([])
   })
 })
+
+describe('Điều hành — Tổng quan, Bộ chỉ số', () => {
+  it('lãnh đạo xem toàn cảnh: khối "Dự án" có số liệu, dự án chậm đứng đầu danh sách quá hạn', async () => {
+    const ct = await vao('chutich.a')
+    const [k] = (await ct.get('/api/tong-quan?theo=toan')).body as import('@gdos/shared').KhoiSoLieu[]
+    expect(k!.nghiepVu).toBe('Dự án')
+    expect(k!.so.find((s) => s.nhan === 'Tổng dự án')?.giaTri).toBe('2')
+    expect(k!.bang[1]!.dong[0]!.lienKet).toBe(`/du-an/${cu.id}?the=checklist`)
+    const dv = (await ct.get('/api/tong-quan?theo=don-vi')).body as import('@gdos/shared').KhoiSoLieu[]
+    expect(dv[0]!.bang[0]!.dong[0]!.o[0]).toBe('Xã An Hòa')
+  })
+
+  it('KPI: dự án chậm điểm thấp hơn dự án mới; xếp hạng có chủ đầu tư', async () => {
+    const ct = await vao('chutich.a')
+    const [k] = (await ct.get('/api/chi-so?loai=tat-ca')).body as import('@gdos/shared').KhoiSoLieu[]
+    const dong = k!.bang[0]!.dong
+    const diem = (ten: string) => dong.find((d) => d.o[0] === ten)!.o[2] as number
+    expect(diem('Dự án mới bắt đầu')).toBeGreaterThan(diem('Dự án cũ đang chậm'))
+    const [xh] = (await ct.get('/api/chi-so?loai=xep-hang')).body as import('@gdos/shared').KhoiSoLieu[]
+    expect(xh!.bang[0]!.dong[0]!.o[1]).toBe('Xã An Hòa')
+  })
+
+  it('chuyên viên không có quyền Điều hành thì 403; tham số lạ 400', async () => {
+    const cv = await vao('chuyenvien.a')
+    // Chuyên viên phân công "mọi phân hệ" có READ ở Điều hành (không phải Giám sát) — xem được.
+    expect((await cv.get('/api/tong-quan?theo=toan')).status).toBe(200)
+    const qt = await vao('quantri')
+    expect((await qt.get('/api/tong-quan?theo=toan')).status).toBe(403)
+    const ct = await vao('chutich.a')
+    expect((await ct.get('/api/tong-quan?theo=bat-ky')).status).toBe(400)
+    expect((await ct.get('/api/chi-so?loai=bat-ky')).status).toBe(400)
+  })
+})

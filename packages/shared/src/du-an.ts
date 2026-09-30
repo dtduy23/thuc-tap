@@ -477,3 +477,56 @@ export interface DotDonDoc {
   nguoiGui: string | null
   duAn: { id: string; ma: string; ten: string }[]
 }
+
+// ── KPI dự án (PMS: services/kpi.js — giữ nguyên công thức) ─────────────────
+
+export type XepLoai = 'A' | 'B' | 'C' | 'D'
+
+export interface KpiDuAn {
+  diem: number
+  xepLoai: XepLoai
+  /** % bước xong đúng hạn trên (bước đã xong + bước đang trễ). */
+  dungHan: number
+  /** Số ngày trễ bình quân (bước xong muộn + bước đang trễ). */
+  treBinhQuan: number
+  /** Số lần điều chỉnh kế hoạch = số phiên bản − 1. */
+  dieuChinh: number
+  /** % giải ngân so với kế hoạch vốn tới nay (100 nếu chưa có kế hoạch). */
+  giaiNgan: number
+}
+
+/**
+ * KPI 100 điểm: đúng hạn 40 · độ trễ 25 · điều chỉnh kế hoạch 15 · giải ngân 20.
+ * A ≥ 85 · B ≥ 70 · C ≥ 50 · D còn lại.
+ */
+export function tinhKpi(
+  buoc: readonly BuocTrangThai[],
+  soPhienBan: number,
+  daGiaiNgan: number,
+  keHoachDenNay: number,
+  hn: string,
+): KpiDuAn {
+  const that = buoc.filter(tinhTienDo)
+  const xong = that.filter((b) => b.ngayHoanThanh)
+  const dangTre = that.filter((b) => !b.ngayHoanThanh && b.han && b.han < hn)
+  const dungHan = xong.filter((b) => !b.han || b.ngayHoanThanh! <= b.han).length
+  const r1 = xong.length + dangTre.length ? dungHan / (xong.length + dangTre.length) : 1
+  const tre = [
+    ...xong.filter((b) => b.han && b.ngayHoanThanh! > b.han).map((b) => soNgayGiua(b.han!, b.ngayHoanThanh!)),
+    ...dangTre.map((b) => soNgayGiua(b.han!, hn)),
+  ]
+  const treBinhQuan = tre.length ? tre.reduce((a, b) => a + b, 0) / tre.length : 0
+  const r2 = Math.max(0, 1 - treBinhQuan / 30)
+  const dieuChinh = Math.max(0, soPhienBan - 1)
+  const r3 = Math.max(0, 1 - 0.25 * dieuChinh)
+  const r4 = keHoachDenNay > 0 ? Math.min(1, daGiaiNgan / keHoachDenNay) : 1
+  const diem = Math.round(40 * r1 + 25 * r2 + 15 * r3 + 20 * r4)
+  return {
+    diem,
+    xepLoai: diem >= 85 ? 'A' : diem >= 70 ? 'B' : diem >= 50 ? 'C' : 'D',
+    dungHan: Math.round(r1 * 100),
+    treBinhQuan: Math.round(treBinhQuan),
+    dieuChinh,
+    giaiNgan: Math.round(r4 * 100),
+  }
+}

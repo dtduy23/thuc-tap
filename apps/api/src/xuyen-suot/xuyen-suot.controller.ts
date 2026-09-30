@@ -1,5 +1,14 @@
 import { BadRequestException, Controller, Get, Inject, Query } from '@nestjs/common'
-import type { CanhBaoDef, DongCanhBao, MucViec } from '@gdos/shared'
+import {
+  GOC_NHIN_TONG_QUAN,
+  LOAI_CHI_SO,
+  type CanhBaoDef,
+  type DongCanhBao,
+  type GocNhinTongQuan,
+  type KhoiSoLieu,
+  type LoaiChiSo,
+  type MucViec,
+} from '@gdos/shared'
 import { CanQuyen, ChiCanDangNhap, NguoiDung, type NguoiDungPhien } from '../xac-thuc/bao-ve.js'
 import { NGUON_DONG_GOP, type NguonDongGop } from './nguon-dong-gop.js'
 
@@ -25,6 +34,30 @@ export class XuyenSuotController {
       this.nguon.map(async (n) => (n.canhBao ? n.canhBao(nd, loai as CanhBaoDef['loai']) : [])),
     )
     return ds.flat()
+  }
+
+  /** Điều hành › Tổng quan — mỗi nghiệp vụ góp một khối số liệu. */
+  @Get('tong-quan')
+  @CanQuyen('TONG_QUAN.READ')
+  async tongQuan(@NguoiDung() nd: NguoiDungPhien, @Query('theo') theo?: string): Promise<KhoiSoLieu[]> {
+    if (!GOC_NHIN_TONG_QUAN.includes(theo as GocNhinTongQuan))
+      throw new BadRequestException(`"theo" phải là một trong: ${GOC_NHIN_TONG_QUAN.join(', ')}`)
+    const ds = await Promise.all(
+      this.nguon.map(async (n) => (n.tongQuan ? n.tongQuan(nd, theo as GocNhinTongQuan) : null)),
+    )
+    return ds.filter((k): k is KhoiSoLieu => k !== null)
+  }
+
+  /** Điều hành › Bộ chỉ số. */
+  @Get('chi-so')
+  @CanQuyen('BO_CHI_SO.READ')
+  async chiSo(@NguoiDung() nd: NguoiDungPhien, @Query('loai') loai?: string): Promise<KhoiSoLieu[]> {
+    if (!LOAI_CHI_SO.includes(loai as LoaiChiSo))
+      throw new BadRequestException(`"loai" phải là một trong: ${LOAI_CHI_SO.join(', ')}`)
+    const ds = await Promise.all(
+      this.nguon.map(async (n) => (n.chiSo ? n.chiSo(nd, loai as LoaiChiSo) : null)),
+    )
+    return ds.filter((k): k is KhoiSoLieu => k !== null)
   }
 
   /** "Việc của tôi" trên trang chủ — ai đăng nhập cũng có, nội dung theo quyền từng nguồn. */

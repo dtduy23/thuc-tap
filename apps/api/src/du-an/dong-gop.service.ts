@@ -6,9 +6,13 @@ import {
   NGUONG_LAU_CAP_NHAT,
   NGUONG_SAP_HAN,
   soNgayGiua,
+  tinhKpi,
   type CanhBaoDef,
   type DongCanhBao,
   type DotDonDoc,
+  type GocNhinTongQuan,
+  type KhoiSoLieu,
+  type LoaiChiSo,
   type MucViec,
 } from '@gdos/shared'
 import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, or, sql, type SQL } from 'drizzle-orm'
@@ -16,7 +20,17 @@ import { randomUUID } from 'node:crypto'
 import { chuoi, mang, maUuid } from '../chung/kiem-than.js'
 import { CoSoDuLieu, dbCua } from '../db/co-so-du-lieu.js'
 import { trongPhamVi, type GiaoDich } from '../db/pham-vi.js'
-import { duAn, duAnBuoc, duAnDonDoc, duAnVuongMac } from '../db/schema/index.js'
+import {
+  duAn,
+  duAnBuoc,
+  duAnDonDoc,
+  duAnPhienBan,
+  duAnThanhVien,
+  duAnVon,
+  duAnVuongMac,
+} from '../db/schema/index.js'
+import { chiSoDuAn, tongQuanDuAn, type DuAnTongHop } from './dieu-hanh.js'
+import { DuAnService } from './du-an.service.js'
 import type { NguoiDungPhien } from '../xac-thuc/bao-ve.js'
 import type { NguonDongGop } from '../xuyen-suot/nguon-dong-gop.js'
 
@@ -47,7 +61,10 @@ const cuaToi = (taiKhoanId: string): SQL =>
 export class DongGopDuAnService implements NguonDongGop {
   readonly module = DANH_SACH_MODULE.find((m) => m.id === 'du-an')!
 
-  constructor(@Inject(CoSoDuLieu) private readonly csdl: CoSoDuLieu) {}
+  constructor(
+    @Inject(CoSoDuLieu) private readonly csdl: CoSoDuLieu,
+    @Inject(DuAnService) private readonly duAnDv: DuAnService,
+  ) {}
 
   private get db() {
     return dbCua(this.csdl)
@@ -207,6 +224,82 @@ export class DongGopDuAnService implements NguonDongGop {
         })
       return viec
     })
+  }
+
+  // ── Điều hành: Tổng quan, Bộ chỉ số ───────────────────────────────────────
+
+  async tongQuan(nd: NguoiDungPhien, goc: GocNhinTongQuan): Promise<KhoiSoLieu | null> {
+    if (!nd.quyen.has('DU_AN.READ')) return null
+    return tongQuanDuAn(await this.taiTongHop(nd), goc)
+  }
+
+  async chiSo(nd: NguoiDungPhien, loai: LoaiChiSo): Promise<KhoiSoLieu | null> {
+    if (!nd.quyen.has('DU_AN.READ')) return null
+    const ds = await this.taiTongHop(nd)
+    const ids = ds.map((x) => x.d.id)
+    const nhaThau = ids.length
+      ? await trongPhamVi(this.db, nd.nguCanh, (tx) =>
+          tx
+            .select({
+              duAnId: duAnThanhVien.duAnId,
+              tenDonVi: sql<string>`ten_don_vi_cua_tai_khoan(${duAnThanhVien.taiKhoanId})`,
+            })
+            .from(duAnThanhVien)
+            .where(
+              and(
+                inArray(duAnThanhVien.duAnId, ids),
+                eq(duAnThanhVien.vaiTro, 'nha-thau'),
+                isNull(duAnThanhVien.deletedAt),
+              ),
+            ),
+        )
+      : []
+    return chiSoDuAn(ds, loai, nhaThau)
+  }
+
+  /** Mọi dự án người này thấy + KPI từng dự án (bước, số phiên bản, kế hoạch vốn tới nay). */
+  private async taiTongHop(nd: NguoiDungPhien): Promise<DuAnTongHop[]> {
+    const ds = await this.duAnDv.danhSach(nd, 'tat-ca')
+    if (ds.length === 0) return []
+    const ids = ds.map((d) => d.id)
+    const hn = homNay()
+    const nam = Number(hn.slice(0, 4))
+    const { buoc, pb, von } = await trongPhamVi(this.db, nd.nguCanh, async (tx) => ({
+      buoc: await tx
+        .select({
+          duAnId: duAnBuoc.duAnId,
+          han: duAnBuoc.han,
+          ngayHoanThanh: duAnBuoc.ngayHoanThanh,
+          laNhom: duAnBuoc.laNhom,
+          laNhap: duAnBuoc.laNhap,
+          boQua: duAnBuoc.boQua,
+          choXacNhan: duAnBuoc.choXacNhan,
+        })
+        .from(duAnBuoc)
+        .where(and(inArray(duAnBuoc.duAnId, ids), isNull(duAnBuoc.deletedAt))),
+      pb: await tx
+        .select({ duAnId: duAnPhienBan.duAnId, n: sql<number>`count(*)::int` })
+        .from(duAnPhienBan)
+        .where(inArray(duAnPhienBan.duAnId, ids))
+        .groupBy(duAnPhienBan.duAnId),
+      von: await tx
+        .select({ duAnId: duAnVon.duAnId, t: sql<number>`coalesce(sum(${duAnVon.keHoach}), 0)::float8` })
+        .from(duAnVon)
+        .where(and(inArray(duAnVon.duAnId, ids), lte(duAnVon.nam, nam), isNull(duAnVon.deletedAt)))
+        .groupBy(duAnVon.duAnId),
+    }))
+    const soPb = new Map(pb.map((x) => [x.duAnId, Number(x.n)]))
+    const keHoach = new Map(von.map((x) => [x.duAnId, Number(x.t)]))
+    return ds.map((d) => ({
+      d,
+      kpi: tinhKpi(
+        buoc.filter((b) => b.duAnId === d.id),
+        soPb.get(d.id) ?? 1,
+        d.daGiaiNgan,
+        keHoach.get(d.id) ?? 0,
+        hn,
+      ),
+    }))
   }
 
   // ── Đôn đốc (Điều 36) ────────────────────────────────────────────────────

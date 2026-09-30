@@ -23,7 +23,6 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'dieu-hanh',
     maQuyen: 'TONG_QUAN',
     nguon: 'db',
-    phac: true,
     mo: 'Bức tranh chung của mọi nghiệp vụ: tiến độ, cảnh báo, giải ngân. Mỗi nghiệp vụ góp thẻ số liệu của mình (ADR-0007).',
     con: [
       { id: 'tq-toan', nhan: 'Toàn cảnh' },
@@ -51,7 +50,6 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'dieu-hanh',
     maQuyen: 'BO_CHI_SO',
     nguon: 'db',
-    phac: true,
     mo: 'KPI 100 điểm: đúng hạn 40 · độ trễ 25 · điều chỉnh kế hoạch 15 · giải ngân 20 → A/B/C/D.',
     con: [
       { id: 'bcs-tat-ca', nhan: 'Tất cả chỉ số' },

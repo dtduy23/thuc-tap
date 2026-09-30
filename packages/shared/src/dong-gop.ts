@@ -127,3 +127,25 @@ export interface MucViec {
 
 /** Ngưỡng mặc định "lâu không cập nhật" (PMS: 15 ngày). Về sau là tham số ở Quy tắc cảnh báo. */
 export const NGUONG_LAU_CAP_NHAT = 15
+
+/**
+ * Khối số liệu một nghiệp vụ góp cho Điều hành (Tổng quan, Bộ chỉ số). Hình dạng
+ * CHUNG — ô số + bảng — để màn Điều hành vẽ được mà không biết nghiệp vụ là gì.
+ */
+export interface KhoiSoLieu {
+  nguon: string
+  nghiepVu: string
+  so: { nhan: string; giaTri: string; phu?: string; mau?: 'danger' | 'warn' | 'ok' | 'brand' }[]
+  bang: {
+    tieuDe: string
+    ghiChu?: string
+    cot: { nhan: string; so?: boolean }[]
+    dong: { o: (string | number)[]; lienKet?: string; mau?: 'danger' | 'warn' | 'ok' }[]
+  }[]
+}
+
+export const GOC_NHIN_TONG_QUAN = ['toan', 'don-vi', 'linh-vuc'] as const
+export type GocNhinTongQuan = (typeof GOC_NHIN_TONG_QUAN)[number]
+
+export const LOAI_CHI_SO = ['tat-ca', 'xep-hang'] as const
+export type LoaiChiSo = (typeof LOAI_CHI_SO)[number]

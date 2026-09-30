@@ -3,7 +3,15 @@
  * Điều hành, Giám sát, "Việc của tôi" chỉ gọi qua giao diện này — thêm nghiệp vụ là
  * thêm một nguồn vào danh sách NGUON_DONG_GOP (app.module.ts), không sửa chúng.
  */
-import type { CanhBaoDef, DongCanhBao, ModuleDef, MucViec } from '@gdos/shared'
+import type {
+  CanhBaoDef,
+  DongCanhBao,
+  GocNhinTongQuan,
+  KhoiSoLieu,
+  LoaiChiSo,
+  ModuleDef,
+  MucViec,
+} from '@gdos/shared'
 import type { NguoiDungPhien } from '../xac-thuc/bao-ve.js'
 
 export interface NguonDongGop {
@@ -11,6 +19,10 @@ export interface NguonDongGop {
   readonly module: ModuleDef
   canhBao?(nd: NguoiDungPhien, loai: CanhBaoDef['loai']): Promise<DongCanhBao[]>
   viec?(nd: NguoiDungPhien): Promise<MucViec[]>
+  /** Điều hành › Tổng quan. null = người này không xem được nghiệp vụ này. */
+  tongQuan?(nd: NguoiDungPhien, gocNhin: GocNhinTongQuan): Promise<KhoiSoLieu | null>
+  /** Điều hành › Bộ chỉ số. */
+  chiSo?(nd: NguoiDungPhien, loai: LoaiChiSo): Promise<KhoiSoLieu | null>
 }
 
 export const NGUON_DONG_GOP = Symbol('NGUON_DONG_GOP')
