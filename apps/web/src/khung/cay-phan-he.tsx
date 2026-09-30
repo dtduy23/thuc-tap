@@ -99,18 +99,6 @@ export function CayPhanHe({ cay, dangXem }: { cay: NhanhTang[]; dangXem: string 
         ))}
       </div>
 
-      {cay.some((t) =>
-        t.nhom.some((n) => n.modules.some(({ module: m, con }) => con.some((c) => laPhac(m, c)))),
-      ) && (
-        <p className="m-0 flex items-center gap-1.5 px-1.5 pb-1 text-[10.5px] text-faint">
-          <span
-            aria-hidden="true"
-            className="block size-[7px] rounded-full border-[1.5px] border-current opacity-70"
-          />
-          màn phác — đã có chỗ trong khung, sắp xây
-        </p>
-      )}
-
       {cay.map((t) => {
         const k1 = `t:${t.so}`
         const mo1 = dangMo(k1)
