@@ -3,10 +3,12 @@
  * API trả về, nên người dùng chỉ thấy những gì API cho làm. Không có danh sách
  * menu viết tay nào ở đây.
  *
- *   Cấp 1 Tầng → Cấp 2 Nhóm → Cấp 3 Module → Cấp 4 Chức năng (link)
+ *   Cấp 1 Tầng      — tiêu đề màu, đóng/mở được (nhớ theo máy)
+ *   Cấp 2 Nhóm      — tiêu đề phân đoạn, LUÔN hiện, không đóng mở
+ *   Cấp 3 Module    — biểu tượng + tên; chỉ MỘT module mở tại một lúc
+ *   Cấp 4 Chức năng — thụt dưới module, có đường dẫn dọc; đang xem có vạch vàng
  *
- * Mặc định mở cấp 1–2, đóng cấp 3 — trừ nhánh đang xem. Trạng thái đóng/mở nhớ
- * theo máy (localStorage), không nhớ được thì thôi.
+ * Mỗi cấp một kiểu hiển thị riêng — nhìn là biết mẹ con, không phải đếm mũi tên.
  */
 import { laPhac, type NhanhTang } from '@gdos/shared'
 import { Link, useNavigate } from '@tanstack/react-router'
@@ -14,61 +16,42 @@ import { useState } from 'react'
 import { docTam, ghiTam } from '@/lib/luu-tam'
 import { BieuTuongNhom, MuiTen } from './bieu-tuong'
 
-const KHOA_LUU = 'gdos-cay-mo'
+const KHOA_LUU = 'gdos-cay-tang-dong'
 
-/** Dấu nhỏ cho màn phác — nhìn cây là biết khung nào đã xây, khung nào chưa. */
+/** Nhãn cho màn phác — chữ rõ nghĩa, không cần chú thích riêng. */
 const SapCo = () => (
-  <span title="Màn phác — sắp có" className="ml-auto flex-none px-1">
-    <span
-      aria-hidden="true"
-      className="block size-[7px] rounded-full border-[1.5px] border-current opacity-55"
-    />
-    <span className="sr-only">(sắp có)</span>
+  <span className="ml-auto flex-none rounded bg-line-2 px-1.5 py-px text-[10px] font-medium text-faint">
+    sắp có
   </span>
 )
 
-/** Khóa đóng/mở của tầng, nhóm, module chứa chức năng đang xem. */
-function toTienCua(cay: NhanhTang[], id: string | undefined): string[] {
-  if (!id) return []
+/** Module chứa chức năng đang xem. */
+function moduleCua(cay: NhanhTang[], id: string | undefined): string | undefined {
+  if (!id) return undefined
   for (const t of cay)
-    for (const n of t.nhom)
-      for (const m of n.modules)
-        if (m.con.some((c) => c.id === id)) return [`t:${t.so}`, `g:${n.ma}`, `m:${m.module.id}`]
-  return []
+    for (const n of t.nhom) for (const m of n.modules) if (m.con.some((c) => c.id === id)) return m.module.id
+  return undefined
 }
 
 export function CayPhanHe({ cay, dangXem }: { cay: NhanhTang[]; dangXem: string | undefined }) {
-  const [mo, datMo] = useState<Record<string, boolean>>(() => docTam(KHOA_LUU, {}))
   const di = useNavigate()
+  // Tầng đang ĐÓNG (mặc định mở hết) — nhớ theo máy, không nhớ được thì thôi.
+  const [tangDong, datTangDong] = useState<number[]>(() => docTam(KHOA_LUU, []))
+  const [moModule, datMoModule] = useState<string | undefined>(() => moduleCua(cay, dangXem))
 
-  const dangMo = (k: string) => mo[k] ?? (k.startsWith('t:') || k.startsWith('g:'))
-  const ghi = (moi: Record<string, boolean>) => {
-    datMo(moi)
-    ghiTam(KHOA_LUU, moi)
-  }
-  const doi = (k: string) => ghi({ ...mo, [k]: !dangMo(k) })
-
-  // Vào một chức năng từ đâu cũng được (link, tìm kiếm, gõ URL) — nhánh chứa nó
-  // phải mở. Chỉ làm khi ĐỔI màn (điều chỉnh lúc render — cách React khuyên), nên
-  // người dùng vẫn tự thu gọn được nhánh đang xem. Không ghi localStorage: chỉ
-  // nhớ lựa chọn của người dùng, không nhớ việc tự mở.
-  const [dangXemTruoc, datDangXemTruoc] = useState<string>()
+  // Đổi màn (link, tìm kiếm, gõ URL) → mở module chứa nó. Điều chỉnh lúc render —
+  // cách React khuyên — nên người dùng vẫn tự thu gọn được module đang xem.
+  const [dangXemTruoc, datDangXemTruoc] = useState(dangXem)
   if (dangXem !== dangXemTruoc) {
     datDangXemTruoc(dangXem)
-    const can = toTienCua(cay, dangXem).filter((k) => !dangMo(k))
-    if (can.length) datMo({ ...mo, ...Object.fromEntries(can.map((k) => [k, true])) })
+    const m = moduleCua(cay, dangXem)
+    if (m) datMoModule(m)
   }
 
-  const moHet = (moRa: boolean) => {
-    const moi: Record<string, boolean> = {}
-    for (const t of cay) {
-      moi[`t:${t.so}`] = true // tầng luôn mở, để còn thấy khung
-      for (const n of t.nhom) {
-        moi[`g:${n.ma}`] = moRa
-        for (const m of n.modules) moi[`m:${m.module.id}`] = moRa
-      }
-    }
-    ghi(moi)
+  const doiTang = (so: number) => {
+    const moi = tangDong.includes(so) ? tangDong.filter((x) => x !== so) : [...tangDong, so]
+    datTangDong(moi)
+    ghiTam(KHOA_LUU, moi)
   }
 
   if (cay.length === 0) {
@@ -81,107 +64,87 @@ export function CayPhanHe({ cay, dangXem }: { cay: NhanhTang[]; dangXem: string 
 
   return (
     <nav aria-label="Cây phân hệ">
-      <div className="flex gap-1 px-0.5 pb-1.5">
-        {(
-          [
-            [true, 'Mở rộng tất cả'],
-            [false, 'Thu gọn tất cả'],
-          ] as const
-        ).map(([moRa, nhan]) => (
-          <button
-            key={nhan}
-            type="button"
-            onClick={() => moHet(moRa)}
-            className="flex-1 rounded-md border border-line-2 px-1 py-1 text-[11px] text-faint hover:bg-nav-hover hover:text-body"
-          >
-            {nhan}
-          </button>
-        ))}
-      </div>
-
       {cay.map((t) => {
-        const k1 = `t:${t.so}`
-        const mo1 = dangMo(k1)
+        const mo1 = !tangDong.includes(t.so)
         return (
-          <div key={t.so} className={t.so === 2 ? 'mt-3 border-t border-line-2 pt-1' : ''}>
+          <div key={t.so} className={t.so === 2 ? 'mt-4' : ''}>
+            {/* Cấp 1 — Tầng */}
             <button
               type="button"
-              onClick={() => doi(k1)}
+              onClick={() => doiTang(t.so)}
               aria-expanded={mo1}
-              className={`flex w-full items-center gap-1.5 px-1.5 pt-3 pb-0.5 text-left text-[10.5px] font-extrabold tracking-[.7px] uppercase ${t.so === 2 ? 'text-tim' : 'text-brand'}`}
+              className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[11px] font-extrabold tracking-[.7px] uppercase hover:bg-nav-hover ${t.so === 2 ? 'text-tim' : 'text-vang'}`}
             >
+              <span className="h-3.5 w-[3px] flex-none rounded-sm bg-current" />
+              <span className="min-w-0 flex-1">
+                Tầng {t.so} — {t.nhan}
+              </span>
               <MuiTen mo={mo1} />
-              <span className="h-3 w-[3px] flex-none rounded-sm bg-current" />
-              Tầng {t.so} — {t.nhan}
             </button>
-            {mo1 && (
-              <>
-                {t.nhom.map((n) => {
-                  const k2 = `g:${n.ma}`
-                  const mo2 = dangMo(k2)
-                  return (
-                    <div key={n.ma}>
-                      <button
-                        type="button"
-                        onClick={() => doi(k2)}
-                        aria-expanded={mo2}
-                        title={n.hoi}
-                        className="flex w-full items-center gap-1.5 px-1.5 pt-2 pb-0.5 pl-3 text-left text-[10.5px] font-bold tracking-[.5px] text-faint uppercase hover:text-body"
-                      >
-                        <MuiTen mo={mo2} />
-                        {n.nhan}
-                      </button>
-                      {mo2 &&
-                        n.modules.map(({ module: m, con }) => {
-                          const k3 = `m:${m.id}`
-                          const mo3 = dangMo(k3)
-                          const chua = con.some((c) => c.id === dangXem)
-                          return (
-                            <div key={m.id}>
-                              <button
-                                type="button"
-                                title={m.mo}
-                                aria-expanded={mo3}
-                                onClick={() => {
-                                  // Bấm module: mở ra và vào chức năng đầu tiên; đang ở trong thì thu lại.
-                                  if (mo3 && chua) return doi(k3)
-                                  ghi({ ...mo, [k3]: true })
-                                  if (!chua) void di({ to: '/$chucNang', params: { chucNang: con[0]!.id } })
-                                }}
-                                className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 pl-3 text-left text-[13px] hover:bg-nav-hover ${chua ? 'font-semibold text-ink' : 'text-body'}`}
-                              >
-                                <span className="w-4 flex-none opacity-85">
-                                  <BieuTuongNhom nhom={n.ma} tang={t.so} />
-                                </span>
-                                <span className={`min-w-0 flex-1 ${m.phac ? 'opacity-75' : ''}`}>
-                                  {m.nhan}
-                                </span>
-                                {m.phac && <SapCo />}
-                                <MuiTen mo={mo3} />
-                              </button>
-                              {mo3 && (
-                                <div className="mt-px mb-1 ml-[27px] border-l border-line pl-1.5">
-                                  {con.map((c) => (
-                                    <Link
-                                      key={c.id}
-                                      to="/$chucNang"
-                                      params={{ chucNang: c.id }}
-                                      className={`flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[12.5px] ${c.id === dangXem ? 'bg-tint-brand font-semibold text-brand' : 'text-body hover:bg-nav-hover'} ${laPhac(m, c) && c.id !== dangXem ? 'opacity-75' : ''}`}
-                                    >
-                                      <span className="min-w-0 flex-1">{c.nhan}</span>
-                                      {c.phac && !m.phac && <SapCo />}
-                                    </Link>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                    </div>
-                  )
-                })}
-              </>
-            )}
+
+            {mo1 &&
+              t.nhom.map((n) => (
+                <section key={n.ma} aria-label={n.nhan} className="mt-1.5">
+                  {/* Cấp 2 — Nhóm: tiêu đề phân đoạn, không đóng mở */}
+                  <h3
+                    title={n.hoi}
+                    className="m-0 flex items-center gap-2 px-2 pt-2 pb-1 text-[10px] font-bold tracking-[.8px] text-faint uppercase"
+                  >
+                    {n.nhan}
+                    <span aria-hidden="true" className="h-px flex-1 bg-line-2" />
+                  </h3>
+
+                  {n.modules.map(({ module: m, con }) => {
+                    const mo3 = moModule === m.id
+                    const chua = con.some((c) => c.id === dangXem)
+                    return (
+                      <div key={m.id}>
+                        {/* Cấp 3 — Module */}
+                        <button
+                          type="button"
+                          title={m.mo}
+                          aria-expanded={mo3}
+                          onClick={() => {
+                            // Đang mở → thu lại. Chưa mở → mở (module khác tự đóng), vào chức năng đầu nếu chưa ở trong.
+                            if (mo3) return datMoModule(undefined)
+                            datMoModule(m.id)
+                            if (!chua) void di({ to: '/$chucNang', params: { chucNang: con[0]!.id } })
+                          }}
+                          className={`flex w-full items-center gap-2 rounded-lg px-2 py-[7px] text-left text-[13px] ${mo3 || chua ? 'bg-nav-hover font-semibold text-ink' : 'text-body hover:bg-nav-hover'}`}
+                        >
+                          <span className={`w-4 flex-none ${m.phac ? 'opacity-50' : 'opacity-85'}`}>
+                            <BieuTuongNhom nhom={n.ma} tang={t.so} />
+                          </span>
+                          <span className={`min-w-0 flex-1 ${m.phac ? 'text-faint' : ''}`}>{m.nhan}</span>
+                          {m.phac && <SapCo />}
+                          <MuiTen mo={mo3} />
+                        </button>
+
+                        {/* Cấp 4 — Chức năng */}
+                        {mo3 && (
+                          <div className="mt-0.5 mb-1.5 ml-[17px] border-l border-line pl-2">
+                            {con.map((c) => {
+                              const dang = c.id === dangXem
+                              return (
+                                <Link
+                                  key={c.id}
+                                  to="/$chucNang"
+                                  params={{ chucNang: c.id }}
+                                  aria-current={dang ? 'page' : undefined}
+                                  className={`-ml-[9px] flex items-center gap-1.5 border-l-[3px] py-1.5 pr-2 pl-[14px] text-[12.5px] ${dang ? 'border-vang bg-tint-brand font-semibold text-brand' : 'border-transparent text-body hover:bg-nav-hover'} ${laPhac(m, c) && !dang ? 'text-faint' : ''}`}
+                                >
+                                  <span className="min-w-0 flex-1">{c.nhan}</span>
+                                  {c.phac && !m.phac && <SapCo />}
+                                </Link>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </section>
+              ))}
           </div>
         )
       })}
