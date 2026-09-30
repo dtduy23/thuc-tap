@@ -194,3 +194,11 @@ describe('bản kết nối', () => {
     expect(() => docCauHinh({ NODE_ENV: 'test', NATIVE_URL: 'ftp://x' })).toThrow(/http/)
   })
 })
+
+describe('bản giả', () => {
+  it('tệp DOCX: không gắn nhãn bản giả hai lần', async () => {
+    const { tomTatGia } = await import('../native/ket-noi-native.js')
+    const t = tomTatGia('[Bản giả — chưa nối FOXAI Native] Bản giả không đọc được nội dung tệp DOCX.')
+    expect(t.match(/\[Bản giả/g)).toHaveLength(1)
+  })
+})

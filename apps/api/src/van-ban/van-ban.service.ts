@@ -75,7 +75,10 @@ const chuyen = (d: DongDb): VanBanDong => ({
   soKyTuGoc: d.soKyTuGoc,
   soKyTuTomTat: d.soKyTuTomTat,
   tyLeRutGon:
-    d.soKyTuGoc && d.soKyTuTomTat ? Math.round((1 - d.soKyTuTomTat / d.soKyTuGoc) * 1000) / 10 : null,
+    // Tóm tắt không ngắn hơn gốc (văn bản rất ngắn, bản giả) thì không có "rút gọn" để nói.
+    d.soKyTuGoc && d.soKyTuTomTat && d.soKyTuTomTat < d.soKyTuGoc
+      ? Math.round((1 - d.soKyTuTomTat / d.soKyTuGoc) * 1000) / 10
+      : null,
   daHieuChinh: d.daHieuChinh,
   nguoiTao: d.nguoiTao,
   donViTen: d.donViTen,

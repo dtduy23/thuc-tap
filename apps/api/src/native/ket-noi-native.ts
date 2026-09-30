@@ -111,7 +111,9 @@ export function tomTatGia(noiDung: string): string {
     .replace(/\s+/g, ' ')
     .split(/(?<=[.!?])\s+/)
     .filter((c) => c.trim().length > 0)
-  return `${GHI_CHU_GIA} ${cau.slice(0, 3).join(' ')}`.trim()
+  const than = cau.slice(0, 3).join(' ')
+  // Nội dung gốc đã là thông báo của bản giả (tệp PDF/DOCX) thì không gắn nhãn lần nữa.
+  return than.startsWith(GHI_CHU_GIA) ? than : `${GHI_CHU_GIA} ${than}`.trim()
 }
 
 export class NativeGia implements KetNoiNative {
