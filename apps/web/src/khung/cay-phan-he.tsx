@@ -11,7 +11,7 @@
  * Tầng, nhóm đang ĐÓNG nhớ theo máy. Vào một trang thì nhánh chứa nó tự mở.
  * Không hiện mã, số cấp hay ghi chú thiết kế — người dùng chỉ thấy tên nghiệp vụ.
  */
-import type { NhanhTang } from '@gdos/shared'
+import { laPhac, type NhanhTang } from '@gdos/shared'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
@@ -132,7 +132,11 @@ export function CayPhanHe({ cay, dangXem }: { cay: NhanhTang[]; dangXem: string 
                               onClick={() => {
                                 if (mo3) return datMoModule(undefined)
                                 datMoModule(m.id)
-                                if (!chua) void di({ to: '/$chucNang', params: { chucNang: con[0]!.id } })
+                                if (!chua)
+                                  void di({
+                                    to: '/$chucNang',
+                                    params: { chucNang: (con.find((c) => !laPhac(m, c)) ?? con[0]!).id },
+                                  })
                               }}
                               className={`mb-0.5 flex w-full items-center gap-2.5 rounded-lg border-l-[3px] px-2.5 py-2 text-left text-[13px] ${chua ? 'border-vang bg-tint-brand font-semibold text-ink' : `border-transparent font-medium hover:bg-nav-hover hover:text-ink ${mo3 ? 'text-ink' : 'text-body'}`}`}
                             >

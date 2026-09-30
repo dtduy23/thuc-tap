@@ -28,6 +28,12 @@ export interface CauHinh {
   thuMucTep: string
   /** Cookie chỉ gửi qua HTTPS. Bật ở production; máy dev chạy http://localhost nên tắt. */
   cookieAnToan: boolean
+  /**
+   * FOXAI Native (ADR-0009). `gia`: bản giả cho máy dev (NATIVE_GIA=1, production cấm).
+   * `url`: địa chỉ Native thật (NATIVE_URL) — KHÔNG có giá trị mặc định (GDOS cũ từng
+   * để sẵn nativev3 làm mặc định). Vắng cả hai: tính năng gọi Native báo "chưa kết nối".
+   */
+  native: { gia: boolean; url: string | undefined }
 }
 
 export const CAU_HINH = Symbol('CAU_HINH')
@@ -85,8 +91,18 @@ export function docCauHinh(env: NodeJS.ProcessEnv = process.env): CauHinh {
         ? join(tmpdir(), 'gdos-tep-test')
         : resolve('../../.data/tep'))
 
+  const nativeGia = env.NATIVE_GIA === '1'
+  if (nativeGia && laProduction)
+    throw new Error('NATIVE_GIA chỉ dùng ở máy dev — production phải nối Native thật')
+  const nativeUrl = env.NATIVE_URL?.trim().replace(/\/+$/, '') || undefined
+  if (nativeUrl && !/^https?:\/\/[^\s/]+/.test(nativeUrl))
+    throw new Error(`NATIVE_URL="${nativeUrl}" không phải địa chỉ http(s)`)
+  if (nativeUrl && laProduction && !nativeUrl.startsWith('https://'))
+    throw new Error('NATIVE_URL ở production phải là https://')
+
   return {
     moiTruong,
+    native: { gia: nativeGia, url: nativeUrl },
     thuMucTep,
     cong,
     duongDanDb,

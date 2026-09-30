@@ -179,14 +179,13 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'tac-nghiep',
     maQuyen: 'VAN_BAN',
     nguon: 'native',
-    phac: true,
     mo: 'Văn bản đi qua Document Service của FOXAI Native. Tóm tắt, soạn thảo là chức năng của văn bản — không phải một nhóm "AI".',
     con: [
-      { id: 'vb-den', nhan: 'Văn bản đến' },
+      { id: 'vb-den', nhan: 'Văn bản đến', phac: true },
       { id: 'vb-tom-tat', nhan: 'Tóm tắt văn bản' },
-      { id: 'vb-soan-thao', nhan: 'Soạn thảo văn bản', hanhDong: 'CREATE' },
-      { id: 'vb-phan-cong', nhan: 'Phân công từ văn bản', hanhDong: 'ASSIGN' },
-      { id: 'vb-mau', nhan: 'Mẫu văn bản' },
+      { id: 'vb-soan-thao', nhan: 'Soạn thảo văn bản', hanhDong: 'CREATE', phac: true },
+      { id: 'vb-phan-cong', nhan: 'Phân công từ văn bản', hanhDong: 'ASSIGN', phac: true },
+      { id: 'vb-mau', nhan: 'Mẫu văn bản', phac: true },
     ],
   },
   {
@@ -345,7 +344,6 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'qt-ket-noi',
     maQuyen: 'QT_DICH_VU',
     nguon: 'native',
-    phac: true,
     mo: 'Các hệ thống GDOS gọi tới: FOXAI Native trước tiên, sau là trục liên thông, Cổng dịch vụ công… Dữ liệu nghiệp vụ vẫn ở Postgres của GDOS.',
     con: [
       { id: 'kn-ds', nhan: 'Danh sách kết nối' },

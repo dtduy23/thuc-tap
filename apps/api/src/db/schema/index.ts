@@ -530,3 +530,47 @@ export const giamSatLinhVuc = pgTable(
       .where(sql`${t.deletedAt} is null`),
   ],
 )
+
+// ════════════════════════════════════════════════════════════════════════════
+// VĂN BẢN — Tác nghiệp › Xử lý văn bản (ADR-0009). Hồ sơ nằm ở GDOS (RLS theo đơn
+// vị); FOXAI Native chỉ XỬ LÝ (tóm tắt…). Native tạm ngừng thì văn bản cũ vẫn xem được.
+// ════════════════════════════════════════════════════════════════════════════
+
+export const vanBan = pgTable(
+  'van_ban',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    ten: text('ten').notNull(),
+    /** Loại văn bản theo Document Service: Công văn, Báo cáo, Quyết định… */
+    loai: text('loai').notNull(),
+    /** tai-len (người dùng tải) · qlvb · cong-dvc · email · khac (tích hợp). */
+    nguon: text('nguon').notNull().default('tai-len'),
+    tenTep: text('ten_tep').notNull(),
+    khoaTep: text('khoa_tep').notNull(),
+    loaiTep: text('loai_tep').notNull(),
+    kichThuoc: integer('kich_thuoc').notNull(),
+    /** Mã bản ghi phía Native — rỗng khi chưa gửi được. */
+    nativeId: text('native_id'),
+    /** chua-gui · cho · dang-xu-ly · xong · loi */
+    trangThai: text('trang_thai').notNull().default('chua-gui'),
+    noiDungGoc: text('noi_dung_goc'),
+    tomTat: text('tom_tat'),
+    soKyTuGoc: integer('so_ky_tu_goc'),
+    soKyTuTomTat: integer('so_ky_tu_tom_tat'),
+    moHinh: text('mo_hinh'),
+    loi: text('loi'),
+    /** Người dùng đã sửa lại bản tóm tắt của AI. */
+    daHieuChinh: boolean('da_hieu_chinh').notNull().default(false),
+    nguoiTao: uuid('nguoi_tao'),
+    dongBoLuc: timestamp('dong_bo_luc', { withTimezone: true }),
+    ...thoiDiem,
+  },
+  (t) => [
+    index('van_ban_don_vi_idx').on(t.donViId, t.createdAt),
+    check('van_ban_trang_thai_ck', sql`${t.trangThai} in ('chua-gui', 'cho', 'dang-xu-ly', 'xong', 'loi')`),
+    check('van_ban_nguon_ck', sql`${t.nguon} in ('tai-len', 'qlvb', 'cong-dvc', 'email', 'khac')`),
+  ],
+)

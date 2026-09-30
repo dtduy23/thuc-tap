@@ -14,6 +14,7 @@ import { NGUON_DONG_GOP } from './xuyen-suot/nguon-dong-gop.js'
 import { HoSoDuAnService } from './du-an/ho-so.service.js'
 import { NhapDuAnService } from './du-an/nhap.service.js'
 import { KHO_TEP, KhoTepThuMuc } from './kho-tep/kho-tep.js'
+import { KET_NOI_NATIVE, taoKetNoiNative } from './native/ket-noi-native.js'
 import { NhatKyController } from './nhat-ky/nhat-ky.controller.js'
 import { NhatKyService } from './nhat-ky/nhat-ky.service.js'
 import { DonViController } from './quan-tri/don-vi.controller.js'
@@ -23,6 +24,8 @@ import { TaiKhoanService } from './quan-tri/tai-khoan.service.js'
 import { ThietLapController } from './thiet-lap/thiet-lap.controller.js'
 import { ThietLapService } from './thiet-lap/thiet-lap.service.js'
 import { SucKhoeController } from './suc-khoe/suc-khoe.controller.js'
+import { KetNoiController, VanBanController } from './van-ban/van-ban.controller.js'
+import { VanBanService } from './van-ban/van-ban.service.js'
 import { BaoVeGuard } from './xac-thuc/bao-ve.js'
 import { XacThucController } from './xac-thuc/xac-thuc.controller.js'
 import { XacThucService } from './xac-thuc/xac-thuc.service.js'
@@ -40,6 +43,8 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     XuyenSuotController,
     DanhMucController,
     QuanLyDanhMucController,
+    VanBanController,
+    KetNoiController,
   ],
   providers: [
     { provide: CAU_HINH, useFactory: () => docCauHinh() },
@@ -54,12 +59,15 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     DongGopDuAnService,
     NhapDuAnService,
     QuanLyDanhMucService,
+    VanBanService,
     // Nguồn đóng góp cho nhóm xuyên suốt (ADR-0007). Module nghiệp vụ mới: thêm vào đây.
     {
       provide: NGUON_DONG_GOP,
       useFactory: (duAn: DongGopDuAnService) => [duAn],
       inject: [DongGopDuAnService],
     },
+    // FOXAI Native (ADR-0009): bản giả / thật / chưa nối — theo cấu hình.
+    { provide: KET_NOI_NATIVE, useFactory: (ch: CauHinh) => taoKetNoiNative(ch.native), inject: [CAU_HINH] },
     { provide: KHO_TEP, useFactory: (ch: CauHinh) => new KhoTepThuMuc(ch.thuMucTep), inject: [CAU_HINH] },
     // Toàn cục: mọi route mặc định bị chặn cho tới khi khai rõ (xem bao-ve.ts).
     { provide: APP_GUARD, useClass: BaoVeGuard },

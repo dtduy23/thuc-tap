@@ -4,16 +4,33 @@
 
 ## Các mốc
 
-| Mốc   | Nội dung                                                                             | Trạng thái                                         |
-| ----- | ------------------------------------------------------------------------------------ | -------------------------------------------------- |
-| **0** | Khởi tạo repo, CI, ADR, khung dùng chung                                             | ✅ Xong — **CI/CD giao kỹ thuật FOXAI** (xem dưới) |
-| **1** | Nền móng: tài khoản, đơn vị, vai trò & quyền, RLS, nhật ký, khung portal + cây 4 cấp | ✅ Xong — nhánh `moc-1-nen-mong`, chưa đẩy         |
-| **2** | Đưa lên máy thử (image, nginx, CI/CD)                                                | Chưa bắt đầu                                       |
-| **3** | Module Dự án (từ PMS)                                                                | ✅ Xong 30/09/2026 — đủ chức năng PMS, chưa đẩy    |
-| **4** | Module Khiếu nại đất đai                                                             | Chưa bắt đầu                                       |
-| **5** | Nối FOXAI Native (văn bản, tóm tắt, hỏi đáp)                                         | Chưa bắt đầu — **chờ đội Native**                  |
-| **6** | Điều hành: dashboard, báo cáo                                                        | 🔄 Khung chung xong (Mốc 3) — chờ nghiệp vụ khác   |
-| **7** | Thiết lập: bật/tắt module theo đơn vị, cảnh báo, luồng duyệt                         | Chưa bắt đầu                                       |
+| Mốc   | Nội dung                                                                             | Trạng thái                                             |
+| ----- | ------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| **0** | Khởi tạo repo, CI, ADR, khung dùng chung                                             | ✅ Xong — **CI/CD giao kỹ thuật FOXAI** (xem dưới)     |
+| **1** | Nền móng: tài khoản, đơn vị, vai trò & quyền, RLS, nhật ký, khung portal + cây 4 cấp | ✅ Xong — nhánh `moc-1-nen-mong`, chưa đẩy             |
+| **2** | Đưa lên máy thử (image, nginx, CI/CD)                                                | Chưa bắt đầu                                           |
+| **3** | Module Dự án (từ PMS)                                                                | ✅ Xong 30/09/2026 — đủ chức năng PMS, chưa đẩy        |
+| **4** | Module Khiếu nại đất đai                                                             | Chưa bắt đầu                                           |
+| **5** | Nối FOXAI Native (văn bản, tóm tắt, hỏi đáp)                                         | 🔄 Bước A xong (bản giả) — **chờ đội Native** xác thực |
+| **6** | Điều hành: dashboard, báo cáo                                                        | 🔄 Khung chung xong (Mốc 3) — chờ nghiệp vụ khác       |
+| **7** | Thiết lập: bật/tắt module theo đơn vị, cảnh báo, luồng duyệt                         | Chưa bắt đầu                                           |
+
+## Mốc 5 — Nối FOXAI Native (ADR-0009)
+
+### Bước A — kiến trúc + Tóm tắt văn bản chạy với bản giả (30/09/2026)
+
+- `apps/api/src/native/ket-noi-native.ts`: giao diện `KetNoiNative` + ba bản: giả (`NATIVE_GIA=1`),
+  thật (HTTP theo đặc tả Document Service — thiếu đúng một lớp `CapToken`), chưa nối (503).
+- Bảng `van_ban` (0020/0021, RLS theo đơn vị): hồ sơ, nội dung gốc, tóm tắt ở GDOS; tệp gốc ở kho
+  tệp GDOS. Native lỗi → văn bản vẫn lưu, ghi lỗi, gửi lại được.
+- API `/api/van-ban` (danh sách, tải lên, chi tiết, chạy lại, sửa tóm tắt, tải tệp, trạng thái);
+  `/api/ket-noi` (danh sách, kiểm tra). Chỉ tài khoản có `native_user_id` gửi được sang Native.
+- Web: Xử lý văn bản › Tóm tắt văn bản (lưới chuẩn + tải lên), `/van-ban/$id` (gốc — tóm tắt song
+  song, tự cập nhật khi đang chạy); Quản trị › Dịch vụ nền tảng (danh sách, kiểm tra).
+- Máy dev: `.env` có `NATIVE_GIA=1`; tài khoản dev "Quản trị hệ thống" đã điền mã Native
+  `thu-nghiem-dev` để thử.
+- **Bước B chờ đội Native** — câu hỏi ở ADR-0009 mục "Còn mở". Có câu trả lời thì viết `CapToken`,
+  đặt `NATIVE_URL`, chuyển ADR-0009 sang "Đã chốt". Sau đó: Văn bản đến, Soạn thảo, Phân công, Mẫu.
 
 ## Mốc 3 — Dự án (từ PMS)
 

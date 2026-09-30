@@ -141,6 +141,20 @@
       "when": 1790743442288,
       "tag": "0019_dem-dung-danh-muc",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790751137765,
+      "tag": "0020_van-ban",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790751149627,
+      "tag": "0021_van-ban-bao-mat",
+      "breakpoints": true
     }
   ]
 }

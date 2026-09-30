@@ -9,6 +9,7 @@
  *       ├── /cai-dat        cài đặt cá nhân (tông màu, sáng/tối)
  *       ├── /du-an/$id      hồ sơ một dự án — các thẻ là trục phạm vi, không lên cây
  *       ├── /bao-cao/$ma    một báo cáo — cùng màn dù mở từ Điều hành hay từ module chủ
+ *       ├── /van-ban/$id    một văn bản: bản gốc và tóm tắt song song
  *       └── /$chucNang      MỘT route động phủ toàn bộ registry — thêm chức năng
  *                           không phải sửa file này
  */
@@ -32,6 +33,7 @@ import { TrangChucNang, KhongTimThay } from '@/trang/chuc-nang'
 import { TrangDangNhap } from '@/trang/dang-nhap'
 import { TrangDoiMatKhau } from '@/trang/doi-mat-khau'
 import { TrangChu } from '@/trang/trang-chu'
+import { TrangVanBan } from '@/trang/van-ban'
 import { Nut, ThongBao } from '@/ui/co-ban'
 
 interface NguCanhRouter {
@@ -125,6 +127,15 @@ const baoCao = createRoute({
   },
 })
 
+const vanBan = createRoute({
+  getParentRoute: () => portal,
+  path: '/van-ban/$id',
+  component: function ManVanBan() {
+    const { id } = vanBan.useParams()
+    return <TrangVanBan id={id} />
+  },
+})
+
 const chucNang = createRoute({
   getParentRoute: () => portal,
   path: '/$chucNang',
@@ -136,7 +147,7 @@ const chucNang = createRoute({
 
 const cayRoute = goc.addChildren([
   dangNhap,
-  portal.addChildren([trangChu, doiMatKhau, caiDat, hoSoDuAn, baoCao, chucNang]),
+  portal.addChildren([trangChu, doiMatKhau, caiDat, hoSoDuAn, baoCao, vanBan, chucNang]),
 ])
 
 export function taoRouter(queryClient: QueryClient) {
