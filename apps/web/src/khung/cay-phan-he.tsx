@@ -105,7 +105,6 @@ export function CayPhanHe({ cay, dangXem }: { cay: NhanhTang[]; dangXem: string 
             </button>
             {mo1 && (
               <>
-                <p className="px-2 pb-1 pl-7 text-[10.5px] leading-snug text-faint italic">{t.hoi}</p>
                 {t.nhom.map((n) => {
                   const k2 = `g:${n.ma}`
                   const mo2 = dangMo(k2)
