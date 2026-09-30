@@ -11,8 +11,10 @@ Postgres). Hai repo cũ **không** phát triển tiếp cho bản chính thức.
 ## 2. Đọc trước khi làm bất cứ việc gì
 
 1. `docs/tien-do.md` — đang ở mốc nào, việc gì dở, câu hỏi nào còn mở.
-2. `docs/adr/` — quyết định đã chốt. **Không làm ngược một ADR**; thấy ADR sai thì dừng và hỏi.
-3. `docs/khung-mau.html` — bản mẫu giao diện (đặc tả, không phải mã để copy).
+2. `docs/tu-duy-xay-dung.md` — **tư duy xây hệ thống**: đặt một màn vào đâu, một chủ — nhiều
+   lối vào, công thức thêm module, dấu hiệu đang làm sai. Đọc trước khi thêm hay sửa module.
+3. `docs/adr/` — quyết định đã chốt. **Không làm ngược một ADR**; thấy ADR sai thì dừng và hỏi.
+4. `docs/khung-mau.html` — bản mẫu giao diện (đặc tả, không phải mã để copy).
 
 ## 3. Lệnh
 
@@ -43,6 +45,9 @@ scripts/         kiểm tra chạy trong CI
   mới thì lên cấp 3.
 - Thẻ bên trong một hồ sơ **không phải cấp 5** — đó là trục phạm vi, không lên sidebar.
 - Không bao giờ có nhóm "Khác / Mở rộng / Tiện ích / AI".
+- **Một chủ — nhiều lối vào** (ADR-0007): báo cáo, chỉ số, cảnh báo, tham số khai **một lần** ở
+  module sở hữu. Điều hành, Giám sát và Tầng 2 không bao giờ có module mang tên một nghiệp vụ;
+  không có module "Cấu hình <nghiệp vụ>".
 
 **Dữ liệu** (ADR-0004)
 

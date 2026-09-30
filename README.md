@@ -35,9 +35,10 @@ Trước khi đẩy mã: `pnpm kiem-tra` phải xanh.
 
 ## Tài liệu
 
-|                                            |                                               |
-| ------------------------------------------ | --------------------------------------------- |
-| [CLAUDE.md](CLAUDE.md)                     | Luật làm việc — cho cả người lẫn AI           |
-| [docs/tien-do.md](docs/tien-do.md)         | Đang ở mốc nào, việc gì mở                    |
-| [docs/adr/](docs/adr/)                     | Quyết định kiến trúc đã chốt                  |
-| [docs/khung-mau.html](docs/khung-mau.html) | Bản mẫu giao diện — mở thẳng bằng trình duyệt |
+|                                                    |                                                 |
+| -------------------------------------------------- | ----------------------------------------------- |
+| [CLAUDE.md](CLAUDE.md)                             | Luật làm việc — cho cả người lẫn AI             |
+| [docs/tu-duy-xay-dung.md](docs/tu-duy-xay-dung.md) | Tư duy xây hệ thống — đọc trước khi thêm module |
+| [docs/tien-do.md](docs/tien-do.md)                 | Đang ở mốc nào, việc gì mở                      |
+| [docs/adr/](docs/adr/)                             | Quyết định kiến trúc đã chốt                    |
+| [docs/khung-mau.html](docs/khung-mau.html)         | Bản mẫu giao diện — mở thẳng bằng trình duyệt   |
