@@ -28,4 +28,24 @@ describe('docCauHinh', () => {
   it('bỏ qua biến PORT chung — công cụ bên ngoài đặt nó cho cả nhóm tiến trình', () => {
     expect(docCauHinh({ PORT: '5174' }).cong).toBe(4100)
   })
+
+  const DB = 'postgres://u:p@h/d'
+
+  it('production thiếu AUTH_SECRET thì DỪNG', () => {
+    expect(() => docCauHinh({ NODE_ENV: 'production', DATABASE_URL: DB })).toThrow(/AUTH_SECRET/)
+  })
+
+  it('từ chối AUTH_SECRET quá ngắn, kể cả ở máy dev', () => {
+    expect(() => docCauHinh({ AUTH_SECRET: 'ngan-qua' })).toThrow(/ít nhất 32/)
+  })
+
+  it('máy dev thiếu AUTH_SECRET thì sinh khóa ngẫu nhiên, mỗi lần một khác', () => {
+    expect(docCauHinh({}).khoaKyVe).not.toBe(docCauHinh({}).khoaKyVe)
+  })
+
+  it('cookie chỉ bắt buộc HTTPS ở production', () => {
+    expect(docCauHinh({}).cookieAnToan).toBe(false)
+    const ch = docCauHinh({ NODE_ENV: 'production', DATABASE_URL: DB, AUTH_SECRET: 'k'.repeat(40) })
+    expect(ch.cookieAnToan).toBe(true)
+  })
 })

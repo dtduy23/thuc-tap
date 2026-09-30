@@ -1,6 +1,7 @@
 import { Controller, Get, Inject, ServiceUnavailableException } from '@nestjs/common'
 import { CAU_HINH, type CauHinh } from '../cau-hinh.js'
 import { CoSoDuLieu } from '../db/co-so-du-lieu.js'
+import { CongKhai } from '../xac-thuc/bao-ve.js'
 
 /**
  * Hai điểm kiểm tra tách riêng, theo đúng thông lệ liveness / readiness:
@@ -11,6 +12,7 @@ import { CoSoDuLieu } from '../db/co-so-du-lieu.js'
  *                         thiếu cái nào trả 503 và nói rõ cái nào
  */
 @Controller('health')
+@CongKhai()
 export class SucKhoeController {
   constructor(
     @Inject(CoSoDuLieu) private readonly csdl: CoSoDuLieu,

@@ -12,7 +12,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "khoi-tao": "node --env-file-if-exists=../../.env dist/cli/khoi-tao.js"
   },
   "dependencies": {
     "@gdos/shared": "workspace:*",
@@ -28,8 +29,11 @@
     "@electric-sql/pglite": "^0.5.8",
     "@nestjs/testing": "^12.1.1",
     "@swc/core": "^1.16.2",
+    "@types/express": "^5.0.6",
     "@types/pg": "^8.23.1",
+    "@types/supertest": "^7.2.1",
     "drizzle-kit": "^0.31.11",
+    "supertest": "^7.3.0",
     "unplugin-swc": "^2.0.0"
   }
 }
