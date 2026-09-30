@@ -7,7 +7,14 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import {
+  BEN_THUC_HIEN,
+  GIAI_DOAN,
   homNay,
+  ngayKetThucDuKien,
+  soNgayGiua,
+  type BenThucHien,
+  type GiaiDoan,
+  type PhienBanKeHoach,
   kiemMaDuAn,
   LOAI_CHI,
   NHOM_DU_AN,
@@ -28,15 +35,34 @@ import {
 } from '@gdos/shared'
 import { and, asc, desc, eq, inArray, isNull, or, sql, type SQL } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
-import { chuoi, chuoiHoacRong, maUuid, motTrong, ngay, ngayHoacRong, soNguyen } from '../chung/kiem-than.js'
+import {
+  chuoi,
+  chuoiHoacRong,
+  coKhong,
+  maUuid,
+  motTrong,
+  ngay,
+  ngayHoacRong,
+  soNguyen,
+} from '../chung/kiem-than.js'
 import { CoSoDuLieu, dbCua } from '../db/co-so-du-lieu.js'
 import { maLoiPg, trongPhamVi, TRUNG_KHOA, truyVan, type GiaoDich } from '../db/pham-vi.js'
-import { danhMucGiaTri, donVi, duAn, duAnBuoc, duAnThanhVien, quyTrinhMau } from '../db/schema/index.js'
+import {
+  danhMucGiaTri,
+  donVi,
+  duAn,
+  duAnBuoc,
+  duAnPhienBan,
+  duAnThanhVien,
+  quyTrinhMau,
+} from '../db/schema/index.js'
 import type { NguoiDungPhien } from '../xac-thuc/bao-ve.js'
 
 const VAI_TRO = Object.keys(VAI_TRO_THANH_VIEN) as VaiTroThanhVien[]
 const TRANG_THAI = Object.keys(TRANG_THAI_DU_AN) as TrangThaiDuAn[]
 const LOAI = Object.keys(LOAI_CHI) as LoaiChi[]
+const GD = Object.keys(GIAI_DOAN) as GiaiDoan[]
+const BEN = Object.keys(BEN_THUC_HIEN) as BenThucHien[]
 
 /** Cột đọc của dự án. Tên đơn vị, cán bộ qua hàm — nhà thầu vẫn thấy tên chủ đầu tư dù RLS che dòng đơn vị. */
 const COT_DU_AN = {
@@ -228,7 +254,7 @@ export class DuAnService {
               ghiChu: b.vanBan ? `Văn bản: ${b.vanBan}` : null,
             })),
           )
-        await chotKeHoach(tx, id)
+        await ghiPhienBan(tx, nd, id, donViId, 'Kế hoạch gốc theo quy trình mẫu', null)
         return docHoSo(tx, nd, id)
       })
     } catch (e) {
@@ -270,6 +296,7 @@ export class DuAnService {
     return this.voiBuoc(nd, id, buocId, 'sua', async (tx, b) => {
       if (b.laNhom) throw new BadRequestException('Đây là nhóm bước — ghi nhận ở từng bước con')
       if (b.boQua) throw new BadRequestException('Bước đã bỏ qua — khôi phục trước')
+      if (b.laNhap) throw new BadRequestException('Bước nháp — chốt kế hoạch trước khi ghi nhận')
       await capNhatBuoc(tx, b.id, { ngayHoanThanh: ngayXong, soVanBan, ghiChu, choXacNhan: null })
     })
   }
@@ -293,8 +320,14 @@ export class DuAnService {
     )
   }
 
-  /** Sửa số ngày, hạn ghi đè, văn bản, đơn vị thực hiện, ghi chú, sản phẩm. */
+  /**
+   * Sửa số ngày, hạn ghi đè, văn bản, đơn vị thực hiện, ghi chú, sản phẩm. Tên, số thứ
+   * tự, bên thực hiện chỉ đổi được ở bước TỰ THÊM — bước theo quy trình mẫu giữ nguyên.
+   */
   suaBuoc(nd: NguoiDungPhien, id: string, buocId: string, than: unknown) {
+    const ten = chuoiHoacRong(than, 'ten', 500) ?? undefined
+    const stt = chuoiHoacRong(than, 'stt', 30) ?? undefined
+    const benThucHien = motTrong(than, 'benThucHien', BEN)
     const gt = {
       soNgay: soNguyen(than, 'soNgay', 0, 3650),
       hanGhiDe: ngayHoacRong(than, 'hanGhiDe'),
@@ -303,7 +336,90 @@ export class DuAnService {
       ghiChu: chuoiHoacRong(than, 'ghiChu', 2000),
       sanPham: chuoiHoacRong(than, 'sanPham', 2000),
     }
-    return this.voiBuoc(nd, id, buocId, 'sua', (tx, b) => capNhatBuoc(tx, b.id, gt))
+    return this.voiBuoc(nd, id, buocId, 'sua', (tx, b) => {
+      if (b.batBuoc && (ten !== undefined || stt !== undefined || benThucHien !== undefined))
+        throw new BadRequestException('Bước theo quy trình mẫu không đổi tên, số thứ tự, bên thực hiện được')
+      return capNhatBuoc(tx, b.id, { ...gt, ten, stt, benThucHien })
+    })
+  }
+
+  // ── Kế hoạch & điều chỉnh ──────────────────────────────────────────────
+
+  /**
+   * Thêm bước tự khai (không bắt buộc). Luôn vào dạng NHÁP: chưa tính hạn, chưa vào
+   * tiến độ — tới khi "Chốt kế hoạch". Chèn ngay sau `sauBuocId`, hoặc cuối giai đoạn.
+   */
+  themBuoc(nd: NguoiDungPhien, id: string, than: unknown) {
+    const giaiDoan = motTrong(than, 'giaiDoan', GD)
+    if (!giaiDoan) throw new BadRequestException('Thiếu "giaiDoan"')
+    const ten = chuoi(than, 'ten', 500, true)
+    const soNgay = soNguyen(than, 'soNgay', 0, 3650) ?? 0
+    const benThucHien = motTrong(than, 'benThucHien', BEN) ?? 'chu-dau-tu'
+    const donViThucHien = chuoiHoacRong(than, 'donViThucHien', 300) ?? null
+    const laNhom = coKhong(than, 'laNhom') ?? false
+    const stt = chuoiHoacRong(than, 'stt', 30) ?? null
+    const sauBuocId = chuoiHoacRong(than, 'sauBuocId', 40)
+    if (sauBuocId) maUuid(sauBuocId, 'sauBuocId')
+    return this.voiDuAn(nd, id, 'sua', async (tx, da) => {
+      const ds = await docBuoc(tx, [id])
+      let truoc: DongBuoc | undefined
+      let chaId: string | null = null
+      if (sauBuocId) {
+        truoc = ds.find((b) => b.id === sauBuocId)
+        if (!truoc) throw new NotFoundException('Không tìm thấy bước đứng trước')
+        if (truoc.giaiDoan !== giaiDoan) throw new BadRequestException('Bước đứng trước ở giai đoạn khác')
+        chaId = truoc.laNhom ? truoc.id : truoc.chaId
+      } else {
+        // Cuối giai đoạn: sau bước cuối cùng của giai đoạn này hoặc các giai đoạn trước ('I' < 'II' < 'III').
+        truoc = ds.filter((b) => b.giaiDoan <= giaiDoan).at(-1)
+      }
+      const sau = truoc ? ds.find((b) => b.thuTu > truoc.thuTu) : ds[0]
+      const thuTu =
+        truoc && sau ? (truoc.thuTu + sau.thuTu) / 2 : truoc ? truoc.thuTu + 1 : sau ? sau.thuTu - 1 : 0
+      await tx.insert(duAnBuoc).values({
+        duAnId: id,
+        donViId: da.donViId,
+        thuTu,
+        chaId,
+        giaiDoan,
+        stt: stt ?? `${giaiDoan}.+`,
+        laNhom,
+        batBuoc: false,
+        ten,
+        soNgay: laNhom ? 0 : soNgay,
+        benThucHien,
+        donViThucHien,
+        laNhap: true,
+      })
+    })
+  }
+
+  /** Xóa (mềm) bước tự thêm. Bước theo quy trình mẫu thì chỉ bỏ qua được, có lý do. */
+  xoaBuoc(nd: NguoiDungPhien, id: string, buocId: string) {
+    return this.voiBuoc(nd, id, buocId, 'sua', async (tx, b) => {
+      if (b.batBuoc)
+        throw new BadRequestException('Bước theo quy trình mẫu không xóa được — dùng "Bỏ qua bước"')
+      const con = (await docBuoc(tx, [id])).some((x) => x.chaId === b.id)
+      if (con) throw new BadRequestException('Nhóm còn bước con — xóa các bước con trước')
+      await capNhatBuoc(tx, b.id, { deletedAt: new Date() })
+    })
+  }
+
+  /**
+   * Chốt kế hoạch: bước nháp thành chính thức, tính lại hạn, ghi một PHIÊN BẢN mới
+   * (ảnh chụp hạn, lý do, số ngày lùi so với lần chốt trước). Phiên bản không sửa được.
+   */
+  chotKeHoach(nd: NguoiDungPhien, id: string, than: unknown) {
+    const lyDo = chuoi(than, 'lyDo', 1000, true)
+    const canCu = chuoiHoacRong(than, 'canCu', 500) ?? null
+    return this.voiDuAn(nd, id, 'sua', async (tx, da) => {
+      await tx
+        .update(duAnBuoc)
+        .set({ laNhap: false })
+        .where(and(eq(duAnBuoc.duAnId, id), eq(duAnBuoc.laNhap, true), isNull(duAnBuoc.deletedAt)))
+      await tinhLaiHan(tx, id)
+      await ghiPhienBan(tx, nd, id, da.donViId, lyDo, canCu)
+    })
   }
 
   /** Nhà thầu / tư vấn gửi cập nhật — database tự kiểm là thành viên (hàm buoc_gui_cap_nhat). */
@@ -511,12 +627,31 @@ async function docHoSo(tx: GiaoDich, nd: NguoiDungPhien, id: string): Promise<Ho
     ten[g] = r?.ten ?? null
   }
   const vaiToi = tv.filter((t) => t.taiKhoanId === nd.taiKhoanId).map((t) => t.vaiTro as VaiTroThanhVien)
+  const pb = await tx
+    .select({
+      id: duAnPhienBan.id,
+      so: duAnPhienBan.so,
+      ngay: duAnPhienBan.ngay,
+      lyDo: duAnPhienBan.lyDo,
+      canCu: duAnPhienBan.canCu,
+      soNgayLui: duAnPhienBan.soNgayLui,
+      ngayKetThuc: duAnPhienBan.ngayKetThuc,
+      nguoiChot: sql<string | null>`ten_tai_khoan(${duAnPhienBan.nguoiChot})`,
+      anhChup: duAnPhienBan.anhChup,
+    })
+    .from(duAnPhienBan)
+    .where(eq(duAnPhienBan.duAnId, id))
+    .orderBy(desc(duAnPhienBan.so))
+  const anh = (pb[0]?.anhChup ?? []) as { id: string; han: string | null }[]
+  const phienBan: PhienBanKeHoach[] = pb.map(({ anhChup: _bo, ...p }) => p)
   return {
     ...chuyenDuAn(da, buoc, homNay()),
     canCu: da.canCu,
     tienDoMoTa: da.tienDoMoTa,
     buoc: buoc.map((b) => chuyenBuoc(b, ten)),
     thanhVien: tv.map((t) => ({ ...t, vaiTro: t.vaiTro as VaiTroThanhVien })),
+    phienBan,
+    hanDaChot: Object.fromEntries(anh.map((a) => [a.id, a.han])),
     quyen: quyenTren(nd, da, vaiToi),
   }
 }
@@ -571,11 +706,33 @@ async function tinhLaiHan(tx: GiaoDich, duAnId: string) {
     if ((han[i] ?? null) !== b.han) await capNhatBuoc(tx, b.id, { han: han[i] ?? null })
 }
 
-/** Chụp kế hoạch hiện hành (không nháp) làm "đã chốt" — để so khi điều chỉnh (phiên sau). */
-async function chotKeHoach(tx: GiaoDich, duAnId: string) {
+/** Ghi một phiên bản kế hoạch: ảnh chụp các bước chính thức + số ngày kết thúc lùi so với lần trước. */
+async function ghiPhienBan(
+  tx: GiaoDich,
+  nd: NguoiDungPhien,
+  duAnId: string,
+  donViId: string,
+  lyDo: string,
+  canCu: string | null,
+) {
   const buoc = (await docBuoc(tx, [duAnId])).filter((b) => !b.laNhap)
-  await tx
-    .update(duAn)
-    .set({ keHoachChot: buoc.map((b) => ({ id: b.id, stt: b.stt, soNgay: b.soNgay, han: b.han })) })
-    .where(eq(duAn.id, duAnId))
+  const ketThuc = ngayKetThucDuKien(buoc)
+  const [truoc] = await tx
+    .select({ so: duAnPhienBan.so, ngayKetThuc: duAnPhienBan.ngayKetThuc })
+    .from(duAnPhienBan)
+    .where(eq(duAnPhienBan.duAnId, duAnId))
+    .orderBy(desc(duAnPhienBan.so))
+    .limit(1)
+  await tx.insert(duAnPhienBan).values({
+    duAnId,
+    donViId,
+    so: (truoc?.so ?? 0) + 1,
+    ngay: homNay(),
+    lyDo,
+    canCu,
+    soNgayLui: truoc?.ngayKetThuc && ketThuc ? Math.max(0, soNgayGiua(truoc.ngayKetThuc, ketThuc)) : 0,
+    ngayKetThuc: ketThuc,
+    anhChup: buoc.map((b) => ({ id: b.id, stt: b.stt, ten: b.ten, han: b.han })),
+    nguoiChot: nd.taiKhoanId,
+  })
 }

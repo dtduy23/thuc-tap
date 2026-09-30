@@ -10,9 +10,9 @@ import {
   type TrangThaiBuoc,
 } from '@gdos/shared'
 import { Fragment, useMemo, useState } from 'react'
-import { suaBuoc, thaoTacBuoc } from '@/lib/du-an'
+import { suaBuoc, thaoTacBuoc, xoaBuoc } from '@/lib/du-an'
 import { ngayGio, ngayVn } from '@/lib/ngay'
-import { KhungBang, LOP_TD, LOP_TH, Nut, ThongBao } from '@/ui/co-ban'
+import { Chip, KhungBang, LOP_TD, LOP_TH, Nut, ThongBao } from '@/ui/co-ban'
 import { ChipBuoc } from '../chung'
 import { useGhiHoSo } from './ghi-ho-so'
 
@@ -125,7 +125,13 @@ export default function Checklist({ hs }: { hs: HoSoDuAn }) {
                         >
                           <span
                             className={
-                              b.laNhom ? 'font-semibold text-ink' : b.boQua ? 'text-faint line-through' : ''
+                              b.laNhom
+                                ? 'font-semibold text-ink'
+                                : b.boQua
+                                  ? 'text-faint line-through'
+                                  : b.laNhap
+                                    ? 'italic'
+                                    : ''
                             }
                           >
                             {b.ten}
@@ -143,7 +149,9 @@ export default function Checklist({ hs }: { hs: HoSoDuAn }) {
                         <td className={`${LOP_TD} whitespace-nowrap tabular-nums`}>
                           {b.ngayHoanThanh ? ngayVn(b.ngayHoanThanh) : ''}
                         </td>
-                        <td className={LOP_TD}>{!b.laNhom && <ChipBuoc tt={trangThai} />}</td>
+                        <td className={LOP_TD}>
+                          {b.laNhap ? <Chip mau="tim">Nháp</Chip> : !b.laNhom && <ChipBuoc tt={trangThai} />}
+                        </td>
                         <td className={`${LOP_TD} text-right`}>
                           {!b.laNhom && (
                             <Nut
@@ -195,6 +203,7 @@ function XuLyBuoc({ hs, b, tt }: { hs: HoSoDuAn; b: BuocDuAn; tt: TrangThaiBuoc 
   const [lyDo, datLyDo] = useState('')
   const [soNgay, datSoNgay] = useState(String(b.soNgay))
   const [hanGhiDe, datHanGhiDe] = useState(b.hanGhiDe ?? '')
+  const [ten, datTen] = useState(b.ten)
   const q = hs.quyen
   const tac = (loai: Parameters<typeof thaoTacBuoc>[2], body?: Record<string, unknown>) =>
     ghi.chay(() => thaoTacBuoc(hs.id, b.id, loai, body))
@@ -232,6 +241,41 @@ function XuLyBuoc({ hs, b, tt }: { hs: HoSoDuAn; b: BuocDuAn; tt: TrangThaiBuoc 
 
       <div className="space-y-3">
         {ghi.loi && <ThongBao kieu="loi">{ghi.loi}</ThongBao>}
+        {b.laNhap && (
+          <ThongBao>
+            Bước nháp — chưa tính hạn, chưa vào tiến độ. Chốt ở thẻ “Kế hoạch & điều chỉnh” để bước thành
+            chính thức.
+          </ThongBao>
+        )}
+
+        {q.sua && !b.batBuoc && (
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="min-w-[220px] flex-1 text-[12px] text-faint">
+              Tên bước (bước tự thêm)
+              <input
+                value={ten}
+                maxLength={500}
+                onChange={(e) => datTen(e.target.value)}
+                className={`${LOP_O} block w-full`}
+              />
+            </label>
+            <Nut
+              disabled={ghi.dangChay || !ten.trim() || ten === b.ten}
+              onClick={() => ghi.chay(() => suaBuoc(hs.id, b.id, { ten: ten.trim() }))}
+            >
+              Lưu tên
+            </Nut>
+            <Nut
+              kieu="nguy-hiem"
+              disabled={ghi.dangChay}
+              onClick={() => {
+                if (confirm(`Xóa bước “${b.ten}”?`)) ghi.chay(() => xoaBuoc(hs.id, b.id))
+              }}
+            >
+              Xóa bước
+            </Nut>
+          </div>
+        )}
 
         {q.xacNhan && b.choXacNhan && (
           <div className="flex flex-wrap gap-2">
@@ -244,7 +288,7 @@ function XuLyBuoc({ hs, b, tt }: { hs: HoSoDuAn; b: BuocDuAn; tt: TrangThaiBuoc 
           </div>
         )}
 
-        {q.sua && !b.boQua && tt !== 'xong' && (
+        {q.sua && !b.boQua && !b.laNhap && tt !== 'xong' && (
           <div className="flex flex-wrap items-end gap-2">
             <label className="text-[12px] text-faint">
               Ngày hoàn thành
@@ -281,7 +325,7 @@ function XuLyBuoc({ hs, b, tt }: { hs: HoSoDuAn; b: BuocDuAn; tt: TrangThaiBuoc 
           </Nut>
         )}
 
-        {q.gui && !b.boQua && tt !== 'xong' && (
+        {q.gui && !b.boQua && !b.laNhap && tt !== 'xong' && (
           <div className="flex flex-wrap items-end gap-2">
             <label className="text-[12px] text-faint">
               Ngày hoàn thành

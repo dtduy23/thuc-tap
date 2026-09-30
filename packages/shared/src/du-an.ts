@@ -276,6 +276,10 @@ export interface HoSoDuAn extends DuAnDong {
   tienDoMoTa: string | null
   buoc: BuocDuAn[]
   thanhVien: ThanhVienDuAn[]
+  /** Mới nhất trước. Phiên bản 1 là kế hoạch gốc. */
+  phienBan: PhienBanKeHoach[]
+  /** Hạn từng bước ở lần chốt gần nhất — so với hạn hiện tại để thấy lệch. Bước vắng mặt = thêm sau lần chốt. */
+  hanDaChot: Record<string, string | null>
   /** Người xem được làm gì trên CHÍNH dự án này — API tính, web chỉ để ẩn/hiện nút. */
   quyen: {
     /** Sửa thông tin, ghi nhận bước, xác nhận cập nhật — đơn vị chủ đầu tư. */
@@ -318,3 +322,40 @@ export interface TaiKhoanDanhBa {
 /** Cấp 4 của module Dự án dùng CHUNG một màn danh sách, khác nhau ở bộ lọc. */
 export const LOC_DU_AN = ['tat-ca', 'cua-toi', 'cho-xac-nhan'] as const
 export type LocDuAn = (typeof LOC_DU_AN)[number]
+
+// ── Kế hoạch & điều chỉnh ─────────────────────────────────────────────────
+
+export interface PhienBanKeHoach {
+  id: string
+  so: number
+  ngay: string
+  lyDo: string
+  canCu: string | null
+  soNgayLui: number
+  ngayKetThuc: string | null
+  nguoiChot: string | null
+}
+
+/**
+ * Khoảng [bắt đầu, hạn] của từng bước theo đúng chuỗi của `tinhHan` — bước bắt
+ * đầu khi bước chính thức trước nó đến hạn. Dùng cho Gantt. Bước nháp: null.
+ */
+export function khoangBuoc(
+  buoc: readonly { soNgay: number; hanGhiDe: string | null; laNhap: boolean }[],
+  batDau: string,
+): ({ tu: string; den: string } | null)[] {
+  let hienTai = batDau
+  return buoc.map((b) => {
+    if (b.laNhap) return null
+    const tu = hienTai
+    hienTai = b.hanGhiDe ?? congNgay(hienTai, b.soNgay)
+    return { tu: hienTai < tu ? hienTai : tu, den: hienTai }
+  })
+}
+
+/** Ngày kết thúc dự kiến = hạn muộn nhất của các bước chính thức. */
+export function ngayKetThucDuKien(buoc: readonly { han: string | null; laNhap: boolean }[]): string | null {
+  let max: string | null = null
+  for (const b of buoc) if (!b.laNhap && b.han && (!max || b.han > max)) max = b.han
+  return max
+}

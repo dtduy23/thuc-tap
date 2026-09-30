@@ -4,16 +4,16 @@
 
 ## Các mốc
 
-| Mốc   | Nội dung                                                                             | Trạng thái                                                   |
-| ----- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
-| **0** | Khởi tạo repo, CI, ADR, khung dùng chung                                             | ✅ Xong — **CI/CD giao kỹ thuật FOXAI** (xem dưới)           |
-| **1** | Nền móng: tài khoản, đơn vị, vai trò & quyền, RLS, nhật ký, khung portal + cây 4 cấp | ✅ Xong — nhánh `moc-1-nen-mong`, chưa đẩy                   |
-| **2** | Đưa lên máy thử (image, nginx, CI/CD)                                                | Chưa bắt đầu                                                 |
-| **3** | Module Dự án (từ PMS)                                                                | 🔄 Phiên 2/6 — tạo dự án, checklist, nhà thầu gửi / xác nhận |
-| **4** | Module Khiếu nại đất đai                                                             | Chưa bắt đầu                                                 |
-| **5** | Nối FOXAI Native (văn bản, tóm tắt, hỏi đáp)                                         | Chưa bắt đầu — **chờ đội Native**                            |
-| **6** | Điều hành: dashboard, báo cáo                                                        | Chưa bắt đầu                                                 |
-| **7** | Thiết lập: bật/tắt module theo đơn vị, cảnh báo, luồng duyệt                         | Chưa bắt đầu                                                 |
+| Mốc   | Nội dung                                                                             | Trạng thái                                         |
+| ----- | ------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| **0** | Khởi tạo repo, CI, ADR, khung dùng chung                                             | ✅ Xong — **CI/CD giao kỹ thuật FOXAI** (xem dưới) |
+| **1** | Nền móng: tài khoản, đơn vị, vai trò & quyền, RLS, nhật ký, khung portal + cây 4 cấp | ✅ Xong — nhánh `moc-1-nen-mong`, chưa đẩy         |
+| **2** | Đưa lên máy thử (image, nginx, CI/CD)                                                | Chưa bắt đầu                                       |
+| **3** | Module Dự án (từ PMS)                                                                | 🔄 Phiên 3/6 — + kế hoạch & điều chỉnh, Gantt      |
+| **4** | Module Khiếu nại đất đai                                                             | Chưa bắt đầu                                       |
+| **5** | Nối FOXAI Native (văn bản, tóm tắt, hỏi đáp)                                         | Chưa bắt đầu — **chờ đội Native**                  |
+| **6** | Điều hành: dashboard, báo cáo                                                        | Chưa bắt đầu                                       |
+| **7** | Thiết lập: bật/tắt module theo đơn vị, cảnh báo, luồng duyệt                         | Chưa bắt đầu                                       |
 
 ## Mốc 3 — Dự án (từ PMS)
 
@@ -24,10 +24,28 @@ Tổ chức theo ADR-0007 (một chủ — nhiều lối vào) và ADR-0008 (mô
 | ----- | -------------------------------------------------------------------------------------------------------------------------- | ------------- |
 | **1** | Lược đồ, RLS, 6 quy trình mẫu NĐ 45, tính hạn dùng chung, loại đơn vị mở rộng                                              | ✅ 30/09/2026 |
 | **2** | API + màn: danh sách (3 bộ lọc), tạo từ quy trình mẫu, hồ sơ (Tổng quan · Checklist · Thành viên), nhà thầu gửi → xác nhận | ✅ 30/09/2026 |
-| 3     | Kế hoạch & điều chỉnh (bước nháp, chốt kế hoạch, phiên bản), thêm/xóa bước tùy biến, Gantt                                 |               |
+| **3** | Kế hoạch & điều chỉnh (bước nháp, chốt kế hoạch, phiên bản), thêm/xóa bước tùy biến, Gantt                                 | ✅ 30/09/2026 |
 | 4     | Văn bản (MinIO) · Kinh phí & giải ngân · Vướng mắc · thẻ Nhật ký                                                           |               |
 | 5     | Đóng góp theo ADR-0007: báo cáo (Biểu 01/02/03, BC35), chỉ số KPI, cảnh báo, việc của tôi · Đôn đốc                        |               |
 | 6     | Nhập / xuất Excel · giám sát theo lĩnh vực · màn quản lý Danh mục nghiệp vụ, Quy trình mẫu                                 |               |
+
+### Phiên 3 — kế hoạch & điều chỉnh, Gantt (30/09/2026)
+
+**Đã làm**
+
+- Bảng `du_an_phien_ban`: mỗi lần **chốt kế hoạch** ghi một phiên bản (ảnh chụp hạn, lý do, căn cứ,
+  ngày kết thúc dự kiến, số ngày lùi so với lần trước). Phiên bản không sửa được — RLS không có
+  policy UPDATE. Phiên bản 1 = kế hoạch gốc lúc tạo; dự án cũ được dựng bù phiên bản 1.
+- Thêm bước tự khai → luôn vào dạng **nháp** (không hạn, không tiến độ); chốt thì thành chính thức.
+  Bước tự thêm đổi tên, xóa (mềm) được; bước theo quy trình mẫu chỉ bỏ qua được.
+- Thẻ Kế hoạch: so hạn hiện tại với lần chốt gần nhất (bước nào lệch, kết thúc lùi bao nhiêu), chốt
+  kế hoạch, thêm bước, lịch sử phiên bản. Thẻ Gantt: vẽ từ đúng chuỗi hạn của checklist, 3 mức
+  thu phóng, vạch hôm nay, chấm ngày xong thực tế.
+- Thứ tự bước là số thực — chèn giữa không phải đánh số lại cả dự án (tránh hàng chục dòng nhật ký rác).
+- **Đã kiểm trên trình duyệt**: thêm bước nháp → chốt → v2 lùi 5 ngày; Gantt.
+
+**Khác PMS, có lý do**: PMS lưu kế hoạch bằng cách gửi TOÀN BỘ danh sách bước, bước nào thiếu thì
+bị xóa âm thầm (chính PMS ghi cảnh báo này). GDOS làm từng thao tác riêng — không có đường xóa hàng loạt.
 
 ### Phiên 1–2 (30/09/2026)
 

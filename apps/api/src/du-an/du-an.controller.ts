@@ -119,6 +119,26 @@ export class DuAnController {
     return this.dv.xacNhan(nd, maUuid(id), maUuid(b, 'buocId'), than)
   }
 
+  @Post(':id/buoc')
+  @CanQuyen('DU_AN.UPDATE')
+  themBuoc(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string, @Body() than: unknown) {
+    return this.dv.themBuoc(nd, maUuid(id), than)
+  }
+
+  @Post(':id/buoc/:buocId/xoa')
+  @CanQuyen('DU_AN.UPDATE')
+  @HttpCode(200)
+  xoaBuoc(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string, @Param('buocId') b: string) {
+    return this.dv.xoaBuoc(nd, maUuid(id), maUuid(b, 'buocId'))
+  }
+
+  @Post(':id/chot-ke-hoach')
+  @CanQuyen('DU_AN.UPDATE')
+  @HttpCode(200)
+  chotKeHoach(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string, @Body() than: unknown) {
+    return this.dv.chotKeHoach(nd, maUuid(id), than)
+  }
+
   @Post(':id/thanh-vien')
   @CanQuyen('DU_AN.UPDATE')
   @HttpCode(200)

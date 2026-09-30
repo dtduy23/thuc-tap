@@ -7,6 +7,8 @@ import { ChipSucKhoe, ChipTrangThai } from '@/man/du-an/chung'
 const TongQuan = lazy(() => import('@/man/du-an/ho-so/tong-quan'))
 const Checklist = lazy(() => import('@/man/du-an/ho-so/checklist'))
 const ThanhVien = lazy(() => import('@/man/du-an/ho-so/thanh-vien'))
+const KeHoach = lazy(() => import('@/man/du-an/ho-so/ke-hoach'))
+const Gantt = lazy(() => import('@/man/du-an/ho-so/gantt'))
 
 /**
  * Hồ sơ MỘT dự án. Các thẻ là trục PHẠM VI của hồ sơ — không lên cây, không phải
@@ -15,8 +17,8 @@ const ThanhVien = lazy(() => import('@/man/du-an/ho-so/thanh-vien'))
 export const THE_HO_SO = [
   { id: 'tong-quan', nhan: 'Tổng quan', ManHinh: TongQuan },
   { id: 'checklist', nhan: 'Checklist & tiến độ', ManHinh: Checklist },
-  { id: 'gantt', nhan: 'Gantt' },
-  { id: 'ke-hoach', nhan: 'Kế hoạch & điều chỉnh' },
+  { id: 'gantt', nhan: 'Gantt', ManHinh: Gantt },
+  { id: 'ke-hoach', nhan: 'Kế hoạch & điều chỉnh', ManHinh: KeHoach },
   { id: 'van-ban', nhan: 'Văn bản' },
   { id: 'kinh-phi', nhan: 'Kinh phí & giải ngân' },
   { id: 'vuong-mac', nhan: 'Vướng mắc' },

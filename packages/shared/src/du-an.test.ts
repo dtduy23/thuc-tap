@@ -113,3 +113,29 @@ describe('mã dự án', () => {
     expect(kiemMaDuAn('x'.repeat(41))).not.toBeNull()
   })
 })
+
+describe('khoảng bước & ngày kết thúc', () => {
+  it('bước bắt đầu khi bước trước đến hạn; nháp không có khoảng', async () => {
+    const { khoangBuoc, ngayKetThucDuKien } = await import('./du-an.js')
+    const k = khoangBuoc(
+      [
+        { soNgay: 5, hanGhiDe: null, laNhap: false },
+        { soNgay: 9, hanGhiDe: null, laNhap: true },
+        { soNgay: 3, hanGhiDe: null, laNhap: false },
+      ],
+      '2026-10-01',
+    )
+    expect(k).toEqual([
+      { tu: '2026-10-01', den: '2026-10-06' },
+      null,
+      { tu: '2026-10-06', den: '2026-10-09' },
+    ])
+    expect(
+      ngayKetThucDuKien([
+        { han: '2026-10-06', laNhap: false },
+        { han: '2027-01-01', laNhap: true },
+        { han: '2026-10-09', laNhap: false },
+      ]),
+    ).toBe('2026-10-09')
+  })
+})

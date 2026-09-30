@@ -87,3 +87,12 @@ export const themThanhVien = (id: string, taiKhoanId: string, vaiTro: VaiTroThan
 
 export const boThanhVien = (id: string, tvId: string) =>
   goiApi<HoSoDuAn>(`/du-an/${id}/thanh-vien/${tvId}/bo`, { method: 'POST' })
+
+export const themBuoc = (id: string, dl: Record<string, unknown>) =>
+  goiApi<HoSoDuAn>(`/du-an/${id}/buoc`, { method: 'POST', body: dl })
+
+export const xoaBuoc = (id: string, buocId: string) =>
+  goiApi<HoSoDuAn>(`/du-an/${id}/buoc/${buocId}/xoa`, { method: 'POST' })
+
+export const chotKeHoach = (id: string, lyDo: string, canCu: string) =>
+  goiApi<HoSoDuAn>(`/du-an/${id}/chot-ke-hoach`, { method: 'POST', body: { lyDo, canCu: canCu || null } })

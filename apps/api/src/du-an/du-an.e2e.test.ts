@@ -335,3 +335,108 @@ describe('sửa thông tin, nhật ký', () => {
     expect(dong.some((d) => d.hanhDong === 'INSERT' && d.nguoiLam === 'Chuyên viên xã An Hòa')).toBe(true)
   })
 })
+
+describe('kế hoạch & điều chỉnh', () => {
+  it('tạo dự án có sẵn phiên bản 1 — kế hoạch gốc, hạn đã chốt khớp hạn hiện tại', async () => {
+    const cv = await vao('chuyenvien.a')
+    const h = (
+      await cv
+        .post('/api/du-an')
+        .set(GHI)
+        .send({ ...CO_BAN, ma: 'DA-KH-01' })
+    ).body as HoSoDuAn
+    expect(h.phienBan).toHaveLength(1)
+    expect(h.phienBan[0]).toMatchObject({ so: 1, lyDo: 'Kế hoạch gốc theo quy trình mẫu', soNgayLui: 0 })
+    const b = h.buoc.find((x) => !x.laNhom)!
+    expect(h.hanDaChot[b.id]).toBe(b.han)
+    hs = h
+  })
+
+  it('thêm bước tự khai → vào dạng NHÁP: không hạn, không tính tiến độ; chèn đúng sau bước chọn', async () => {
+    const cv = await vao('chuyenvien.a')
+    const truoc = hs.buoc.filter((x) => !x.laNhom)[0]!
+    const tongTruoc = hs.thongKe.tong
+    const res = await cv
+      .post(`/api/du-an/${hs.id}/buoc`)
+      .set(GHI)
+      .send({ giaiDoan: truoc.giaiDoan, sauBuocId: truoc.id, ten: 'Khảo sát bổ sung hiện trạng', soNgay: 7 })
+    expect(res.status).toBe(201)
+    const moi = res.body as HoSoDuAn
+    const i = moi.buoc.findIndex((x) => x.id === truoc.id)
+    expect(moi.buoc[i + 1]).toMatchObject({
+      ten: 'Khảo sát bổ sung hiện trạng',
+      laNhap: true,
+      batBuoc: false,
+      han: null,
+    })
+    expect(moi.thongKe.tong).toBe(tongTruoc)
+    hs = moi
+  })
+
+  it('chốt kế hoạch: nháp thành chính thức, hạn sau dời theo, phiên bản 2 ghi số ngày lùi', async () => {
+    const cv = await vao('chuyenvien.a')
+    expect((await cv.post(`/api/du-an/${hs.id}/chot-ke-hoach`).set(GHI).send({})).status).toBe(400) // thiếu lý do
+    const res = await cv
+      .post(`/api/du-an/${hs.id}/chot-ke-hoach`)
+      .set(GHI)
+      .send({ lyDo: 'Bổ sung bước khảo sát', canCu: 'Công văn số 12/CV' })
+    const moi = res.body as HoSoDuAn
+    expect(moi.buoc.some((x) => x.laNhap)).toBe(false)
+    expect(moi.phienBan[0]).toMatchObject({
+      so: 2,
+      lyDo: 'Bổ sung bước khảo sát',
+      canCu: 'Công văn số 12/CV',
+      soNgayLui: 7,
+    })
+    expect(moi.phienBan[0]!.nguoiChot).toBe('Chuyên viên xã An Hòa')
+    const buocMoi = moi.buoc.find((x) => x.ten === 'Khảo sát bổ sung hiện trạng')!
+    expect(buocMoi.han).toBeTruthy()
+    expect(moi.hanDaChot[buocMoi.id]).toBe(buocMoi.han)
+    hs = moi
+  })
+
+  it('sửa hạn sau khi chốt → hạn hiện tại lệch với hạn đã chốt (chưa có phiên bản mới)', async () => {
+    const cv = await vao('chuyenvien.a')
+    const b = hs.buoc.filter((x) => !x.laNhom)[0]!
+    const moi = (
+      await cv
+        .patch(`/api/du-an/${hs.id}/buoc/${b.id}`)
+        .set(GHI)
+        .send({ soNgay: b.soNgay + 3 })
+    ).body as HoSoDuAn
+    const cuoi = moi.buoc.filter((x) => !x.laNhom).at(-1)!
+    expect(moi.phienBan).toHaveLength(2)
+    expect(Date.parse(cuoi.han!) - Date.parse(moi.hanDaChot[cuoi.id]!)).toBe(3 * 864e5)
+    hs = moi
+  })
+
+  it('bước tự thêm: đổi tên được, xóa được; bước theo quy trình: không đổi tên, không xóa', async () => {
+    const cv = await vao('chuyenvien.a')
+    const tuThem = hs.buoc.find((x) => !x.batBuoc)!
+    const mau = hs.buoc.find((x) => x.batBuoc && !x.laNhom)!
+    expect(
+      (await cv.patch(`/api/du-an/${hs.id}/buoc/${mau.id}`).set(GHI).send({ ten: 'Đổi tên' })).status,
+    ).toBe(400)
+    expect((await cv.post(`/api/du-an/${hs.id}/buoc/${mau.id}/xoa`).set(GHI)).status).toBe(400)
+    const doi = (
+      await cv.patch(`/api/du-an/${hs.id}/buoc/${tuThem.id}`).set(GHI).send({ ten: 'Khảo sát hiện trạng' })
+    ).body as HoSoDuAn
+    expect(doi.buoc.find((x) => x.id === tuThem.id)?.ten).toBe('Khảo sát hiện trạng')
+    const xoa = (await cv.post(`/api/du-an/${hs.id}/buoc/${tuThem.id}/xoa`).set(GHI)).body as HoSoDuAn
+    expect(xoa.buoc.find((x) => x.id === tuThem.id)).toBeUndefined()
+    hs = xoa
+  })
+
+  it('nhà thầu không thêm bước, không chốt kế hoạch; xã khác không thấy phiên bản', async () => {
+    const cv = await vao('chuyenvien.a')
+    const [nt] = (await cv.get('/api/danh-ba?tim=nhathau')).body as TaiKhoanDanhBa[]
+    await cv.post(`/api/du-an/${hs.id}/thanh-vien`).set(GHI).send({ taiKhoanId: nt!.id, vaiTro: 'nha-thau' })
+    const n = await vao('nhathau.dn')
+    expect(
+      (await n.post(`/api/du-an/${hs.id}/buoc`).set(GHI).send({ giaiDoan: 'I', ten: 'Lén' })).status,
+    ).toBe(403)
+    expect((await n.post(`/api/du-an/${hs.id}/chot-ke-hoach`).set(GHI).send({ lyDo: 'x' })).status).toBe(403)
+    const h = (await n.get(`/api/du-an/${hs.id}`)).body as HoSoDuAn
+    expect(h.phienBan.length).toBe(2) // thành viên xem được lịch sử kế hoạch
+  })
+})

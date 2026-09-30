@@ -15,6 +15,7 @@ import {
   check,
   customType,
   date,
+  doublePrecision,
   index,
   integer,
   jsonb,
@@ -253,8 +254,6 @@ export const duAn = pgTable(
     /** Ngày đơn vị cập nhật gần nhất — cảnh báo "lâu không cập nhật". */
     capNhatNgay: date('cap_nhat_ngay', { mode: 'string' }),
     canBoId: uuid('can_bo_id').references(() => taiKhoan.id),
-    /** Kế hoạch đã chốt gần nhất (ảnh chụp các bước) — để so với nháp. */
-    keHoachChot: jsonb('ke_hoach_chot'),
     donDocNgay: date('don_doc_ngay', { mode: 'string' }),
     nguoiTao: uuid('nguoi_tao'),
     ...thoiDiem,
@@ -284,7 +283,8 @@ export const duAnBuoc = pgTable(
     donViId: uuid('don_vi_id')
       .notNull()
       .references(() => donVi.id),
-    thuTu: integer('thu_tu').notNull(),
+    /** Số thực: chèn bước vào giữa lấy trung bình hai bên — không phải đánh số lại cả dự án. */
+    thuTu: doublePrecision('thu_tu').notNull(),
     chaId: uuid('cha_id').references((): AnyPgColumn => duAnBuoc.id),
     giaiDoan: text('giai_doan').notNull(),
     stt: text('stt').notNull(),
@@ -344,4 +344,35 @@ export const duAnThanhVien = pgTable(
     index('du_an_thanh_vien_du_an_idx').on(t.duAnId),
     check('du_an_thanh_vien_vai_ck', sql`${t.vaiTro} in ('phu-trach', 'nha-thau', 'tu-van', 'giam-sat')`),
   ],
+)
+
+/**
+ * Phiên bản kế hoạch — mỗi lần CHỐT kế hoạch là một dòng, kèm ảnh chụp hạn các bước.
+ * Phiên bản 1 là kế hoạch gốc lúc tạo dự án. So hạn hiện tại với ảnh chụp mới nhất
+ * là biết kế hoạch đang lệch bao nhiêu so với lần chốt; số phiên bản vào KPI (điều chỉnh kế hoạch).
+ */
+export const duAnPhienBan = pgTable(
+  'du_an_phien_ban',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    duAnId: uuid('du_an_id')
+      .notNull()
+      .references(() => duAn.id),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    so: integer('so').notNull(),
+    ngay: date('ngay', { mode: 'string' }).notNull(),
+    lyDo: text('ly_do').notNull(),
+    /** Cấp có thẩm quyền cho phép điều chỉnh (quyết định số …). */
+    canCu: text('can_cu'),
+    /** Ngày kết thúc dự kiến lùi bao nhiêu so với phiên bản trước. */
+    soNgayLui: integer('so_ngay_lui').notNull().default(0),
+    ngayKetThuc: date('ngay_ket_thuc', { mode: 'string' }),
+    /** [{ id, stt, ten, han }] các bước chính thức lúc chốt. */
+    anhChup: jsonb('anh_chup').notNull(),
+    nguoiChot: uuid('nguoi_chot'),
+    ...thoiDiem,
+  },
+  (t) => [uniqueIndex('du_an_phien_ban_so_uq').on(t.duAnId, t.so)],
 )
