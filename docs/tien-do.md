@@ -8,12 +8,55 @@
 | ----- | ------------------------------------------------------------------------------------ | ------------------------------------------------------ |
 | **0** | Khởi tạo repo, CI, ADR, khung dùng chung                                             | ✅ Xong — **CI/CD giao kỹ thuật FOXAI** (xem dưới)     |
 | **1** | Nền móng: tài khoản, đơn vị, vai trò & quyền, RLS, nhật ký, khung portal + cây 4 cấp | ✅ Xong — nhánh `moc-1-nen-mong`, chưa đẩy             |
-| **2** | Đưa lên máy thử (image, nginx, CI/CD)                                                | Chưa bắt đầu                                           |
+| **2** | Đưa lên máy thử (image, nginx, CI/CD)                                                | 🔄 Đường ống xong — chờ máy thử                        |
 | **3** | Module Dự án (từ PMS)                                                                | ✅ Xong 30/09/2026 — đủ chức năng PMS, chưa đẩy        |
 | **4** | Module Khiếu nại đất đai                                                             | Chưa bắt đầu                                           |
 | **5** | Nối FOXAI Native (văn bản, tóm tắt, hỏi đáp)                                         | 🔄 Tóm tắt văn bản + liên kết Native theo người — xong |
 | **6** | Điều hành: dashboard, báo cáo                                                        | 🔄 Khung chung xong (Mốc 3) — chờ nghiệp vụ khác       |
 | **7** | Thiết lập: bật/tắt module theo đơn vị, cảnh báo, luồng duyệt                         | Chưa bắt đầu                                           |
+
+## Mốc 2 — Đưa lên máy thử (30/09/2026)
+
+**Đã làm**
+
+- `.gitlab-ci.yml`: ba chặng `kiem-tra` → `dong-goi` → `trien-khai`. **Chỉ chạy ở nhánh `develop`**
+  (`workflow.rules`) — người dùng chốt; `main` và nhánh mốc không nổ pipeline.
+- **Bỏ chặng `bao-mat`** (gitleaks + `pnpm audit`) — người dùng chốt 30/09/2026. Luật "không dữ liệu
+  cá nhân thật" vẫn được chặn vì `kiem-du-lieu-that.mjs` nằm trong `pnpm lint`; nhưng **không còn ai
+  quét bí mật lọt vào lịch sử git**.
+- `apps/api/Dockerfile`, `apps/web/Dockerfile` — hai chặng, bối cảnh build là **gốc repo** (image cần
+  `packages/shared`). Bản chạy không mang tsc, drizzle-kit, PGlite. API chạy non-root, có HEALTHCHECK
+  gọi `/api/health` (không chạm DB — Postgres chậm một nhịp không làm Docker giết container).
+- `apps/web/nginx.conf` — phục vụ bản tĩnh, `try_files` cho SPA, chuyển tiếp đúng một tiền tố `/api`,
+  cache dài cho `/assets/` và `no-cache` cho `index.html`, kèm CSP + `X-Frame-Options: DENY`.
+- `compose.trien-khai.yaml` — api · web · postgres · minio + service `di-tru` (profile `cong-cu`).
+  **Không chứa bí mật**: đọc `.env` do kỹ thuật đặt một lần trên máy thử, và `.the-anh` do CI ghi.
+- Lệnh `di-tru` (`apps/api/src/cli/di-tru.ts`) — CHỈ chạy migration, để đường triển khai tự động
+  không phải gọi `khoi-tao` (lệnh đó còn tạo quản trị viên và có nhập mật khẩu).
+  Phần mở Postgres + migration gom về `moPostgresVaDiTru()` trong `db/migration.ts`.
+- **`TIN_PROXY`** (`cau-hinh.ts`): trước đây `trust proxy` đóng cứng `loopback`. Trong Docker nginx là
+  container KHÁC nên X-Forwarded-For không được tin → nhật ký phiên đăng nhập sẽ ghi IP của container
+  nginx thay vì IP người dùng. Mặc định vẫn `loopback`; compose khai dải `172.31.0.0/16`.
+
+**Chưa kiểm được**
+
+- Không dựng được image ở máy này (không có Docker) và **không chạy được `pnpm kiem-tra` đầy đủ**:
+  máy đang có **Node 22**, repo cần **Node 24** — 16 tệp test API chết ngay ở `crypto.argon2`
+  (`undefined` trên Node 22), không liên quan thay đổi nào. Đã xanh: `lint`, `format:check`,
+  `typecheck`, `build`, test `cau-hinh` (16) và shared (60).
+- `pnpm` toàn cục ở máy (`/usr/local/bin/pnpm`, 11.12.0) hỏng — `pnpm --version` cũng lỗi
+  `Cannot use 'in' operator to search for 'integrity' in undefined`. Chạy qua
+  `npx --yes pnpm@11.12.0` thì bình thường. npm cảnh báo **pnpm 11.12.0 là bản lỗi, nên lên 11.13.1+**
+  — chưa đổi, vì đổi `packageManager` ảnh hưởng cả đội (CLAUDE.md §7).
+
+**Chờ quyết định**
+
+- Nhánh `develop` **chưa tồn tại** trên remote. Pipeline chỉ nổ khi có nhánh đó.
+- Cơ chế triển khai đang dùng: **SSH từ runner SRV-01 sang máy thử**, cần bốn biến CI/CD
+  `TRIEN_KHAI_SSH` · `TRIEN_KHAI_KHOA` (kiểu FILE) · `TRIEN_KHAI_HOST_KEY` · `TRIEN_KHAI_THU_MUC`.
+  Nếu hạ tầng muốn cách khác — đặt thêm một runner tag riêng NGAY TRÊN máy thử, khỏi cần khóa SSH —
+  thì chỉ sửa job `trien-khai`.
+- CSP trong `nginx.conf` chưa mở trên trình duyệt thật; màn nào trắng thì nới ở đúng chỉ thị đó.
 
 ## Mốc 5 — Nối FOXAI Native (ADR-0009)
 
@@ -386,4 +429,6 @@ thật → GDOS dùng 5433.
 | Kết quả pipeline CI / runner là docker hay shell executor                                                | Người dùng xem GitLab | Trộn Mốc 0 |
 | ~~GDOS gọi Native thay mặt người dùng bằng cách nào?~~ — liên kết tài khoản Native theo người (ADR-0009) | —                     | —          |
 | Server + tên miền phụ cho máy thử                                                                        | Hạ tầng               | Mốc 2      |
+| Triển khai bằng SSH hay bằng runner đặt trên máy thử                                                     | Hạ tầng               | Mốc 2      |
+| Có lên pnpm 11.13.1 (11.12.0 là bản lỗi) không                                                           | Người dùng            | —          |
 | ~~Ngưỡng khóa tài khoản~~ — đã chỉnh được trên màn Cấu hình hệ thống (phiên 5)                           | —                     | —          |

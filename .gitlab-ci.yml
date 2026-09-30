@@ -1,28 +1,36 @@
 # ============================================================================
-# GDOS — GitLab CI
+# GDOS — GitLab CI/CD
 #
-#   kiem-tra   lint · kiểm dữ liệu thật · định dạng · kiểu · test · build
-#   bao-mat    gitleaks (bí mật lọt vào lịch sử git) · pnpm audit
+#   kiem-tra     lint · kiểm dữ liệu thật · định dạng · kiểu · test · build
+#   dong-goi     dựng image api + web, đẩy lên registry của GitLab
+#   trien-khai   đưa lên MÁY THỬ (bấm tay)
+#
+# CHỈ CHẠY Ở NHÁNH `develop` (người dùng chốt 30/09/2026) — xem `workflow` dưới.
 #
 # RUNNER CỦA FOXAI LÀ SHELL EXECUTOR (docs/FOXAI-CICD-Runbook.md của repo cũ):
 #   tag `foxai-build`, chạy trên SRV-01, user chạy runner có quyền docker.
 #
 #   - Không gắn tag → không runner nào nhận → pipeline treo "stuck".
 #   - Shell executor BỎ QUA `image:` → job chạy thẳng trên máy chủ, không có
-#     Node. Nên mỗi job tự chạy trong container bằng `docker run`.
+#     Node. Nên job kiểm tra tự chạy trong container bằng `docker run`.
 #   - `--user $(id -u):$(id -g)`: file sinh ra trong thư mục build thuộc user
 #     của runner, không thuộc root — không thì lần clone sau runner không dọn
 #     được thư mục và job hỏng ở bước chuẩn bị.
 #   - node:24 bản ĐẦY ĐỦ (không phải alpine/slim) vì cần git: script
 #     kiem-du-lieu-that dùng `git ls-files`.
-#
-# Stage đóng gói image + triển khai thuộc Mốc 2, theo mẫu nhánh develop của
-# repo foxai-gdos cũ (build SRV-01 → deploy SRV-03, deploy bấm tay).
 # ============================================================================
 
 stages:
   - kiem-tra
-  - bao-mat
+  - dong-goi
+  - trien-khai
+
+# Pipeline chỉ nổ ở `develop`. Nhánh mốc (`moc-*`) và `main` không chạy — tránh
+# việc một nhánh đang làm dở cũng chiếm runner và đẩy image lên registry.
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - when: never
 
 default:
   tags: ['foxai-build']
@@ -30,6 +38,11 @@ default:
 variables:
   NODE_IMAGE: 'node:24'
   PNPM: 'pnpm@11.12.0'
+  # Một image cho API, một cho web (nginx tĩnh). Thẻ = SHA ngắn của commit:
+  # mỗi lần triển khai chỉ đúng một mã nguồn, không dùng `latest` mơ hồ.
+  ANH_API: '$CI_REGISTRY_IMAGE/api'
+  ANH_WEB: '$CI_REGISTRY_IMAGE/web'
+  THE: '$CI_COMMIT_SHORT_SHA'
 
 kiem-tra:
   stage: kiem-tra
@@ -43,21 +56,95 @@ kiem-tra:
       files: [pnpm-lock.yaml]
     paths: [.pnpm-store]
 
-gitleaks:
-  stage: bao-mat
-  variables:
-    GIT_DEPTH: '0' # quét TOÀN BỘ lịch sử — bí mật đã commit rồi xoá vẫn còn trong lịch sử
+dong-goi:
+  stage: dong-goi
   script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login --username "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    # `--cache-from` thẻ develop của lần trước: lớp `pnpm install` không đổi thì
+    # dùng lại, khỏi tải lại toàn bộ phụ thuộc mỗi lần đẩy.
+    - docker pull "$ANH_API:develop" || true
+    - docker pull "$ANH_WEB:develop" || true
     - >-
-      docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp
-      -v "$CI_PROJECT_DIR":/repo zricethezav/gitleaks:latest
-      git --redact --verbose /repo
+      docker build --pull --file apps/api/Dockerfile
+      --cache-from "$ANH_API:develop" --build-arg BUILDKIT_INLINE_CACHE=1
+      --build-arg PHIEN_BAN="$CI_COMMIT_SHORT_SHA"
+      --tag "$ANH_API:$THE" --tag "$ANH_API:develop" .
+    - >-
+      docker build --pull --file apps/web/Dockerfile
+      --cache-from "$ANH_WEB:develop" --build-arg BUILDKIT_INLINE_CACHE=1
+      --tag "$ANH_WEB:$THE" --tag "$ANH_WEB:develop" .
+    - docker push "$ANH_API:$THE"
+    - docker push "$ANH_API:develop"
+    - docker push "$ANH_WEB:$THE"
+    - docker push "$ANH_WEB:develop"
 
-audit:
-  stage: bao-mat
+# ── Triển khai ───────────────────────────────────────────────────────────────
+# BẤM TAY (`when: manual`) — máy thử không tự đổi sau mỗi commit.
+#
+# Cần bốn biến CI/CD (Settings → CI/CD → Variables), tất cả `Protected`:
+#   TRIEN_KHAI_SSH        user@may-thu  (ví dụ gdos@10.0.0.13)
+#   TRIEN_KHAI_KHOA       khóa SSH riêng — kiểu biến FILE, không phải Variable
+#   TRIEN_KHAI_HOST_KEY   một dòng known_hosts của máy thử:
+#                         ssh-keyscan -t ed25519 <máy thử>
+#   TRIEN_KHAI_THU_MUC    thư mục trên máy thử, ví dụ /srv/gdos
+#
+# Mật khẩu DB, AUTH_SECRET, NATIVE_URL… KHÔNG đi qua CI: nằm trong
+# `$TRIEN_KHAI_THU_MUC/.env` do kỹ thuật FOXAI đặt một lần trên máy thử
+# (xem compose.trien-khai.yaml). CI không bao giờ nhìn thấy chúng.
+trien-khai:
+  stage: trien-khai
+  when: manual
+  environment:
+    name: may-thu
+    url: $TRIEN_KHAI_URL
   script:
-    # Chỉ phụ thuộc chạy thật (--prod), chặn ở mức high trở lên. Đọc lockfile, không cần cài.
-    - >-
-      docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp
-      -v "$CI_PROJECT_DIR":/app -w /app "$NODE_IMAGE"
-      npx --yes $PNPM audit --prod --audit-level high
+    - |
+      thieu=''
+      for bien in TRIEN_KHAI_SSH TRIEN_KHAI_KHOA TRIEN_KHAI_HOST_KEY TRIEN_KHAI_THU_MUC; do
+        eval "gia_tri=\${$bien:-}"
+        [ -n "$gia_tri" ] || thieu="$thieu $bien"
+      done
+      if [ -n "$thieu" ]; then
+        echo "✗ Chưa đặt biến CI/CD:$thieu — xem chú thích job trien-khai trong .gitlab-ci.yml" >&2
+        exit 1
+      fi
+      command -v ssh >/dev/null || { echo '✗ Runner chưa có ssh — cài openssh-client trên SRV-01' >&2; exit 1; }
+    - |
+      # Khóa và known_hosts nằm trong thư mục riêng của job, xóa khi job xong.
+      ssh_dir="$CI_PROJECT_DIR/.ssh-$CI_JOB_ID"
+      mkdir -p "$ssh_dir" && chmod 700 "$ssh_dir"
+      trap 'rm -rf "$ssh_dir"' EXIT
+      cp "$TRIEN_KHAI_KHOA" "$ssh_dir/khoa" && chmod 600 "$ssh_dir/khoa"
+      printf '%s\n' "$TRIEN_KHAI_HOST_KEY" > "$ssh_dir/known_hosts"
+      # Kiểm host key thật, KHÔNG dùng StrictHostKeyChecking=no — nếu không thì
+      # bất cứ máy nào chen vào đường truyền cũng nhận được lệnh triển khai.
+      KHOA="-i $ssh_dir/khoa -o IdentitiesOnly=yes -o UserKnownHostsFile=$ssh_dir/known_hosts -o StrictHostKeyChecking=yes"
+      # Thẻ image đi kèm .env (bí mật) — mọi lệnh compose phải đọc CẢ HAI file.
+      DC="docker compose --env-file .env --env-file .the-anh"
+
+      scp $KHOA compose.trien-khai.yaml "$TRIEN_KHAI_SSH:$TRIEN_KHAI_THU_MUC/compose.yaml"
+
+      # Máy thử đăng nhập registry bằng vé của job (hết hiệu lực khi job xong).
+      # Vé đi qua stdin, KHÔNG qua tham số dòng lệnh — tham số hiện trong danh
+      # sách tiến trình của máy thử, ai đang đăng nhập máy đó cũng đọc được.
+      printf '%s' "$CI_JOB_TOKEN" |
+        ssh $KHOA "$TRIEN_KHAI_SSH" "docker login --username gitlab-ci-token --password-stdin '$CI_REGISTRY'"
+
+      ssh $KHOA "$TRIEN_KHAI_SSH" "set -e
+        cd '$TRIEN_KHAI_THU_MUC'
+        printf 'ANH_API=%s\nANH_WEB=%s\nTHE=%s\n' '$ANH_API' '$ANH_WEB' '$THE' > .the-anh
+        $DC pull
+        $DC run --rm di-tru
+        $DC up --detach --remove-orphans
+        docker logout '$CI_REGISTRY'"
+    - |
+      # Chỉ báo xong khi ĐI HẾT chuỗi thật: nginx → api → Postgres.
+      for _ in $(seq 1 30); do
+        if ssh $KHOA "$TRIEN_KHAI_SSH" "curl --fail --silent --show-error --output /dev/null http://127.0.0.1:8080/api/health/deps"; then
+          echo "✓ Máy thử đã chạy bản $THE"
+          exit 0
+        fi
+        sleep 2
+      done
+      echo "✗ Sau 60 giây /api/health/deps vẫn chưa ok — trên máy thử xem: docker compose logs api" >&2
+      exit 1

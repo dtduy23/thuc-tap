@@ -13,7 +13,8 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "khoi-tao": "node --env-file-if-exists=../../.env dist/cli/khoi-tao.js"
+    "khoi-tao": "node --env-file-if-exists=../../.env dist/cli/khoi-tao.js",
+    "di-tru": "node --env-file-if-exists=../../.env dist/cli/di-tru.js"
   },
   "dependencies": {
     "@gdos/shared": "workspace:*",

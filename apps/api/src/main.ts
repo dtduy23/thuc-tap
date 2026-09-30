@@ -6,17 +6,20 @@ import { CAU_HINH, type CauHinh } from './cau-hinh.js'
 
 async function khoiDong() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule)
+  const cauHinh = app.get<CauHinh>(CAU_HINH)
   // Mọi route nằm dưới /api: web gọi đường dẫn tương đối, nginx chuyển tiếp
   // đúng một tiền tố — cùng cách GDOS cũ đã chạy ổn trên gdos.fox.ai.vn.
   app.setGlobalPrefix('api')
   app.enableShutdownHooks()
-  // Chỉ tin header X-Forwarded-For từ nginx chạy cùng máy — IP ghi vào phiên
-  // đăng nhập phải là IP thật của người dùng, không phải IP người dùng tự khai.
-  app.set('trust proxy', 'loopback')
+  // Chỉ tin header X-Forwarded-For từ proxy đã khai — IP ghi vào phiên đăng
+  // nhập phải là IP thật của người dùng, không phải IP người dùng tự khai.
+  // Mặc định `loopback` (nginx cùng máy); chạy Docker thì khai mạng compose
+  // qua TIN_PROXY, xem cau-hinh.ts.
+  app.set('trust proxy', cauHinh.tinProxy)
   // Xuất lưới ra Excel gửi lên cả phần đang lọc — nới giới hạn JSON mặc định (100 KB).
   app.useBodyParser('json', { limit: '2mb' })
 
-  const { cong, moiTruong } = app.get<CauHinh>(CAU_HINH)
+  const { cong, moiTruong } = cauHinh
   await app.listen(cong)
   console.log(`GDOS API · ${moiTruong} · http://localhost:${cong}/api/health`)
 }

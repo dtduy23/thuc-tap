@@ -1,0 +1,116 @@
+# ============================================================================
+# MÁY THỬ — job `trien-khai` trong .gitlab-ci.yml chép file này lên
+# $TRIEN_KHAI_THU_MUC/compose.yaml rồi chạy `docker compose up -d`.
+#
+# File này KHÔNG chứa bí mật nào. Trên máy thử cần đúng hai file cạnh nó:
+#
+#   .env       do kỹ thuật FOXAI đặt MỘT LẦN, chmod 600, không bao giờ commit:
+#                POSTGRES_PASSWORD=<ngẫu nhiên>
+#                AUTH_SECRET=<ngẫu nhiên ≥32 ký tự: node -e "console.log(crypto.randomBytes(32).toString('base64url'))">
+#                MINIO_ROOT_USER=gdos
+#                MINIO_ROOT_PASSWORD=<ngẫu nhiên>
+#                NATIVE_URL=https://…            # địa chỉ FOXAI Native thật
+#                TIN_PROXY=172.31.0.0/16         # khớp `networks.gdos.ipam` dưới
+#   .the-anh   do CI ghi mỗi lần triển khai (ANH_API, ANH_WEB, THE)
+#
+# LẦN ĐẦU — sau khi `up -d` lần đầu, tạo đơn vị gốc + quản trị viên:
+#   docker compose run --rm --entrypoint node api dist/cli/khoi-tao.js \
+#     --don-vi-ma XA-01 --don-vi-ten "Xã …" --cap xa
+# (lệnh hỏi mật khẩu, nhập ẩn — không đặt qua tham số dòng lệnh)
+#
+# Postgres chạy trong container với ổ đĩa gắn ngoài: đủ cho MÁY THỬ. Bản chạy
+# thật cho khối chính phủ dùng Postgres do hạ tầng quản, chỉ đổi DATABASE_URL.
+# ============================================================================
+
+name: gdos
+
+services:
+  api:
+    image: ${ANH_API}:${THE}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      API_PORT: 4100
+      # Máy thử dùng luôn chủ bảng — API vẫn tự hạ quyền xuống `gdos_app` mỗi
+      # request (trongPhamVi()). Bản chạy thật: role LOGIN riêng, thành viên gdos_app.
+      DATABASE_URL: postgres://gdos:${POSTGRES_PASSWORD:?Thiếu POSTGRES_PASSWORD trong .env}@postgres:5432/gdos
+      AUTH_SECRET: ${AUTH_SECRET:?Thiếu AUTH_SECRET trong .env}
+      KHO_TEP_THU_MUC: /du-lieu/tep
+      # nginx là container khác nên IP nguồn là IP mạng nội bộ, không phải loopback.
+      TIN_PROXY: ${TIN_PROXY:?Thiếu TIN_PROXY trong .env — xem networks.gdos.ipam}
+      NATIVE_URL: ${NATIVE_URL:-}
+      APP_VERSION: ${THE}
+    volumes:
+      - ./.du-lieu/tep:/du-lieu/tep
+    networks: [gdos]
+
+  # Chạy migration RỒI THOÁT — CI gọi `docker compose run --rm di-tru` trước khi
+  # `up`. Không nằm trong `up` thường: `profiles` giữ nó ngoài danh sách khởi động.
+  di-tru:
+    image: ${ANH_API}:${THE}
+    profiles: ['cong-cu']
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      AUTH_SECRET: ${AUTH_SECRET:?Thiếu AUTH_SECRET trong .env}
+      KHO_TEP_THU_MUC: /du-lieu/tep
+      # Migration chạy bằng CHỦ BẢNG (ADR-0004) — không phải role của API.
+      DATABASE_URL_CHU_BANG: postgres://gdos:${POSTGRES_PASSWORD}@postgres:5432/gdos
+      DATABASE_URL: postgres://gdos:${POSTGRES_PASSWORD}@postgres:5432/gdos
+    command: ['node', 'dist/cli/di-tru.js']
+    networks: [gdos]
+
+  web:
+    image: ${ANH_WEB}:${THE}
+    restart: unless-stopped
+    depends_on: [api]
+    # Chỉ mở ra loopback của máy thử: TLS và tên miền do nginx ngoài lo.
+    # Có proxy ngoài thì thêm IP của nó vào TIN_PROXY trong .env.
+    ports:
+      - '127.0.0.1:8080:8080'
+    networks: [gdos]
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gdos
+      POSTGRES_USER: gdos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Thiếu POSTGRES_PASSWORD trong .env}
+    volumes:
+      - ./.du-lieu/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U gdos -d gdos']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [gdos]
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ':9001'
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Thiếu MINIO_ROOT_USER trong .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Thiếu MINIO_ROOT_PASSWORD trong .env}
+    volumes:
+      - ./.du-lieu/minio:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks: [gdos]
+
+# Mạng khai dải cố định để TIN_PROXY trong .env nói đúng một dải, không phải
+# dải Docker tự chọn (đổi sau mỗi lần tạo lại mạng).
+networks:
+  gdos:
+    ipam:
+      config:
+        - subnet: 172.31.0.0/16

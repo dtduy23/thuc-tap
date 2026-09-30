@@ -33,6 +33,29 @@ bỏ — cán bộ CNTT chỉ cần cờ quản trị (ADR-0006).
 
 Trước khi đẩy mã: `pnpm kiem-tra` phải xanh.
 
+## Triển khai (Mốc 2)
+
+CI/CD chạy ở nhánh **`develop`** và chỉ ở đó (`.gitlab-ci.yml`):
+
+| Chặng        | Làm gì                                                                       |
+| ------------ | ---------------------------------------------------------------------------- |
+| `kiem-tra`   | `pnpm kiem-tra` trong container Node                                         |
+| `dong-goi`   | dựng image `api` + `web`, đẩy lên registry GitLab, thẻ = SHA ngắn            |
+| `trien-khai` | **bấm tay** — SSH sang máy thử: pull, chạy migration, `up -d`, kiểm sức khỏe |
+
+Dựng image tại máy (bối cảnh build là **gốc repo**, vì image cần `packages/shared`):
+
+```bash
+docker build -f apps/api/Dockerfile -t gdos-api .
+docker build -f apps/web/Dockerfile -t gdos-web .
+```
+
+Trên máy thử chỉ cần `compose.trien-khai.yaml` (CI tự chép sang) và một file `.env` do kỹ thuật
+đặt một lần — danh sách biến ghi ở đầu `compose.trien-khai.yaml`. Bí mật **không** đi qua CI.
+
+Lệnh `di-tru` chỉ chạy migration; `khoi-tao` (tạo đơn vị gốc + quản trị viên đầu tiên) vẫn là việc
+làm tay đúng một lần, vì có nhập mật khẩu.
+
 ## Tài liệu
 
 |                                                    |                                                 |
