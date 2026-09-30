@@ -83,6 +83,13 @@ export const TEN_BANG: Record<string, string> = {
   du_an: 'Dự án',
   du_an_buoc: 'Bước dự án',
   du_an_thanh_vien: 'Thành viên dự án',
+  du_an_phien_ban: 'Phiên bản kế hoạch',
+  du_an_van_ban: 'Văn bản dự án',
+  du_an_von: 'Kế hoạch vốn',
+  du_an_giai_ngan: 'Giải ngân',
+  du_an_vuong_mac: 'Vướng mắc',
+  du_an_don_doc: 'Đôn đốc',
+  giam_sat_linh_vuc: 'Giám sát lĩnh vực',
   danh_muc_gia_tri: 'Danh mục',
   quy_trinh_mau: 'Quy trình mẫu',
 }

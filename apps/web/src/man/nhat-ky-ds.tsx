@@ -19,8 +19,8 @@ const MAU_HANH_DONG: Record<string, 'ok' | 'brand' | 'danger' | 'warn' | 'xam'> 
  * sửa hay xóa được, kể cả quản trị viên.
  */
 /** `duAnId`: dùng lại chính màn này làm thẻ Nhật ký trong hồ sơ dự án (một chủ — nhiều lối vào). */
-export default function NhatKyDs({ duAnId }: { duAnId?: string }) {
-  const [loc, datLoc] = useState<LocNhatKy>(duAnId ? { duAnId } : {})
+export default function NhatKyDs({ duAnId, taiKhoanId }: { duAnId?: string; taiKhoanId?: string }) {
+  const [loc, datLoc] = useState<LocNhatKy>({ duAnId, taiKhoanId })
   const [mo, datMo] = useState<number>()
   const tv = useInfiniteQuery({ ...truyVanNhatKy(loc), placeholderData: keepPreviousData })
   const ds = tv.data?.pages.flatMap((t) => t.dong) ?? []

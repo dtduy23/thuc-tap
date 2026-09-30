@@ -1,16 +1,10 @@
-import {
-  HINH_THUC,
-  LOAI_CHI,
-  NHOM_DU_AN,
-  TRANG_THAI_DU_AN,
-  type HoSoDuAn,
-  type TaiKhoanDanhBa,
-} from '@gdos/shared'
+import { HINH_THUC, LOAI_CHI, NHOM_DU_AN, TRANG_THAI_DU_AN, type HoSoDuAn } from '@gdos/shared'
 import { useQuery } from '@tanstack/react-query'
 import { useState, type FormEvent, type ReactNode } from 'react'
-import { suaDuAn, timDanhBa, truyVanDanhMuc } from '@/lib/du-an'
+import { suaDuAn, truyVanDanhMuc } from '@/lib/du-an'
 import { ngayVn } from '@/lib/ngay'
 import { Nut, OChon, ONhap, The, ThongBao } from '@/ui/co-ban'
+import { ChonTaiKhoan } from '@/ui/chon-tai-khoan'
 import { tenGiaiDoan, ThanhTienDo, trieuDong } from '../chung'
 import { useGhiHoSo } from './ghi-ho-so'
 
@@ -190,7 +184,7 @@ function ThongTin({ hs }: { hs: HoSoDuAn }) {
             value={f.diaDiem}
             onChange={doi('diaDiem')}
           />
-          <ChonCanBo gt={canBo} doi={datCanBo} khoa={khoa} />
+          <ChonTaiKhoan nhan="Cán bộ phụ trách" gt={canBo} doi={datCanBo} khoa={khoa} />
           <div className="mb-3.5">
             <label htmlFor="tt-tien-do" className="mb-1.5 block text-[12.5px] font-semibold text-body">
               Tình hình thực hiện
@@ -212,67 +206,5 @@ function ThongTin({ hs }: { hs: HoSoDuAn }) {
         </fieldset>
       </form>
     </The>
-  )
-}
-
-/** Chọn cán bộ phụ trách từ danh bạ tài khoản. */
-function ChonCanBo({
-  gt,
-  doi,
-  khoa,
-}: {
-  gt: { id: string; hoTen: string } | null
-  doi: (x: { id: string; hoTen: string } | null) => void
-  khoa: boolean
-}) {
-  const [tim, datTim] = useState('')
-  const { data: ds = [] } = useQuery({
-    queryKey: ['danh-ba', tim],
-    queryFn: () => timDanhBa(tim),
-    enabled: tim.trim().length >= 2,
-  })
-  return (
-    <div className="mb-3.5">
-      <span className="mb-1.5 block text-[12.5px] font-semibold text-body">Cán bộ phụ trách</span>
-      <div className="flex flex-wrap items-center gap-2">
-        <b className="text-[13.5px]">{gt?.hoTen ?? '— chưa có —'}</b>
-        {!khoa && gt && (
-          <Nut onClick={() => doi(null)} className="!py-0.5">
-            Bỏ
-          </Nut>
-        )}
-      </div>
-      {!khoa && (
-        <>
-          <input
-            type="search"
-            aria-label="Tìm cán bộ phụ trách"
-            placeholder="Gõ tên để tìm và đổi cán bộ phụ trách…"
-            value={tim}
-            onChange={(e) => datTim(e.target.value)}
-            className="mt-1.5 w-full rounded-lg border border-line bg-nen-2 px-3 py-1.5 text-[13px]"
-          />
-          {tim.trim().length >= 2 && (
-            <ul className="m-0 mt-1 max-h-48 list-none overflow-y-auto rounded-lg border border-line p-1">
-              {ds.map((t: TaiKhoanDanhBa) => (
-                <li key={t.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      doi({ id: t.id, hoTen: t.hoTen })
-                      datTim('')
-                    }}
-                    className="w-full rounded-md px-2 py-1.5 text-left text-[13px] hover:bg-nav-hover"
-                  >
-                    {t.hoTen} <span className="text-faint">· {t.donViTen}</span>
-                  </button>
-                </li>
-              ))}
-              {ds.length === 0 && <li className="px-2 py-1.5 text-[12.5px] text-faint">Không tìm thấy.</li>}
-            </ul>
-          )}
-        </>
-      )}
-    </div>
   )
 }

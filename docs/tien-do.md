@@ -9,10 +9,10 @@
 | **0** | Khởi tạo repo, CI, ADR, khung dùng chung                                             | ✅ Xong — **CI/CD giao kỹ thuật FOXAI** (xem dưới) |
 | **1** | Nền móng: tài khoản, đơn vị, vai trò & quyền, RLS, nhật ký, khung portal + cây 4 cấp | ✅ Xong — nhánh `moc-1-nen-mong`, chưa đẩy         |
 | **2** | Đưa lên máy thử (image, nginx, CI/CD)                                                | Chưa bắt đầu                                       |
-| **3** | Module Dự án (từ PMS)                                                                | 🔄 Phiên 5b/6 — + tổng quan, bộ chỉ số KPI         |
+| **3** | Module Dự án (từ PMS)                                                                | ✅ Xong 30/09/2026 — đủ chức năng PMS, chưa đẩy    |
 | **4** | Module Khiếu nại đất đai                                                             | Chưa bắt đầu                                       |
 | **5** | Nối FOXAI Native (văn bản, tóm tắt, hỏi đáp)                                         | Chưa bắt đầu — **chờ đội Native**                  |
-| **6** | Điều hành: dashboard, báo cáo                                                        | Chưa bắt đầu                                       |
+| **6** | Điều hành: dashboard, báo cáo                                                        | 🔄 Khung chung xong (Mốc 3) — chờ nghiệp vụ khác   |
 | **7** | Thiết lập: bật/tắt module theo đơn vị, cảnh báo, luồng duyệt                         | Chưa bắt đầu                                       |
 
 ## Mốc 3 — Dự án (từ PMS)
@@ -20,14 +20,59 @@
 Người dùng chốt: làm **đủ chức năng PMS**, **không** chuyển dữ liệu dự án (tự nạp bằng Nhập Excel).
 Tổ chức theo ADR-0007 (một chủ — nhiều lối vào) và ADR-0008 (mô hình dữ liệu).
 
-| Phiên | Việc                                                                                                                       | Trạng thái     |
-| ----- | -------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| **1** | Lược đồ, RLS, 6 quy trình mẫu NĐ 45, tính hạn dùng chung, loại đơn vị mở rộng                                              | ✅ 30/09/2026  |
-| **2** | API + màn: danh sách (3 bộ lọc), tạo từ quy trình mẫu, hồ sơ (Tổng quan · Checklist · Thành viên), nhà thầu gửi → xác nhận | ✅ 30/09/2026  |
-| **3** | Kế hoạch & điều chỉnh (bước nháp, chốt kế hoạch, phiên bản), thêm/xóa bước tùy biến, Gantt                                 | ✅ 30/09/2026  |
-| **4** | Văn bản (kho tệp) · Kinh phí & giải ngân · Vướng mắc · thẻ Nhật ký                                                         | ✅ 30/09/2026  |
-| 5     | Đóng góp theo ADR-0007: báo cáo (Biểu 01/02/03, BC35), chỉ số KPI, cảnh báo, việc của tôi · Đôn đốc                        | 🔄 5a, 5b xong |
-| 6     | Nhập / xuất Excel · giám sát theo lĩnh vực · màn quản lý Danh mục nghiệp vụ, Quy trình mẫu                                 |                |
+| Phiên | Việc                                                                                                                       | Trạng thái    |
+| ----- | -------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| **1** | Lược đồ, RLS, 6 quy trình mẫu NĐ 45, tính hạn dùng chung, loại đơn vị mở rộng                                              | ✅ 30/09/2026 |
+| **2** | API + màn: danh sách (3 bộ lọc), tạo từ quy trình mẫu, hồ sơ (Tổng quan · Checklist · Thành viên), nhà thầu gửi → xác nhận | ✅ 30/09/2026 |
+| **3** | Kế hoạch & điều chỉnh (bước nháp, chốt kế hoạch, phiên bản), thêm/xóa bước tùy biến, Gantt                                 | ✅ 30/09/2026 |
+| **4** | Văn bản (kho tệp) · Kinh phí & giải ngân · Vướng mắc · thẻ Nhật ký                                                         | ✅ 30/09/2026 |
+| **5** | Đóng góp theo ADR-0007: báo cáo (Biểu 01/02/03, BC35), chỉ số KPI, cảnh báo, việc của tôi · Đôn đốc                        | ✅ 30/09/2026 |
+| **6** | Nhập / xuất Excel · giám sát theo lĩnh vực · màn quản lý Danh mục nghiệp vụ, Quy trình mẫu                                 | ✅ 30/09/2026 |
+
+### Mốc 3 xong — đối chiếu PMS (30/09/2026)
+
+Mọi chức năng PMS đã có trong GDOS, trừ hai chỗ **cố ý khác**:
+
+- **Nhập đè checklist từ Excel** (PMS xóa bước cũ, nạp bước mới): không làm — đi ngược phiên bản
+  kế hoạch (bước chỉ đổi qua nháp → chốt, lịch sử giữ nguyên). Nhập Excel có ở mức **danh sách dự án**.
+- **Giải ngân nhập tay một con số**: không có — luôn là tổng các đợt (PMS có cả hai nên từng lệch).
+
+Còn phác trong cây nhưng **ngoài PMS**: văn bản (qua FOXAI Native), đơn thư, nhiệm vụ, Tổ chức
+(danh bạ), các mục Tầng 2 về kết nối, AI, vận hành, luồng duyệt, quy tắc cảnh báo.
+
+Dữ liệu dev: `chay-dev` dùng PGlite nhúng, tự chạy migration khi khởi động lại.
+
+### Phiên 6b — giám sát lĩnh vực, danh mục, quy trình mẫu, nhật ký theo hồ sơ/người (30/09/2026)
+
+- **Giám sát theo lĩnh vực** (0017/0018): bảng `giam_sat_linh_vuc`; RLS đọc dự án và mọi bảng con
+  thêm nhánh `app_du_an_xem()` = thành viên ∪ lĩnh vực giám sát. Chỉ XEM — policy ghi không đổi.
+  Giao ở Tầng 2 › Tài khoản (quyền `QT_TAI_KHOAN.ASSIGN`).
+- **Danh mục nghiệp vụ** › Lĩnh vực, Loại văn bản; **Tầng 2 › Tham số nghiệp vụ** (nguồn vốn — chỉ
+  Dự án dùng): một màn chung, quyền theo `QUYEN_DANH_MUC`. Chỉ đơn vị gốc ghi (RLS + kiểm trước để
+  báo lỗi dễ hiểu). Không xóa giá trị đang dùng — đếm toàn hệ thống bằng hàm SECURITY DEFINER (0019).
+- **Quy trình mẫu**: xem bước; bản theo luật chỉ nhân bản; bản sao sửa mọi bước (cha trỏ tới nhóm
+  đứng trước — API kiểm). Đang có dự án theo thì không xóa.
+- **Nhật ký › Theo hồ sơ / Theo người dùng**: cùng màn nhật ký, thêm lọc `taiKhoanId`. Bổ sung tên
+  hiển thị cho các bảng dự án mới + test chặn: bảng có trigger nhật ký phải có tên trong `TEN_BANG`.
+- Ô chọn tài khoản tách thành `ui/chon-tai-khoan.tsx` (hồ sơ dự án và nhật ký cùng dùng).
+
+### Phiên 6a — nhập dự án từ Excel (30/09/2026)
+
+- Tải mẫu (sheet Hướng dẫn: chủ đầu tư, quy trình, lĩnh vực trong phạm vi) → kiểm mọi dòng (không
+  ghi) → nhập **tất cả hoặc không** trong một giao dịch. Mỗi dòng đi `DuAnService.taoMot` — cùng
+  đường với tạo tay. Tối đa 500 dòng.
+- Sửa `laNgay`: từ chối ngày không có thật (31/02) — trước đây lọt xuống Postgres thành lỗi 500.
+
+### Phiên 5c — báo cáo + Excel (30/09/2026)
+
+- Khung báo cáo **chung** (`xuyen-suot/bao-cao-chung.ts`): `KetQuaBaoCao` (cột, nhóm cột hai tầng,
+  dòng nhóm 3 cấp, dòng tổng), tham số chuẩn khai trong registry (`thamSo`, `nhomTheo`), một bộ
+  xuất Excel duy nhất (SUBTOTAL — sửa số trong Excel là tổng tự đổi).
+- `/api/bao-cao/:ma` (+ `/excel`): quyền của module chủ. Báo cáo điều hành › Tất cả / Định kỳ /
+  Xuất dữ liệu và Dự án › Báo cáo dự án là **một** màn danh sách + **một** màn xem (`/bao-cao/$ma`).
+- Dự án góp: Biểu 01 (đầu tư công), Biểu 02/03 (chi thường xuyên chuyển tiếp/mới — suy từ năm bắt
+  đầu), Điều 35, Danh sách dự án; checklist một dự án ra Excel. Thêm `du_an.dia_diem` (Biểu 01).
+- Web tải tệp qua `taiVeTep` (làm mới phiên khi 401 — thẻ `<a href>` không làm được).
 
 ### Phiên 5b — Điều hành: Tổng quan, Bộ chỉ số (30/09/2026)
 

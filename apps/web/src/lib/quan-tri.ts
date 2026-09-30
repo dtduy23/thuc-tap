@@ -56,6 +56,8 @@ export const suaDonVi = (id: string, dl: { ma?: string; ten?: string }) =>
 export interface LocNhatKy {
   /** Chỉ thao tác trên một dự án — thẻ Nhật ký trong hồ sơ. */
   duAnId?: string
+  /** Chỉ thao tác của một người. */
+  taiKhoanId?: string
   bang?: string
   hanhDong?: string
   tu?: string

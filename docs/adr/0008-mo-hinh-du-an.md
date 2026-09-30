@@ -41,9 +41,11 @@ hợp với khung GDOS (ADR-0002, ADR-0006, ADR-0007):
 
 - Tài khoản ở đơn vị doanh nghiệp không thấy gì ngoài dự án mình là thành viên — kể cả khi đơn vị
   doanh nghiệp nằm dưới tỉnh.
-- "Giám sát theo lĩnh vực" của PMS (sở chuyên ngành xem mọi dự án một lĩnh vực) **chưa làm** trong
-  lớp dữ liệu này. Khi làm: thêm phạm vi lĩnh vực vào phân công, và nhánh thứ ba cho RLS của dự án.
-- Tệp đính kèm (văn bản, chứng từ) làm ở phiên sau, lưu MinIO (CLAUDE.md).
+- "Giám sát theo lĩnh vực" của PMS (sở chuyên ngành xem mọi dự án một lĩnh vực): **đã làm**
+  (migration 0017/0018) bằng bảng riêng `giam_sat_linh_vuc` — không nhét vào phân công vì phân công
+  là vai × phân hệ, còn đây là phạm vi dữ liệu. RLS đọc có nhánh thứ ba `app_du_an_xem()`; policy
+  ghi giữ nguyên nên người giám sát chỉ xem.
+- Tệp đính kèm: giao diện `KhoTep`, bản thư mục chạy trước; MinIO ở Mốc 2 (CLAUDE.md).
 
 ## Phương án đã loại
 

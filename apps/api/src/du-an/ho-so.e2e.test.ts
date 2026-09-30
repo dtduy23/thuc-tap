@@ -285,3 +285,15 @@ describe('nhật ký theo dự án', () => {
     expect((await ct.get('/api/nhat-ky?duAnId=khong-phai-uuid')).status).toBe(400)
   })
 })
+
+describe('nhật ký theo người dùng', () => {
+  it('lọc đúng thao tác của một người; mã sai → 400', async () => {
+    const ct = await vao('chutich.a')
+    const tatCa = ((await ct.get('/api/nhat-ky?gioiHan=200')).body as TrangNhatKy).dong
+    const nguoi = tatCa.find((d) => d.taiKhoanId)!.taiKhoanId!
+    const { dong } = (await ct.get(`/api/nhat-ky?taiKhoanId=${nguoi}&gioiHan=200`)).body as TrangNhatKy
+    expect(dong.length).toBeGreaterThan(0)
+    expect(dong.every((d) => d.taiKhoanId === nguoi)).toBe(true)
+    expect((await ct.get('/api/nhat-ky?taiKhoanId=abc')).status).toBe(400)
+  })
+})

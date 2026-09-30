@@ -18,6 +18,8 @@ export interface LocNhatKy {
   gioiHan?: string
   /** Chỉ các thao tác trên MỘT dự án (thẻ Nhật ký trong hồ sơ dự án). */
   duAnId?: string
+  /** Chỉ thao tác của MỘT người (Giám sát › Nhật ký › Theo người dùng). */
+  taiKhoanId?: string
 }
 
 const NGAY = /^\d{4}-\d{2}-\d{2}$/
@@ -50,6 +52,7 @@ export class NhatKyService {
     if (truoc !== undefined && (!Number.isSafeInteger(truoc) || truoc < 1))
       throw new BadRequestException('"truoc" không hợp lệ')
     if (loc.duAnId !== undefined) maUuid(loc.duAnId, 'duAnId')
+    if (loc.taiKhoanId !== undefined) maUuid(loc.taiKhoanId, 'taiKhoanId')
 
     const dk: (SQL | undefined)[] = [
       loc.bang ? eq(nhatKyThaoTac.bang, loc.bang) : undefined,
@@ -57,6 +60,7 @@ export class NhatKyService {
       loc.tu ? gte(nhatKyThaoTac.luc, dauNgay('tu', loc.tu)) : undefined,
       loc.den ? lt(nhatKyThaoTac.luc, new Date(dauNgay('den', loc.den).getTime() + MOT_NGAY_MS)) : undefined,
       truoc ? lt(nhatKyThaoTac.id, truoc) : undefined,
+      loc.taiKhoanId ? eq(nhatKyThaoTac.taiKhoanId, loc.taiKhoanId) : undefined,
       loc.duAnId
         ? sql`(${nhatKyThaoTac.banGhiId} = ${loc.duAnId}
               or ${nhatKyThaoTac.giaTriMoi} ->> 'du_an_id' = ${loc.duAnId}

@@ -257,8 +257,8 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     mo: 'Ai, lúc nào, làm gì — bằng chứng pháp lý. Do database tự ghi, không ai sửa hay xóa được.',
     con: [
       { id: 'nk-tat-ca', nhan: 'Tất cả thao tác' },
-      { id: 'nk-ho-so', nhan: 'Theo hồ sơ', phac: true },
-      { id: 'nk-nguoi', nhan: 'Theo người dùng', phac: true },
+      { id: 'nk-ho-so', nhan: 'Theo hồ sơ' },
+      { id: 'nk-nguoi', nhan: 'Theo người dùng' },
     ],
   },
   {

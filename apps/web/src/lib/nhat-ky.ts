@@ -87,12 +87,23 @@ export function thayDoiCua(d: NhatKyDong): ThayDoi[] {
 }
 
 /** Tên đối tượng bị tác động: họ tên / tên đơn vị / vai của phân công. */
+/** Số hoặc chuỗi trong JSON nhật ký → chữ; kiểu khác bỏ trống. */
+const chu = (v: unknown) => (typeof v === 'number' || typeof v === 'string' ? String(v) : '')
+
 export function doiTuongCua(d: NhatKyDong): string {
   const g = d.giaTriMoi ?? d.giaTriCu ?? {}
   if (d.bang === 'cau_hinh' && typeof g.khoa === 'string') return TEN_NHOM_CAU_HINH[g.khoa] ?? g.khoa
   if (typeof g.ho_ten === 'string') return g.ho_ten
   if (typeof g.ten === 'string') return g.ten
   if (typeof g.vai === 'string') return `Vai ${giaTri('vai', g.vai)}`
+  if (typeof g.tieu_de === 'string' && g.tieu_de) return g.tieu_de
+  if (typeof g.ten_tep === 'string') return g.ten_tep
+  if (typeof g.noi_dung === 'string')
+    return g.noi_dung.length > 80 ? `${g.noi_dung.slice(0, 80)}…` : g.noi_dung
+  if (d.bang === 'du_an_phien_ban' && g.so !== undefined) return `Phiên bản ${chu(g.so)}`
+  if (d.bang === 'du_an_von' && g.nam !== undefined) return `Năm ${chu(g.nam)} · ${chu(g.ke_hoach)} tr.đ`
+  if (d.bang === 'du_an_giai_ngan' && g.so_tien !== undefined)
+    return `${typeof g.dot === 'string' && g.dot ? `${g.dot} · ` : ''}${chu(g.so_tien)} tr.đ`
   return d.banGhiId ?? '—'
 }
 
