@@ -28,6 +28,18 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      // `throw redirect(...)` là cách TanStack Router chuyển trang trong beforeLoad —
+      // redirect() trả về Response chứ không phải Error. Cho phép đúng kiểu đó, ở MỘT chỗ,
+      // thay vì tắt luật rải rác từng dòng.
+      '@typescript-eslint/only-throw-error': [
+        'error',
+        {
+          allow: [
+            { from: 'package', package: '@tanstack/router-core', name: 'Redirect' },
+            { from: 'lib', name: 'Response' },
+          ],
+        },
+      ],
     },
   },
 

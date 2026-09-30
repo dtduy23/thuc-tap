@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsc -p tsconfig.build.json && pnpm run \"/^dev:/\"",
     "dev:tsc": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
-    "dev:node": "node --watch-path=dist --env-file-if-exists=../../.env dist/main.js",
+    "dev:node": "node scripts/chay-dev.mjs",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",

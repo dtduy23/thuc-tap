@@ -1,0 +1,125 @@
+/**
+ * Thành phần giao diện nguyên thủy — không biết gì về nghiệp vụ.
+ * Chỉ dùng class token (bg-nen, text-ink…), không viết mã màu.
+ */
+import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react'
+
+type KieuNut = 'chinh' | 'phu' | 'nguy-hiem'
+const MAU_NUT: Record<KieuNut, string> = {
+  chinh: 'border-brand bg-brand text-white hover:bg-brand-dim',
+  phu: 'border-line bg-nen text-body hover:bg-nav-hover',
+  'nguy-hiem': 'border-line bg-nen text-danger hover:bg-tint-danger',
+}
+
+export function Nut({
+  kieu = 'phu',
+  className = '',
+  ...p
+}: ButtonHTMLAttributes<HTMLButtonElement> & { kieu?: KieuNut }) {
+  return (
+    <button
+      type="button"
+      {...p}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-[13px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${MAU_NUT[kieu]} ${className}`}
+    />
+  )
+}
+
+const LOP_O =
+  'w-full rounded-lg border border-line bg-nen-2 px-3 py-2 text-[13.5px] text-ink disabled:opacity-60'
+
+export function ONhap({
+  nhan,
+  id,
+  goiY,
+  ...p
+}: InputHTMLAttributes<HTMLInputElement> & { nhan: string; id: string; goiY?: string }) {
+  return (
+    <div className="mb-3.5">
+      <label htmlFor={id} className="mb-1.5 block text-[12.5px] font-semibold text-body">
+        {nhan}
+      </label>
+      <input id={id} {...p} className={LOP_O} aria-describedby={goiY ? `${id}-goi-y` : undefined} />
+      {goiY && (
+        <p id={`${id}-goi-y`} className="mt-1 text-[11.5px] text-faint">
+          {goiY}
+        </p>
+      )}
+    </div>
+  )
+}
+
+export function OChon({
+  nhan,
+  id,
+  children,
+  ...p
+}: SelectHTMLAttributes<HTMLSelectElement> & { nhan: string; id: string; children: ReactNode }) {
+  return (
+    <div className="mb-3.5">
+      <label htmlFor={id} className="mb-1.5 block text-[12.5px] font-semibold text-body">
+        {nhan}
+      </label>
+      <select id={id} {...p} className={LOP_O}>
+        {children}
+      </select>
+    </div>
+  )
+}
+
+type KieuThongBao = 'loi' | 'ok' | 'thong-tin'
+const MAU_TB: Record<KieuThongBao, string> = {
+  loi: 'border-danger bg-tint-danger text-danger',
+  ok: 'border-ok bg-tint-ok text-ok',
+  'thong-tin': 'border-brand bg-tint-brand text-body',
+}
+
+export function ThongBao({ kieu = 'thong-tin', children }: { kieu?: KieuThongBao; children: ReactNode }) {
+  return (
+    <div
+      role={kieu === 'loi' ? 'alert' : 'status'}
+      className={`mb-4 rounded-r-lg border-l-[3px] px-3.5 py-2.5 text-[12.8px] leading-relaxed ${MAU_TB[kieu]}`}
+    >
+      {children}
+    </div>
+  )
+}
+
+export function The({ tieuDe, phu, children }: { tieuDe?: string; phu?: string; children: ReactNode }) {
+  return (
+    <section className="mb-4 rounded-[10px] border border-line bg-nen shadow-[0_1px_2px_rgba(16,34,54,.06),0_4px_16px_rgba(16,34,54,.06)]">
+      {tieuDe && (
+        <div className="flex items-center gap-2.5 border-b border-line-2 px-4 py-3">
+          <h2 className="m-0 text-[14px] font-semibold">{tieuDe}</h2>
+          {phu && <span className="text-[11.5px] text-faint">{phu}</span>}
+        </div>
+      )}
+      <div className="p-4">{children}</div>
+    </section>
+  )
+}
+
+/** Nhãn nhỏ dạng viên thuốc. */
+export function Chip({
+  mau = 'xam',
+  children,
+}: {
+  mau?: 'xam' | 'ok' | 'danger' | 'brand' | 'tim' | 'warn'
+  children: ReactNode
+}) {
+  const lop = {
+    xam: 'border border-line bg-nen-2 text-faint',
+    ok: 'bg-tint-ok text-ok',
+    danger: 'bg-tint-danger text-danger',
+    brand: 'bg-tint-brand text-brand',
+    tim: 'bg-tint-tim text-tim',
+    warn: 'bg-tint-warn text-warn',
+  }[mau]
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${lop}`}
+    >
+      {children}
+    </span>
+  )
+}

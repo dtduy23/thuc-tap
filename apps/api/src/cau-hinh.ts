@@ -6,6 +6,7 @@
  * JWT_SECRET dự phòng công khai — cả hai đều chạy "được" cho tới ngày chạy sai.
  */
 import { randomBytes } from 'node:crypto'
+import { resolve } from 'node:path'
 
 export type MoiTruong = 'development' | 'test' | 'production'
 
@@ -14,6 +15,11 @@ export interface CauHinh {
   cong: number
   /** Chưa cấu hình ở máy dev thì API vẫn lên để xem /health; production thì bắt buộc. */
   duongDanDb: string | undefined
+  /**
+   * Thư mục database NHÚNG (PGlite) cho máy dev không có Docker — bật bằng DB_NHUNG=1.
+   * Cùng migration, cùng RLS như Postgres thật. Production CẤM.
+   */
+  dbNhung: string | undefined
   phienBan: string
   /** Khóa ký vé đăng nhập. Production bắt buộc; dev thiếu thì sinh tạm mỗi lần chạy. */
   khoaKyVe: string
@@ -46,6 +52,14 @@ export function docCauHinh(env: NodeJS.ProcessEnv = process.env): CauHinh {
     throw new Error('Thiếu DATABASE_URL — môi trường production không được chạy khi chưa nối cơ sở dữ liệu')
   }
 
+  let dbNhung: string | undefined
+  if (env.DB_NHUNG === '1') {
+    if (laProduction) throw new Error('DB_NHUNG chỉ dùng ở máy dev — production phải dùng Postgres thật')
+    if (duongDanDb) throw new Error('Đặt DATABASE_URL hoặc DB_NHUNG=1, không đặt cả hai')
+    // pnpm chạy script với thư mục hiện tại là apps/api → mặc định <gốc repo>/.data/pglite
+    dbNhung = resolve(env.DB_NHUNG_THU_MUC?.trim() || '../../.data/pglite')
+  }
+
   let khoaKyVe = env.AUTH_SECRET?.trim() ?? ''
   if (!khoaKyVe) {
     if (laProduction)
@@ -60,6 +74,7 @@ export function docCauHinh(env: NodeJS.ProcessEnv = process.env): CauHinh {
     moiTruong,
     cong,
     duongDanDb,
+    dbNhung,
     phienBan: env.APP_VERSION?.trim() || 'dev',
     khoaKyVe,
     cookieAnToan: laProduction,

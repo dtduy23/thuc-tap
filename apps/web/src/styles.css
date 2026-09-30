@@ -2,58 +2,137 @@
 
 /*
  * Design token — khai MỘT lần ở đây, component chỉ dùng class token
- * (bg-nen, text-ink…), không viết mã màu thẳng vào JSX.
- * Mốc 1 thay bằng bộ token đầy đủ port từ GDOS (globals.css).
+ * (bg-nen, text-ink, border-line…), không viết mã màu thẳng vào JSX.
+ * Nguồn: docs/khung-mau.html. Riêng --faint đậm hơn bản mẫu để chữ phụ
+ * đạt tương phản WCAG AA (~4,6:1) — bản mẫu chỉ ~3,1:1.
+ *
+ * Sáng/tối: theo hệ điều hành; người dùng chọn tay thì ghi data-theme lên <html>.
  */
 :root {
   --brand: #1b66e0;
-  --ok: #0f9d58;
-  --danger: #d93025;
-  --warn: #b7791f;
+  --brand-dim: #1552bb;
+  --tint-brand: #e8f0fe;
+  --ok: #0b7d46;
+  --tint-ok: #e6f4ec;
+  --warn: #9a6614;
+  --tint-warn: #fdf3e3;
+  --danger: #c5221f;
+  --tint-danger: #fce8e6;
+  --tim: #6a3de8;
+  --tint-tim: #f0eaff;
   --bg: #eef1f6;
   --nen: #ffffff;
+  --nen-2: #f7f9fc;
   --ink: #16222e;
   --body: #41505f;
-  --faint: #8494a5;
+  --faint: #66768a;
   --line: #dfe5ec;
+  --line-2: #eef2f7;
+  --nav-hover: #f0f4fa;
+  color-scheme: light;
 }
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --brand: #5b9bff;
+    --brand-dim: #3f7fe0;
+    --tint-brand: #16273f;
     --ok: #4cc38a;
-    --danger: #ff6b60;
+    --tint-ok: #123024;
     --warn: #e0a458;
+    --tint-warn: #33260f;
+    --danger: #ff6b60;
+    --tint-danger: #3a1714;
+    --tim: #a98bff;
+    --tint-tim: #241a3d;
     --bg: #0e141b;
     --nen: #161e27;
+    --nen-2: #1b242f;
     --ink: #e8eef5;
     --body: #b3c0cd;
-    --faint: #7d8c9c;
+    --faint: #8d9cab;
     --line: #26313d;
+    --line-2: #1f2831;
+    --nav-hover: #1d2833;
+    color-scheme: dark;
   }
+}
+:root[data-theme='dark'] {
+  --brand: #5b9bff;
+  --brand-dim: #3f7fe0;
+  --tint-brand: #16273f;
+  --ok: #4cc38a;
+  --tint-ok: #123024;
+  --warn: #e0a458;
+  --tint-warn: #33260f;
+  --danger: #ff6b60;
+  --tint-danger: #3a1714;
+  --tim: #a98bff;
+  --tint-tim: #241a3d;
+  --bg: #0e141b;
+  --nen: #161e27;
+  --nen-2: #1b242f;
+  --ink: #e8eef5;
+  --body: #b3c0cd;
+  --faint: #8d9cab;
+  --line: #26313d;
+  --line-2: #1f2831;
+  --nav-hover: #1d2833;
+  color-scheme: dark;
 }
 
 @theme inline {
   --color-brand: var(--brand);
+  --color-brand-dim: var(--brand-dim);
+  --color-tint-brand: var(--tint-brand);
   --color-ok: var(--ok);
-  --color-danger: var(--danger);
+  --color-tint-ok: var(--tint-ok);
   --color-warn: var(--warn);
+  --color-tint-warn: var(--tint-warn);
+  --color-danger: var(--danger);
+  --color-tint-danger: var(--tint-danger);
+  --color-tim: var(--tim);
+  --color-tint-tim: var(--tint-tim);
   --color-bg: var(--bg);
   --color-nen: var(--nen);
+  --color-nen-2: var(--nen-2);
   --color-ink: var(--ink);
   --color-body: var(--body);
   --color-faint: var(--faint);
   --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-nav-hover: var(--nav-hover);
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
 body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family:
-    'Segoe UI',
+  font:
+    14px/1.5 'Segoe UI',
     system-ui,
     -apple-system,
     'Helvetica Neue',
     Arial,
     sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }

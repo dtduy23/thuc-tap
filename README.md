@@ -2,18 +2,34 @@
 
 Nền tảng quản trị điều hành số — bản chính thức, làm trước cho khối chính phủ.
 
-## Chạy
+## Chạy ở máy dev
 
-Cần Node 24+, pnpm 11+. Docker chỉ cần cho Postgres/MinIO.
+Cần Node 24+, pnpm 11+.
 
 ```bash
 pnpm install
-cp .env.example .env        # rồi đổi các mật khẩu
-docker compose up -d        # Postgres :5433, MinIO :9100
+cp .env.example .env
+```
+
+**Có Docker** — Postgres thật:
+
+```bash
+docker compose up -d        # Postgres :5433, MinIO :9100 (đổi mật khẩu trong .env trước)
+```
+
+**Không có Docker** — trong `.env` bỏ dòng `DATABASE_URL`, bật `DB_NHUNG=1`. API dùng database
+nhúng (PGlite) ghi ra `.data/pglite`, cùng migration và RLS như Postgres thật.
+
+Tạo quản trị viên đầu tiên (một lần), rồi chạy:
+
+```bash
+pnpm --filter @gdos/api build
+pnpm --filter @gdos/api khoi-tao --don-vi-ma XA-01 --don-vi-ten "Xã Thử" --cap xa --toan-quyen
 pnpm dev                    # web http://localhost:5174 · api http://localhost:4100/api/health
 ```
 
-Chưa có Docker vẫn chạy được `pnpm dev` — trang chủ sẽ báo "postgres: chưa cấu hình".
+`--toan-quyen` chỉ dùng lúc xây dựng (quản trị viên thấy và làm được mọi thứ). Triển khai thật thì
+bỏ — cán bộ CNTT chỉ cần cờ quản trị (ADR-0006).
 
 Trước khi đẩy mã: `pnpm kiem-tra` phải xanh.
 

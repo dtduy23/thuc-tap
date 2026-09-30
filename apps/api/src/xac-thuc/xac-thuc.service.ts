@@ -8,7 +8,7 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common'
-import { DANH_SACH_MODULE, tinhQuyen, type MaVai, type PhanCong } from '@gdos/shared'
+import { DANH_SACH_MODULE, tinhQuyen, type MaVai, type PhanCong, type ThongTinToi } from '@gdos/shared'
 import { and, eq, isNull, ne, sql } from 'drizzle-orm'
 import { createHash, randomBytes } from 'node:crypto'
 import { CAU_HINH, type CauHinh } from '../cau-hinh.js'
@@ -25,17 +25,7 @@ export interface ThietBi {
   trinhDuyet: string | undefined
 }
 
-/** Những gì web cần biết về người đang đăng nhập — KHÔNG có gì bí mật. */
-export interface ThongTinToi {
-  id: string
-  tenDangNhap: string
-  hoTen: string
-  laQuanTri: boolean
-  donVi: { id: string; ten: string; cap: string }
-  phanCong: PhanCong[]
-  /** Web đưa thẳng vào locTheoQuyen() để dựng cây — cùng tập API dùng để chặn. */
-  quyen: string[]
-}
+export type { ThongTinToi }
 
 export interface KetQuaPhien {
   ve: string

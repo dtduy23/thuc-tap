@@ -48,4 +48,18 @@ describe('docCauHinh', () => {
     const ch = docCauHinh({ NODE_ENV: 'production', DATABASE_URL: DB, AUTH_SECRET: 'k'.repeat(40) })
     expect(ch.cookieAnToan).toBe(true)
   })
+
+  it('database nhúng: bật được ở máy dev', () => {
+    expect(docCauHinh({ DB_NHUNG: '1' }).dbNhung).toMatch(/pglite$/)
+  })
+
+  it('database nhúng: CẤM ở production', () => {
+    expect(() =>
+      docCauHinh({ NODE_ENV: 'production', DATABASE_URL: DB, AUTH_SECRET: 'k'.repeat(40), DB_NHUNG: '1' }),
+    ).toThrow(/DB_NHUNG/)
+  })
+
+  it('database nhúng: không đặt cùng DATABASE_URL — tránh tưởng đang ghi vào Postgres thật', () => {
+    expect(() => docCauHinh({ DB_NHUNG: '1', DATABASE_URL: DB })).toThrow(/không đặt cả hai/)
+  })
 })

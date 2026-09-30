@@ -7,7 +7,7 @@
 | Mốc   | Nội dung                                                                             | Trạng thái                                         |
 | ----- | ------------------------------------------------------------------------------------ | -------------------------------------------------- |
 | **0** | Khởi tạo repo, CI, ADR, khung dùng chung                                             | ✅ Xong — **CI/CD giao kỹ thuật FOXAI** (xem dưới) |
-| **1** | Nền móng: tài khoản, đơn vị, vai trò & quyền, RLS, nhật ký, khung portal + cây 4 cấp | 🔄 Phiên 2/4 xong (đăng nhập, guard, khởi tạo)     |
+| **1** | Nền móng: tài khoản, đơn vị, vai trò & quyền, RLS, nhật ký, khung portal + cây 4 cấp | 🔄 Phiên 3/4 xong (khung web, đăng nhập)           |
 | **2** | Đưa lên máy thử (image, nginx, CI/CD)                                                | Chưa bắt đầu                                       |
 | **3** | Module Dự án (từ PMS)                                                                | Chưa bắt đầu                                       |
 | **4** | Module Khiếu nại đất đai                                                             | Chưa bắt đầu                                       |
@@ -21,8 +21,36 @@
 | ----- | --------------------------------------------------------------------------------------------------------------------------- | ------------- |
 | **1** | Vai trò & tính quyền · lược đồ · RLS · nhật ký · test bảo mật DB                                                            | ✅ 30/09/2026 |
 | **2** | Đăng nhập (argon2id của Node, cookie HttpOnly, refresh xoay vòng, khóa khi sai) · CLI tạo quản trị viên · guard quyền ở API | ✅ 30/09/2026 |
-| 3     | Web: khung portal + cây 4 cấp lọc quyền (mang từ `docs/khung-mau.html` + GDOS cũ) · màn đăng nhập                           |               |
+| **3** | Web: khung portal + cây 4 cấp lọc quyền (mang từ `docs/khung-mau.html` + GDOS cũ) · màn đăng nhập                           | ✅ 30/09/2026 |
 | 4     | Web Tầng 2: Tài khoản · Phân công · Đơn vị · Nhật ký thao tác                                                               |               |
+
+### Phiên 3 — khung web (30/09/2026)
+
+**Đã làm**
+
+- Web: TanStack Router + Query. Route `/dang-nhap`, khung portal (guard một chỗ), `/`, `/doi-mat-khau`,
+  và MỘT route động `/$chucNang` phủ cả registry.
+- Lớp gọi API duy nhất (`lib/http.ts`): tự gắn `X-GDOS`; gặp 401 thì làm mới phiên ĐÚNG MỘT LẦN rồi
+  gọi lại, nhiều request cùng hết hạn dùng chung một lần làm mới (token xoay vòng — làm mới hai lần là
+  bị coi như dùng lại token cũ).
+- Cây 4 cấp dựng từ `locTheoQuyen()` trên đúng tập quyền API trả về; tự mở nhánh đang xem; nhớ
+  đóng/mở theo máy; màn hẹp thành ngăn kéo ☰.
+- `?tiep=` chỉ nhận đường dẫn nội bộ — chống dùng màn đăng nhập làm bàn đạp chuyển sang trang lừa đảo.
+- Token màu từ bản mẫu, riêng chữ phụ đậm hơn để đạt tương phản WCAG AA.
+- **Database nhúng cho máy dev** (`DB_NHUNG=1`, PGlite ghi ra `.data/pglite`) — chạy `pnpm dev` không
+  cần Docker. Production cấm. Lệnh khởi tạo cũng dùng được.
+- **Đã kiểm trên trình duyệt**: chưa đăng nhập vào `/tk-ds` → về màn đăng nhập kèm `?tiep`; sai mật
+  khẩu → câu chung, xóa ô mật khẩu; đúng → quay lại đúng `/tk-ds`; đường dẫn C1›C2›C3›C4; cây đúng
+  quyền; ngăn kéo màn hẹp.
+
+**Phát hiện**
+
+- `node --watch` trên Windows khởi động lại API liên tục dù `dist/` không đổi (phần mềm diệt virus
+  quét thư mục sinh sự kiện giả) → thay bằng `apps/api/scripts/chay-dev.mjs`: chỉ khởi động lại khi dấu
+  vân tay (mtime + kích thước) các tệp `.js` thật sự đổi. Bật biên dịch tăng dần (`.tsbuildinfo`).
+- pnpm 11 chuyển nguyên dấu `--` vào lệnh CLI → lệnh `khoi-tao` chấp nhận cả hai kiểu gõ.
+- ESLint (react-hooks 7) chặn `setState` trong `useEffect` → điều chỉnh state ngay lúc render khi đầu
+  vào đổi (cách React khuyên). `jsx-a11y` chặn `autoFocus` ở màn đăng nhập → bỏ.
 
 ### Phiên 2 — đăng nhập (30/09/2026)
 
