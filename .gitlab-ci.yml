@@ -81,7 +81,7 @@ build:
 # Bí mật nằm trên máy thử, KHÔNG đi qua CI và không ai phải dán vào GitLab.
 deploy:
   stage: deploy
-  tags: ['foxai-develop']
+  tags: ['deploy-gdos']
   when: manual
   environment:
     name: may-thu
