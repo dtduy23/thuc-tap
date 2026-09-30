@@ -13,6 +13,8 @@ async function khoiDong() {
   // Chỉ tin header X-Forwarded-For từ nginx chạy cùng máy — IP ghi vào phiên
   // đăng nhập phải là IP thật của người dùng, không phải IP người dùng tự khai.
   app.set('trust proxy', 'loopback')
+  // Xuất lưới ra Excel gửi lên cả phần đang lọc — nới giới hạn JSON mặc định (100 KB).
+  app.useBodyParser('json', { limit: '2mb' })
 
   const { cong, moiTruong } = app.get<CauHinh>(CAU_HINH)
   await app.listen(cong)

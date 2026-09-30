@@ -4,7 +4,8 @@ import { useState, type FormEvent } from 'react'
 import { lamMoiPhienNgay, LoiApi } from '@/lib/http'
 import { KHOA_TOI, truyVanToi } from '@/lib/phien'
 import { KHOA_DON_VI, suaDonVi, taoDonVi, truyVanDonVi } from '@/lib/quan-tri'
-import { Chip, KhungBang, LOP_TD, LOP_TH, Nut, OChon, ONhap, The, ThongBao } from '@/ui/co-ban'
+import { Chip, Nut, OChon, ONhap, The, ThongBao } from '@/ui/co-ban'
+import { Luoi, type CotLuoi } from '@/ui/luoi/luoi'
 
 const loiCua = (e: unknown, macDinh: string) => (e instanceof LoiApi ? e.message : macDinh)
 
@@ -31,6 +32,69 @@ export default function DonViDs() {
   const coTao = toi.quyen.includes('QT_DON_VI.CREATE')
   const coSua = toi.quyen.includes('QT_DON_VI.UPDATE')
   const dsTinh = ds.filter((d) => d.cap === 'tinh')
+  const cay = xepCay(ds)
+  const capCua = new Map(cay.map((x) => [x.dv.id, x.cap]))
+  const tenCua = new Map(ds.map((d) => [d.id, d.ten]))
+  const dangSuaDv = ds.find((d) => d.id === dangSua)
+
+  const cot: CotLuoi<DonViDong>[] = [
+    {
+      id: 'ten',
+      nhan: 'Đơn vị',
+      kieu: 'chu',
+      rong: 280,
+      batBuoc: true,
+      giaTri: (dv) => dv.ten,
+      hien: (dv) => (
+        <span style={{ paddingLeft: (capCua.get(dv.id) ?? 0) * 18 }}>
+          {(capCua.get(dv.id) ?? 0) > 0 && <span className="mr-1.5 text-faint">└</span>}
+          <b className="text-ink">{dv.ten}</b>
+          {dv.id === toi.donVi.id && (
+            <span className="ml-2">
+              <Chip mau="brand">Đơn vị của bạn</Chip>
+            </span>
+          )}
+        </span>
+      ),
+    },
+    {
+      id: 'ma',
+      nhan: 'Mã',
+      kieu: 'chu',
+      rong: 130,
+      giaTri: (dv) => dv.ma,
+      hien: (dv) => <code className="text-[12.5px]">{dv.ma}</code>,
+    },
+    {
+      id: 'cap',
+      nhan: 'Loại',
+      kieu: 'danh-muc',
+      rong: 150,
+      giaTri: (dv) => dv.cap,
+      luaChon: Object.entries(CAP_DON_VI).map(([giaTri, nhan]) => ({ giaTri, nhan })),
+    },
+    {
+      id: 'cha',
+      nhan: 'Trực thuộc',
+      kieu: 'danh-muc',
+      rong: 180,
+      giaTri: (dv) => (dv.chaId ? (tenCua.get(dv.chaId) ?? null) : null),
+    },
+    { id: 'soTaiKhoan', nhan: 'Tài khoản', kieu: 'so', rong: 110, cong: true, giaTri: (dv) => dv.soTaiKhoan },
+    ...(coSua
+      ? [
+          {
+            id: 'thaoTac',
+            nhan: 'Thao tác',
+            kieu: 'chu',
+            rong: 100,
+            khongLoc: true,
+            giaTri: () => null,
+            hien: (dv) => <Nut onClick={() => datDangSua(dv.id)}>Sửa</Nut>,
+          } satisfies CotLuoi<DonViDong>,
+        ]
+      : []),
+  ]
 
   return (
     <>
@@ -48,59 +112,27 @@ export default function DonViDs() {
         />
       )}
 
-      <KhungBang nhan="Danh sách đơn vị">
-        <thead>
-          <tr>
-            <th className={LOP_TH}>Đơn vị</th>
-            <th className={LOP_TH}>Mã</th>
-            <th className={LOP_TH}>Cấp</th>
-            <th className={`${LOP_TH} text-right`}>Tài khoản</th>
-            {coSua && (
-              <th className={LOP_TH}>
-                <span className="sr-only">Thao tác</span>
-              </th>
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {xepCay(ds).map(({ dv, cap }) =>
-            dangSua === dv.id ? (
-              <SuaDonVi
-                key={dv.id}
-                dv={dv}
-                dong={() => datDangSua(undefined)}
-                xong={(moi) => {
-                  qc.setQueryData<DonViDong[]>(KHOA_DON_VI, (cu) =>
-                    cu?.map((x) => (x.id === moi.id ? moi : x)),
-                  )
-                  datDangSua(undefined)
-                  datThongBao({ ok: true, cau: `Đã lưu ${moi.ten}.` })
-                }}
-              />
-            ) : (
-              <tr key={dv.id}>
-                <td className={LOP_TD} style={{ paddingLeft: `${12 + cap * 22}px` }}>
-                  {cap > 0 && <span className="mr-1.5 text-faint">└</span>}
-                  <b className="text-ink">{dv.ten}</b>
-                  {dv.id === toi.donVi.id && (
-                    <span className="ml-2">
-                      <Chip mau="brand">Đơn vị của bạn</Chip>
-                    </span>
-                  )}
-                </td>
-                <td className={`${LOP_TD} font-mono text-[12.5px]`}>{dv.ma}</td>
-                <td className={LOP_TD}>{CAP_DON_VI[dv.cap]}</td>
-                <td className={`${LOP_TD} text-right tabular-nums`}>{dv.soTaiKhoan}</td>
-                {coSua && (
-                  <td className={`${LOP_TD} text-right`}>
-                    <Nut onClick={() => datDangSua(dv.id)}>Sửa</Nut>
-                  </td>
-                )}
-              </tr>
-            ),
-          )}
-        </tbody>
-      </KhungBang>
+      {dangSuaDv && (
+        <SuaDonVi
+          key={dangSuaDv.id}
+          dv={dangSuaDv}
+          dong={() => datDangSua(undefined)}
+          xong={(moi) => {
+            qc.setQueryData<DonViDong[]>(KHOA_DON_VI, (cu) => cu?.map((x) => (x.id === moi.id ? moi : x)))
+            datDangSua(undefined)
+            datThongBao({ ok: true, cau: `Đã lưu ${moi.ten}.` })
+          }}
+        />
+      )}
+
+      <Luoi
+        ma="don-vi"
+        tieuDe="Danh sách đơn vị"
+        cot={cot}
+        dong={cay.map((x) => x.dv)}
+        khoa={(dv) => dv.id}
+        rong="Chưa có đơn vị nào trong phạm vi."
+      />
       <p className="mt-2 text-[12px] text-faint">
         Tài khoản cấp tỉnh thấy dữ liệu của tỉnh và mọi đơn vị trực thuộc; tài khoản ở một đơn vị chỉ thấy đơn
         vị mình. Chủ đầu tư là một đơn vị; nhà thầu, tư vấn là "doanh nghiệp" — chỉ thấy dự án mình tham gia.
@@ -189,36 +221,39 @@ function SuaDonVi({ dv, dong, xong }: { dv: DonViDong; dong: () => void; xong: (
     onSuccess: xong,
   })
   return (
-    <tr className="bg-tint-brand">
-      <td className={LOP_TD}>
-        <input
-          aria-label="Tên đơn vị"
-          className="w-full rounded-md border border-line bg-nen px-2 py-1"
-          value={ten}
+    <The tieuDe={`Sửa đơn vị · ${dv.ten}`} phu={CAP_DON_VI[dv.cap]}>
+      {sua.error && <ThongBao kieu="loi">{loiCua(sua.error, 'Không lưu được.')}</ThongBao>}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          sua.mutate()
+        }}
+        className="grid items-end gap-x-3 sm:grid-cols-[2fr_1fr_auto]"
+      >
+        <ONhap
+          id="sdv-ten"
+          nhan="Tên đơn vị"
+          required
           maxLength={150}
+          value={ten}
           onChange={(e) => datTen(e.target.value)}
         />
-        {sua.error && (
-          <span className="mt-1 block text-[12px] text-danger">{loiCua(sua.error, 'Không lưu được.')}</span>
-        )}
-      </td>
-      <td className={LOP_TD}>
-        <input
-          aria-label="Mã đơn vị"
-          className="w-[120px] rounded-md border border-line bg-nen px-2 py-1 font-mono"
-          value={ma}
+        <ONhap
+          id="sdv-ma"
+          nhan="Mã"
+          required
           maxLength={30}
+          spellCheck={false}
+          value={ma}
           onChange={(e) => datMa(e.target.value.toUpperCase())}
         />
-      </td>
-      <td className={LOP_TD}>{CAP_DON_VI[dv.cap]}</td>
-      <td className={`${LOP_TD} text-right tabular-nums`}>{dv.soTaiKhoan}</td>
-      <td className={`${LOP_TD} text-right whitespace-nowrap`}>
-        <Nut kieu="chinh" disabled={sua.isPending || !ten.trim() || !ma.trim()} onClick={() => sua.mutate()}>
-          Lưu
-        </Nut>{' '}
-        <Nut onClick={dong}>Hủy</Nut>
-      </td>
-    </tr>
+        <div className="mb-3.5 flex gap-2">
+          <Nut type="submit" kieu="chinh" disabled={sua.isPending || !ten.trim() || !ma.trim()}>
+            {sua.isPending ? 'Đang lưu…' : 'Lưu'}
+          </Nut>
+          <Nut onClick={dong}>Hủy</Nut>
+        </div>
+      </form>
+    </The>
   )
 }

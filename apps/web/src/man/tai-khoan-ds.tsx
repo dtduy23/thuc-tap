@@ -1,6 +1,6 @@
 import type { PhanCong, TaiKhoanDong } from '@gdos/shared'
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { useMemo, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { truyVanDanhMuc } from '@/lib/du-an'
 import { lamMoiPhienNgay, LoiApi } from '@/lib/http'
 import { ngay } from '@/lib/ngay'
@@ -14,13 +14,10 @@ import {
   suaTaiKhoan,
   truyVanTaiKhoan,
 } from '@/lib/quan-tri'
-import { Chip, KhungBang, LOP_TD, LOP_TH, Nut, ODanhDau, ONhap, The, ThongBao } from '@/ui/co-ban'
+import { Chip, Nut, ODanhDau, ONhap, The, ThongBao } from '@/ui/co-ban'
+import { Luoi, type CotLuoi } from '@/ui/luoi/luoi'
 import { BoPhanCong, loiPhanCong, tomTatPhanCong } from './bo-phan-cong'
 import { HopMatKhauTam } from './mat-khau-tam'
-
-/** So khớp không dấu: gõ "hoa" tìm ra "Hòa". */
-const boDau = (s: string) =>
-  s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase()
 
 export function TrangThaiTaiKhoan({ tk }: { tk: TaiKhoanDong }) {
   return (
@@ -32,6 +29,27 @@ export function TrangThaiTaiKhoan({ tk }: { tk: TaiKhoanDong }) {
   )
 }
 
+const TRANG_THAI = [
+  { giaTri: 'hoat-dong', nhan: 'Hoạt động' },
+  { giaTri: 'khoa', nhan: 'Đã khóa' },
+  { giaTri: 'khoa-tam', nhan: 'Khóa tạm (nhập sai)' },
+  { giaTri: 'doi-mat-khau', nhan: 'Chờ đổi mật khẩu' },
+] as const
+const trangThai = (tk: TaiKhoanDong) =>
+  tk.trangThai === 'khoa'
+    ? 'khoa'
+    : tk.khoaTamDen
+      ? 'khoa-tam'
+      : tk.phaiDoiMatKhau
+        ? 'doi-mat-khau'
+        : 'hoat-dong'
+const phanCongChu = (tk: TaiKhoanDong) =>
+  [
+    ...(tk.laQuanTri ? ['Quản trị'] : []),
+    ...tk.phanCong.map(tomTatPhanCong),
+    ...tk.giamSatLinhVuc.map((l) => `Giám sát ${l.ten}`),
+  ].join('; ')
+
 /**
  * Danh sách tài khoản trong phạm vi + chi tiết để sửa, khóa, đặt lại mật khẩu, phân công.
  * `chiKhoa`: cấp 4 "Tài khoản bị khóa" — cùng màn, lọc sẵn (khóa hẳn hoặc khóa tạm).
@@ -39,90 +57,86 @@ export function TrangThaiTaiKhoan({ tk }: { tk: TaiKhoanDong }) {
 export default function TaiKhoanDs({ chiKhoa = false }: { chiKhoa?: boolean }) {
   const { data: tatCa } = useSuspenseQuery(truyVanTaiKhoan)
   const ds = chiKhoa ? tatCa.filter((x) => x.trangThai === 'khoa' || !!x.khoaTamDen) : tatCa
-  const [tim, datTim] = useState('')
   const [chon, datChon] = useState<string>()
-
-  const loc = useMemo(() => {
-    const t = boDau(tim.trim())
-    return t ? ds.filter((x) => boDau(`${x.tenDangNhap} ${x.hoTen} ${x.donViTen}`).includes(t)) : ds
-  }, [ds, tim])
   const dangChon = ds.find((x) => x.id === chon)
+
+  const cot: CotLuoi<TaiKhoanDong>[] = [
+    {
+      id: 'hoTen',
+      nhan: 'Họ tên',
+      kieu: 'chu',
+      rong: 200,
+      batBuoc: true,
+      giaTri: (tk) => tk.hoTen,
+      hien: (tk) => <b className="text-ink">{tk.hoTen}</b>,
+    },
+    { id: 'tenDangNhap', nhan: 'Tên đăng nhập', kieu: 'chu', rong: 160, giaTri: (tk) => tk.tenDangNhap },
+    { id: 'donVi', nhan: 'Đơn vị', kieu: 'danh-muc', rong: 170, giaTri: (tk) => tk.donViTen },
+    {
+      id: 'phanCong',
+      nhan: 'Phân công',
+      kieu: 'chu',
+      rong: 300,
+      giaTri: (tk) => phanCongChu(tk) || 'Chưa phân công',
+      hien: (tk) => (
+        <span className="flex flex-wrap gap-1">
+          {tk.laQuanTri && <Chip mau="tim">Quản trị</Chip>}
+          {tk.phanCong.map((p) => (
+            <Chip key={p.vai} mau="brand">
+              {tomTatPhanCong(p)}
+            </Chip>
+          ))}
+          {tk.giamSatLinhVuc.map((l) => (
+            <Chip key={l.id} mau="xam">
+              Giám sát {l.ten}
+            </Chip>
+          ))}
+          {!tk.laQuanTri && tk.phanCong.length === 0 && <span className="text-faint">Chưa phân công</span>}
+        </span>
+      ),
+    },
+    {
+      id: 'trangThai',
+      nhan: 'Trạng thái',
+      kieu: 'danh-muc',
+      rong: 170,
+      giaTri: trangThai,
+      luaChon: TRANG_THAI,
+      hien: (tk) => <TrangThaiTaiKhoan tk={tk} />,
+    },
+    { id: 'taoLuc', nhan: 'Ngày tạo', kieu: 'ngay', an: true, giaTri: (tk) => tk.taoLuc.slice(0, 10) },
+    {
+      id: 'thaoTac',
+      nhan: 'Thao tác',
+      kieu: 'chu',
+      rong: 110,
+      khongLoc: true,
+      giaTri: () => null,
+      hien: (tk) => (
+        <Nut
+          onClick={(e) => {
+            e.stopPropagation()
+            datChon(tk.id === chon ? undefined : tk.id)
+          }}
+        >
+          {tk.id === chon ? 'Đóng' : 'Chi tiết'}
+        </Nut>
+      ),
+    },
+  ]
 
   return (
     <>
-      <div className="mb-3 flex flex-wrap items-center gap-3">
-        <input
-          type="search"
-          aria-label="Tìm tài khoản"
-          placeholder="Tìm theo tên, họ tên, đơn vị…"
-          value={tim}
-          onChange={(e) => datTim(e.target.value)}
-          className="w-full max-w-[320px] rounded-lg border border-line bg-nen px-3 py-1.5 text-[13px]"
-        />
-        <span className="text-[12px] text-faint">
-          {loc.length}/{ds.length} tài khoản
-        </span>
-      </div>
-
       {dangChon && <ChiTietTaiKhoan key={dangChon.id} tk={dangChon} dong={() => datChon(undefined)} />}
-
-      <KhungBang nhan="Danh sách tài khoản">
-        <thead>
-          <tr>
-            <th className={LOP_TH}>Tài khoản</th>
-            <th className={LOP_TH}>Đơn vị</th>
-            <th className={LOP_TH}>Phân công</th>
-            <th className={LOP_TH}>Trạng thái</th>
-            <th className={LOP_TH}>
-              <span className="sr-only">Thao tác</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {loc.map((tk) => (
-            <tr key={tk.id} className={tk.id === chon ? 'bg-tint-brand' : undefined}>
-              <td className={LOP_TD}>
-                <b className="text-ink">{tk.hoTen}</b>
-                <span className="block text-[12px] text-faint">{tk.tenDangNhap}</span>
-              </td>
-              <td className={LOP_TD}>{tk.donViTen}</td>
-              <td className={LOP_TD}>
-                <span className="flex flex-wrap gap-1">
-                  {tk.laQuanTri && <Chip mau="tim">Quản trị</Chip>}
-                  {tk.phanCong.map((p) => (
-                    <Chip key={p.vai} mau="brand">
-                      {tomTatPhanCong(p)}
-                    </Chip>
-                  ))}
-                  {tk.giamSatLinhVuc.map((l) => (
-                    <Chip key={l.id} mau="xam">
-                      Giám sát {l.ten}
-                    </Chip>
-                  ))}
-                  {!tk.laQuanTri && tk.phanCong.length === 0 && (
-                    <span className="text-faint">Chưa phân công</span>
-                  )}
-                </span>
-              </td>
-              <td className={LOP_TD}>
-                <TrangThaiTaiKhoan tk={tk} />
-              </td>
-              <td className={`${LOP_TD} text-right`}>
-                <Nut onClick={() => datChon(tk.id === chon ? undefined : tk.id)}>
-                  {tk.id === chon ? 'Đóng' : 'Chi tiết'}
-                </Nut>
-              </td>
-            </tr>
-          ))}
-          {loc.length === 0 && (
-            <tr>
-              <td colSpan={5} className={`${LOP_TD} text-center text-faint`}>
-                {chiKhoa ? 'Không có tài khoản nào đang bị khóa.' : 'Không có tài khoản nào khớp.'}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </KhungBang>
+      <Luoi
+        ma={chiKhoa ? 'tai-khoan-khoa' : 'tai-khoan'}
+        tieuDe={chiKhoa ? 'Tài khoản bị khóa' : 'Danh sách tài khoản'}
+        cot={cot}
+        dong={ds}
+        khoa={(tk) => tk.id}
+        moDong={(tk) => datChon(tk.id === chon ? undefined : tk.id)}
+        rong={chiKhoa ? 'Không có tài khoản nào đang bị khóa.' : 'Chưa có tài khoản nào.'}
+      />
     </>
   )
 }

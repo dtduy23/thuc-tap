@@ -258,3 +258,57 @@ export function headerTaiExcel(ten: string): Record<string, string> {
     'X-Content-Type-Options': 'nosniff',
   }
 }
+
+// ── Xuất lưới danh sách ra Excel ────────────────────────────────────────────
+
+const KIEU_COT = ['chu', 'so', 'ngay', 'phan-tram'] as const
+export const SO_DONG_XUAT_TOI_DA = 20_000
+
+/**
+ * Lưới danh sách gửi lên ĐÚNG phần đang lọc, ĐÚNG cột đang hiện (chuẩn lưới §1.12)
+ * — máy chủ chỉ dựng tệp, không đọc thêm dữ liệu nào. Người dùng nhận lại chính dữ
+ * liệu mình đang thấy, nên không có gì vượt quyền; chỉ kiểm hình dạng và độ lớn.
+ */
+export function docBangXuat(than: unknown, hn: string): KetQuaBaoCao {
+  const t = (than ?? {}) as { tieuDe?: unknown; cot?: unknown; dong?: unknown; ghiChu?: unknown }
+  if (typeof t.tieuDe !== 'string' || !t.tieuDe.trim() || t.tieuDe.length > 200)
+    throw new BadRequestException('"tieuDe" 1–200 ký tự')
+  if (!Array.isArray(t.cot) || t.cot.length === 0 || t.cot.length > 60)
+    throw new BadRequestException('"cot": 1–60 cột')
+  const cot: CotBaoCao[] = t.cot.map((c: unknown, i) => {
+    const x = (c ?? {}) as { nhan?: unknown; kieu?: unknown; cong?: unknown }
+    if (typeof x.nhan !== 'string' || x.nhan.length > 200)
+      throw new BadRequestException(`cot[${i}].nhan không hợp lệ`)
+    if (!KIEU_COT.includes(x.kieu as (typeof KIEU_COT)[number]))
+      throw new BadRequestException(`cot[${i}].kieu không hợp lệ`)
+    return { nhan: x.nhan, kieu: x.kieu as CotBaoCao['kieu'], khongCong: x.cong !== true }
+  })
+  if (!Array.isArray(t.dong) || t.dong.length > SO_DONG_XUAT_TOI_DA)
+    throw new BadRequestException(`"dong": tối đa ${SO_DONG_XUAT_TOI_DA} dòng`)
+  const dong: DongBaoCao[] = t.dong.map((d: unknown, i) => {
+    if (!Array.isArray(d) || d.length !== cot.length) throw new BadRequestException(`dong[${i}] sai số cột`)
+    return {
+      cap: 0,
+      o: d.map((v: unknown) => {
+        if (v === null || typeof v === 'number')
+          return typeof v === 'number' && !Number.isFinite(v) ? null : v
+        if (typeof v === 'string') return v.slice(0, 4000)
+        throw new BadRequestException(`dong[${i}] có ô sai kiểu`)
+      }),
+    }
+  })
+  const ngay = `${hn.slice(8, 10)}/${hn.slice(5, 7)}/${hn.slice(0, 4)}`
+  const ghiChu = typeof t.ghiChu === 'string' ? t.ghiChu.slice(0, 300) : ''
+  return {
+    ma: 'xuat-luoi',
+    tieuDe: t.tieuDe.trim(),
+    phuDe: `Xuất ngày ${ngay} · ${dong.length} bản ghi${ghiChu ? ` · ${ghiChu}` : ''}`,
+    cot,
+    dong,
+    coTong: cot.some((c) => c.kieu === 'so' && !c.khongCong),
+    tenTep: `${t.tieuDe
+      .trim()
+      .replace(/[\\/:*?"<>|]/g, '')
+      .slice(0, 60)}_${hn}`,
+  }
+}

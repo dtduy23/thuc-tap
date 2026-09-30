@@ -199,3 +199,52 @@ describe('Excel và quyền', () => {
 function moTep(b: Buffer): ArrayBuffer {
   return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer
 }
+
+describe('xuất lưới danh sách ra Excel', () => {
+  it('dựng tệp từ đúng các cột, dòng gửi lên; dòng tổng cộng cột có cong', async () => {
+    const ct = await vao('chutich.a')
+    const res = await ct
+      .post('/api/xuat-bang')
+      .set(GHI)
+      .send({
+        tieuDe: 'Danh sách dự án',
+        cot: [
+          { nhan: 'Tên', kieu: 'chu' },
+          { nhan: 'Tổng mức', kieu: 'so', cong: true },
+          { nhan: 'Cập nhật', kieu: 'ngay' },
+        ],
+        dong: [
+          ['A', 100, '2026-09-30'],
+          ['B', 50, null],
+        ],
+      })
+      .buffer(true)
+      .parse((r, cb) => {
+        const phan: Buffer[] = []
+        r.on('data', (c: Buffer) => phan.push(c))
+        r.on('end', () => cb(null, Buffer.concat(phan)))
+      })
+    expect(res.status).toBe(200)
+    const wb = new ExcelJS.Workbook()
+    await wb.xlsx.load(moTep(res.body as Buffer))
+    const ws = wb.worksheets[0]!
+    expect(ws.getCell('A1').text).toContain('DANH SÁCH DỰ ÁN')
+    expect(ws.getCell('B6').text).toBe('A')
+    expect((ws.getCell('C5').value as { result?: number }).result).toBe(150)
+  })
+
+  it('sai hình dạng → 400; chưa đăng nhập → 401', async () => {
+    const ct = await vao('chutich.a')
+    const sai = (than: object) => ct.post('/api/xuat-bang').set(GHI).send(than)
+    expect((await sai({ tieuDe: '', cot: [{ nhan: 'a', kieu: 'chu' }], dong: [] })).status).toBe(400)
+    expect((await sai({ tieuDe: 'x', cot: [{ nhan: 'a', kieu: 'la' }], dong: [] })).status).toBe(400)
+    expect((await sai({ tieuDe: 'x', cot: [{ nhan: 'a', kieu: 'chu' }], dong: [['a', 'b']] })).status).toBe(
+      400,
+    )
+    expect((await sai({ tieuDe: 'x', cot: [{ nhan: 'a', kieu: 'chu' }], dong: [[{ x: 1 }]] })).status).toBe(
+      400,
+    )
+    const khach = request(app.getHttpServer() as Parameters<typeof request>[0])
+    expect((await khach.post('/api/xuat-bang').set(GHI).send({})).status).toBe(401)
+  })
+})

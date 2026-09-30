@@ -1,11 +1,14 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   ForbiddenException,
   Get,
+  HttpCode,
   Inject,
   NotFoundException,
   Param,
+  Post,
   Query,
   Res,
 } from '@nestjs/common'
@@ -13,6 +16,7 @@ import type { Response } from 'express'
 import {
   DANH_SACH_MODULE,
   GOC_NHIN_TONG_QUAN,
+  homNay,
   timBaoCao,
   LOAI_CHI_SO,
   type CanhBaoDef,
@@ -24,7 +28,7 @@ import {
   type MucViec,
 } from '@gdos/shared'
 import { CanQuyen, ChiCanDangNhap, NguoiDung, type NguoiDungPhien } from '../xac-thuc/bao-ve.js'
-import { headerTaiExcel, kiemThamSo, vietExcel } from './bao-cao-chung.js'
+import { docBangXuat, headerTaiExcel, kiemThamSo, vietExcel } from './bao-cao-chung.js'
 import { NGUON_DONG_GOP, type NguonDongGop } from './nguon-dong-gop.js'
 
 const LOAI_CANH_BAO: readonly CanhBaoDef['loai'][] = ['qua-han', 'sap-han', 'lau-khong-cap-nhat']
@@ -99,6 +103,15 @@ export class XuyenSuotController {
     @Res() res: Response,
   ): Promise<void> {
     const kq = await this.chayBaoCao(nd, ma, q)
+    res.set(headerTaiExcel(kq.tenTep)).send(await vietExcel(kq))
+  }
+
+  /** Xuất lưới danh sách (phần đang lọc, cột đang hiện) ra Excel — cùng bộ xuất với báo cáo. */
+  @Post('xuat-bang')
+  @HttpCode(200)
+  @ChiCanDangNhap()
+  async xuatBang(@Body() than: unknown, @Res() res: Response): Promise<void> {
+    const kq = docBangXuat(than, homNay())
     res.set(headerTaiExcel(kq.tenTep)).send(await vietExcel(kq))
   }
 

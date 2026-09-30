@@ -11,7 +11,7 @@
  * Tầng, nhóm đang ĐÓNG nhớ theo máy. Vào một trang thì nhánh chứa nó tự mở.
  * Không hiện mã, số cấp hay ghi chú thiết kế — người dùng chỉ thấy tên nghiệp vụ.
  */
-import { laPhac, type NhanhTang } from '@gdos/shared'
+import type { NhanhTang } from '@gdos/shared'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
@@ -95,7 +95,7 @@ export function CayPhanHe({ cay, dangXem }: { cay: NhanhTang[]; dangXem: string 
               type="button"
               onClick={() => doi(k1)}
               aria-expanded={mo1}
-              className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[11px] font-extrabold tracking-[.1em] uppercase hover:bg-nav-hover ${t.so === 2 ? 'text-tim' : 'text-vang'}`}
+              className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[11.5px] font-extrabold tracking-[.1em] uppercase hover:bg-nav-hover ${t.so === 2 ? 'text-tim' : 'text-vang'}`}
             >
               <span className="min-w-0 flex-1">{t.nhan}</span>
               <MuiTen mo={mo1} />
@@ -112,7 +112,7 @@ export function CayPhanHe({ cay, dangXem }: { cay: NhanhTang[]; dangXem: string 
                       type="button"
                       onClick={() => doi(k2)}
                       aria-expanded={mo2}
-                      className="mt-2 flex w-full items-center gap-2 rounded-md px-2.5 py-1 text-left text-[10px] font-bold tracking-[.14em] text-faint uppercase hover:text-body"
+                      className="mt-2.5 flex w-full items-center gap-2 rounded-md px-2.5 py-1 text-left text-[10.5px] font-bold tracking-[.12em] text-ink uppercase hover:bg-nav-hover"
                     >
                       <span className="min-w-0 flex-1">{n.nhan}</span>
                       <MuiTen mo={mo2} />
@@ -151,7 +151,7 @@ export function CayPhanHe({ cay, dangXem }: { cay: NhanhTang[]; dangXem: string 
 
                             {/* Cấp 4 — Chức năng */}
                             {mo3 && (
-                              <div className="mt-0.5 mb-2 ml-[19px] border-l border-line pl-2">
+                              <div className="mt-0.5 mb-2 ml-[19px] border-l border-line pl-1.5">
                                 {con.map((c) => {
                                   const dang = c.id === dangXem
                                   return (
@@ -160,8 +160,12 @@ export function CayPhanHe({ cay, dangXem }: { cay: NhanhTang[]; dangXem: string 
                                       to="/$chucNang"
                                       params={{ chucNang: c.id }}
                                       aria-current={dang ? 'page' : undefined}
-                                      className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12.5px] ${dang ? 'font-semibold text-vang' : 'text-body hover:bg-nav-hover hover:text-ink'} ${laPhac(m, c) && !dang ? 'text-faint' : ''}`}
+                                      className={`flex items-center gap-2 rounded-md px-2 py-[5px] text-[12.5px] ${dang ? 'font-semibold text-vang' : 'text-faint hover:bg-nav-hover hover:text-ink'}`}
                                     >
+                                      <span
+                                        aria-hidden="true"
+                                        className={`size-[5px] flex-none rounded-full bg-current ${dang ? '' : 'opacity-60'}`}
+                                      />
                                       <span className="min-w-0 flex-1">{c.nhan}</span>
                                       {c.phac && !m.phac && <SapCo />}
                                     </Link>

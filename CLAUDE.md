@@ -15,6 +15,8 @@ Postgres). Hai repo cũ **không** phát triển tiếp cho bản chính thức.
    lối vào, công thức thêm module, dấu hiệu đang làm sai. Đọc trước khi thêm hay sửa module.
 3. `docs/adr/` — quyết định đã chốt. **Không làm ngược một ADR**; thấy ADR sai thì dừng và hỏi.
 4. `docs/khung-mau.html` — bản mẫu giao diện (đặc tả, không phải mã để copy).
+5. `docs/tieu-chuan-luoi.md` — **chuẩn lưới danh sách** (lấy từ PRM): ô lọc dưới MỖI cột, xóa lọc,
+   chọn/ghim/kéo cột, xuất Excel… Làm lưới nào cũng dùng `apps/web/src/ui/luoi/luoi.tsx`.
 
 ## 3. Lệnh
 

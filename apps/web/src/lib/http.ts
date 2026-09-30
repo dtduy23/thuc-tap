@@ -140,15 +140,28 @@ export function tenTepTu(cd: string | null, macDinh: string): string {
 /**
  * Tải một tệp do API sinh (Excel…) về máy. Cùng luật hết phiên với goiApi: 401
  * thì làm mới đúng một lần rồi tải lại — thẻ <a href> không làm được việc này.
+ * Có `than` thì gửi POST (vd lưới gửi phần đang lọc để xuất Excel).
  */
-export async function taiVeTep(duongDan: string, macDinh: string, daThuLai = false): Promise<void> {
+export async function taiVeTep(duongDan: string, macDinh: string, than?: unknown): Promise<void> {
+  const goi = () =>
+    fetch(
+      `/api${duongDan}`,
+      than === undefined
+        ? undefined
+        : {
+            method: 'POST',
+            headers: { [HEADER_CHONG_GIA_MAO]: '1', 'Content-Type': 'application/json' },
+            body: JSON.stringify(than),
+          },
+    )
   let res: Response
   try {
-    res = await fetch(`/api${duongDan}`)
+    res = await goi()
+    if (res.status === 401 && (await lamMoiPhien(fetch))) res = await goi()
   } catch {
     throw new LoiApi(MA_MAT_KET_NOI, 'Không kết nối được máy chủ. Kiểm tra đường truyền rồi thử lại.')
   }
-  if (res.status === 401 && !daThuLai && (await lamMoiPhien(fetch))) return taiVeTep(duongDan, macDinh, true)
+  if (res.status === 413) throw new LoiApi(413, 'Dữ liệu quá lớn để xuất một lần — lọc bớt rồi thử lại.')
   if (!res.ok) throw new LoiApi(res.status, await docThongDiep(res))
   const url = URL.createObjectURL(await res.blob())
   const a = document.createElement('a')

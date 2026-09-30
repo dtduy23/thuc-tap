@@ -1,13 +1,20 @@
-import { congNgay, homNay, NGUONG_LAU_CAP_NHAT } from '@gdos/shared'
+import { congNgay, homNay, NGUONG_LAU_CAP_NHAT, type DotDonDoc, type DuAnDong } from '@gdos/shared'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useMemo, useState, type FormEvent } from 'react'
 import { guiDonDoc, KHOA_DU_AN, truyVanDanhSachDuAn, truyVanLichSuDonDoc } from '@/lib/du-an'
 import { LoiApi } from '@/lib/http'
-import { ngayVn } from '@/lib/ngay'
 import { truyVanToi } from '@/lib/phien'
-import { KhungBang, LOP_TD, LOP_TH, Nut, The, ThongBao } from '@/ui/co-ban'
+import { Nut, The, ThongBao } from '@/ui/co-ban'
+import { Luoi, type CotLuoi } from '@/ui/luoi/luoi'
 import { ChipSucKhoe } from './chung'
+
+/** Lý do một dự án cần đôn đốc — cột lọc được. */
+const LY_DO = [
+  { giaTri: 'tre', nhan: 'Có bước trễ hạn' },
+  { giaTri: 'lau', nhan: 'Lâu không cập nhật' },
+  { giaTri: 'vuong', nhan: 'Có vướng mắc' },
+] as const
 
 /**
  * Đôn đốc (Điều 36 NĐ 45) — chọn các dự án đang chậm hoặc lâu không cập nhật, gửi
@@ -25,14 +32,70 @@ export default function DonDoc() {
   const [noiDung, datNoiDung] = useState('')
   const [kq, datKq] = useState<{ ok: boolean; cau: string }>()
 
-  // Dự án của đơn vị trong phạm vi (không đôn đốc dự án chỉ tham gia làm thành viên), đang thực hiện, có vấn đề.
-  const canDonDoc = useMemo(() => {
-    return ds.filter(
-      (d) =>
-        d.trangThai === 'dang-thuc-hien' &&
-        (d.thongKe.quaHan > 0 || !d.capNhatNgay || d.capNhatNgay < moc || d.vuongMacMo > 0),
-    )
-  }, [ds, moc])
+  const lyDo = (d: DuAnDong): string =>
+    d.thongKe.quaHan > 0 ? 'tre' : !d.capNhatNgay || d.capNhatNgay < moc ? 'lau' : 'vuong'
+  // Dự án đang thực hiện mà có vấn đề (chậm, lâu không cập nhật, vướng).
+  const canDonDoc = useMemo(
+    () =>
+      ds.filter(
+        (d) =>
+          d.trangThai === 'dang-thuc-hien' &&
+          (d.thongKe.quaHan > 0 || !d.capNhatNgay || d.capNhatNgay < moc || d.vuongMacMo > 0),
+      ),
+    [ds, moc],
+  )
+  const ganNhat = (id: string) => lichSu.find((l) => l.duAn.some((x) => x.id === id))?.ngay ?? null
+
+  const cot: CotLuoi<DuAnDong>[] = [
+    {
+      id: 'ten',
+      nhan: 'Dự án',
+      kieu: 'chu',
+      rong: 280,
+      batBuoc: true,
+      giaTri: (d) => d.ten,
+      hien: (d) => (
+        <Link to="/du-an/$id" params={{ id: d.id }} className="font-semibold text-ink hover:text-brand">
+          {d.ten}
+        </Link>
+      ),
+    },
+    { id: 'donVi', nhan: 'Chủ đầu tư', kieu: 'danh-muc', rong: 160, giaTri: (d) => d.donViTen },
+    {
+      id: 'canBo',
+      nhan: 'Cán bộ phụ trách',
+      kieu: 'danh-muc',
+      rong: 160,
+      giaTri: (d) => d.canBo?.hoTen ?? null,
+    },
+    { id: 'lyDo', nhan: 'Lý do', kieu: 'danh-muc', rong: 160, giaTri: lyDo, luaChon: LY_DO },
+    {
+      id: 'tinhTrang',
+      nhan: 'Tình trạng',
+      kieu: 'danh-muc',
+      rong: 130,
+      giaTri: (d) => d.thongKe.sucKhoe,
+      luaChon: [
+        { giaTri: 'qua-han', nhan: 'Quá hạn' },
+        { giaTri: 'sap-han', nhan: 'Sắp đến hạn' },
+        { giaTri: 'trong-han', nhan: 'Trong hạn' },
+        { giaTri: 'xong', nhan: 'Xong các bước' },
+      ],
+      hien: (d) => <ChipSucKhoe sk={d.thongKe.sucKhoe} />,
+    },
+    { id: 'buocTre', nhan: 'Bước trễ', kieu: 'so', rong: 90, giaTri: (d) => d.thongKe.quaHan || null },
+    { id: 'vuongMac', nhan: 'Vướng mắc', kieu: 'so', rong: 100, giaTri: (d) => d.vuongMacMo || null },
+    { id: 'capNhat', nhan: 'Cập nhật', kieu: 'ngay', giaTri: (d) => d.capNhatNgay },
+    { id: 'donDoc', nhan: 'Đôn đốc gần nhất', kieu: 'ngay', rong: 140, giaTri: (d) => ganNhat(d.id) },
+  ]
+
+  const cotLichSu: CotLuoi<DotDonDoc>[] = [
+    { id: 'ngay', nhan: 'Ngày', kieu: 'ngay', giaTri: (l) => l.ngay },
+    { id: 'noiDung', nhan: 'Nội dung', kieu: 'chu', rong: 360, batBuoc: true, giaTri: (l) => l.noiDung },
+    { id: 'duAn', nhan: 'Dự án', kieu: 'chu', rong: 220, giaTri: (l) => l.duAn.map((d) => d.ma).join(', ') },
+    { id: 'soDuAn', nhan: 'Số dự án', kieu: 'so', rong: 100, cong: true, giaTri: (l) => l.duAn.length },
+    { id: 'nguoiGui', nhan: 'Người gửi', kieu: 'danh-muc', rong: 170, giaTri: (l) => l.nguoiGui },
+  ]
 
   const gui = useMutation({
     mutationFn: () => guiDonDoc([...chon], noiDung.trim()),
@@ -45,14 +108,6 @@ export default function DonDoc() {
     onError: (e) => datKq({ ok: false, cau: e instanceof LoiApi ? e.message : 'Không gửi được.' }),
   })
 
-  const doi = (id: string) =>
-    datChon((c) => {
-      const m = new Set(c)
-      if (m.has(id)) m.delete(id)
-      else m.add(id)
-      return m
-    })
-
   const nopForm = (e: FormEvent) => {
     e.preventDefault()
     gui.mutate()
@@ -60,121 +115,68 @@ export default function DonDoc() {
   const coQuyen = toi.quyen.includes('DU_AN.ASSIGN')
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
-      <div>
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="min-w-0">
         {kq && <ThongBao kieu={kq.ok ? 'ok' : 'loi'}>{kq.cau}</ThongBao>}
-        <KhungBang nhan="Dự án cần đôn đốc">
-          <thead>
-            <tr>
-              <th className={LOP_TH}>
-                <span className="sr-only">Chọn</span>
-              </th>
-              <th className={LOP_TH}>Dự án</th>
-              <th className={LOP_TH}>Tình trạng</th>
-              <th className={LOP_TH}>Cập nhật</th>
-              <th className={LOP_TH}>Đôn đốc gần nhất</th>
-            </tr>
-          </thead>
-          <tbody>
-            {canDonDoc.map((d) => (
-              <tr key={d.id} className={chon.has(d.id) ? 'bg-tint-brand' : undefined}>
-                <td className={LOP_TD}>
-                  <input
-                    type="checkbox"
-                    aria-label={`Chọn ${d.ten}`}
-                    className="accent-brand"
-                    disabled={!coQuyen}
-                    checked={chon.has(d.id)}
-                    onChange={() => doi(d.id)}
-                  />
-                </td>
-                <td className={`${LOP_TD} min-w-[220px]`}>
-                  <Link
-                    to="/du-an/$id"
-                    params={{ id: d.id }}
-                    className="font-semibold text-ink hover:text-brand"
-                  >
-                    {d.ten}
-                  </Link>
-                  <span className="block text-[11.5px] text-faint">
-                    {d.donViTen}
-                    {d.canBo ? ` · ${d.canBo.hoTen}` : ''}
-                  </span>
-                </td>
-                <td className={LOP_TD}>
-                  <span className="flex flex-wrap items-center gap-1 text-[12px]">
-                    <ChipSucKhoe sk={d.thongKe.sucKhoe} />
-                    {d.thongKe.quaHan > 0 && <span className="text-danger">{d.thongKe.quaHan} bước trễ</span>}
-                    {d.vuongMacMo > 0 && <span className="text-danger">{d.vuongMacMo} vướng mắc</span>}
-                  </span>
-                </td>
-                <td className={`${LOP_TD} tabular-nums`}>{ngayVn(d.capNhatNgay)}</td>
-                <td className={`${LOP_TD} tabular-nums text-faint`}>
-                  {ngayVn(lichSu.find((l) => l.duAn.some((x) => x.id === d.id))?.ngay)}
-                </td>
-              </tr>
-            ))}
-            {canDonDoc.length === 0 && (
-              <tr>
-                <td colSpan={5} className={`${LOP_TD} text-center text-faint`}>
-                  Không có dự án nào đang chậm, vướng hay lâu không cập nhật.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </KhungBang>
+        <Luoi
+          ma="don-doc"
+          tieuDe="Dự án cần đôn đốc"
+          cot={cot}
+          dong={canDonDoc}
+          khoa={(d) => d.id}
+          rong="Không có dự án nào đang chậm, vướng hay lâu không cập nhật."
+          chon={
+            coQuyen
+              ? {
+                  ds: chon,
+                  doi: (ids, co) =>
+                    datChon((c) => {
+                      const m = new Set(c)
+                      for (const id of ids) {
+                        if (co) m.add(id)
+                        else m.delete(id)
+                      }
+                      return m
+                    }),
+                }
+              : undefined
+          }
+        />
 
-        <h2 className="mt-5 mb-2 text-[14px] font-semibold">Lịch sử đôn đốc</h2>
-        <KhungBang nhan="Lịch sử đôn đốc">
-          <thead>
-            <tr>
-              <th className={LOP_TH}>Ngày</th>
-              <th className={LOP_TH}>Nội dung</th>
-              <th className={LOP_TH}>Dự án</th>
-              <th className={LOP_TH}>Người gửi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lichSu.map((l) => (
-              <tr key={l.dot}>
-                <td className={`${LOP_TD} tabular-nums`}>{ngayVn(l.ngay)}</td>
-                <td className={LOP_TD}>{l.noiDung}</td>
-                <td className={`${LOP_TD} text-[12px]`}>{l.duAn.map((d) => d.ma).join(', ')}</td>
-                <td className={LOP_TD}>{l.nguoiGui ?? '—'}</td>
-              </tr>
-            ))}
-            {lichSu.length === 0 && (
-              <tr>
-                <td colSpan={4} className={`${LOP_TD} text-center text-faint`}>
-                  Chưa gửi đôn đốc lần nào.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </KhungBang>
+        <h2 className="tieu-de-phan mt-6">Lịch sử đôn đốc</h2>
+        <Luoi
+          ma="don-doc-lich-su"
+          tieuDe="Lịch sử đôn đốc"
+          cot={cotLichSu}
+          dong={lichSu}
+          khoa={(l) => l.dot}
+          rong="Chưa gửi đôn đốc lần nào."
+        />
       </div>
 
       {coQuyen && (
-        <The tieuDe="Gửi đôn đốc" phu={`${chon.size} dự án đã chọn`}>
-          <form onSubmit={nopForm}>
-            <label htmlFor="dd-noi-dung" className="mb-1.5 block text-[12.5px] font-semibold text-body">
-              Nội dung đôn đốc
-            </label>
-            <textarea
-              id="dd-noi-dung"
-              rows={5}
-              required
-              maxLength={2000}
-              placeholder="VD: Đề nghị chủ đầu tư đẩy nhanh các bước đang chậm và cập nhật tiến độ trước ngày …"
-              value={noiDung}
-              onChange={(e) => datNoiDung(e.target.value)}
-              className="mb-3 w-full rounded-lg border border-line bg-nen-2 px-3 py-2 text-[13.5px]"
-            />
-            <Nut type="submit" kieu="chinh" disabled={gui.isPending || chon.size === 0 || !noiDung.trim()}>
-              {gui.isPending ? 'Đang gửi…' : 'Gửi đôn đốc'}
-            </Nut>
-          </form>
-        </The>
+        <div className="xl:sticky xl:top-0 xl:self-start">
+          <The tieuDe="Gửi đôn đốc" phu={`${chon.size} dự án đã chọn`}>
+            <form onSubmit={nopForm}>
+              <label htmlFor="dd-noi-dung" className="mb-1.5 block text-[12.5px] font-semibold text-body">
+                Nội dung đôn đốc
+              </label>
+              <textarea
+                id="dd-noi-dung"
+                rows={5}
+                required
+                maxLength={2000}
+                placeholder="VD: Đề nghị chủ đầu tư đẩy nhanh các bước đang chậm và cập nhật tiến độ trước ngày …"
+                value={noiDung}
+                onChange={(e) => datNoiDung(e.target.value)}
+                className="mb-3 w-full rounded-lg border border-line bg-nen-2 px-3 py-2 text-[13.5px] outline-none focus:border-brand focus:bg-nen"
+              />
+              <Nut type="submit" kieu="chinh" disabled={gui.isPending || chon.size === 0 || !noiDung.trim()}>
+                {gui.isPending ? 'Đang gửi…' : 'Gửi đôn đốc'}
+              </Nut>
+            </form>
+          </The>
+        </div>
       )}
     </div>
   )

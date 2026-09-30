@@ -1,18 +1,43 @@
-import type { CanhBaoDef } from '@gdos/shared'
+import type { CanhBaoDef, DongCanhBao } from '@gdos/shared'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { ngayVn } from '@/lib/ngay'
 import { truyVanCanhBao } from '@/lib/xuyen-suot'
-import { KhungBang, LOP_TD, LOP_TH } from '@/ui/co-ban'
+import { Luoi, type CotLuoi } from '@/ui/luoi/luoi'
 
-const NHAN: Record<CanhBaoDef['loai'], { tieuDe: string; soNgay: string; trong: string }> = {
-  'qua-han': { tieuDe: 'Hạn', soNgay: 'Trễ', trong: 'Không có việc nào quá hạn.' },
-  'sap-han': { tieuDe: 'Hạn', soNgay: 'Còn', trong: 'Không có việc nào sắp đến hạn.' },
-  'lau-khong-cap-nhat': {
-    tieuDe: '',
-    soNgay: 'Không cập nhật',
-    trong: 'Hồ sơ nào cũng được cập nhật gần đây.',
-  },
+const NHAN: Record<CanhBaoDef['loai'], { soNgay: string; trong: string }> = {
+  'qua-han': { soNgay: 'Trễ (ngày)', trong: 'Không có việc nào quá hạn.' },
+  'sap-han': { soNgay: 'Còn (ngày)', trong: 'Không có việc nào sắp đến hạn.' },
+  'lau-khong-cap-nhat': { soNgay: 'Không cập nhật (ngày)', trong: 'Hồ sơ nào cũng được cập nhật gần đây.' },
+}
+
+function cotCua(loai: CanhBaoDef['loai']): CotLuoi<DongCanhBao>[] {
+  const mau = loai === 'sap-han' ? 'text-warn' : 'text-danger'
+  return [
+    {
+      id: 'hoSo',
+      nhan: 'Hồ sơ',
+      kieu: 'chu',
+      rong: 280,
+      batBuoc: true,
+      giaTri: (d) => d.hoSoTen,
+      hien: (d) => <b className="text-ink">{d.hoSoTen}</b>,
+    },
+    { id: 'ma', nhan: 'Mã hồ sơ', kieu: 'chu', rong: 130, giaTri: (d) => d.hoSoMa },
+    { id: 'nghiepVu', nhan: 'Nghiệp vụ', kieu: 'danh-muc', rong: 120, giaTri: (d) => d.nghiepVu },
+    { id: 'donVi', nhan: 'Đơn vị', kieu: 'danh-muc', rong: 160, giaTri: (d) => d.donViTen },
+    { id: 'noiDung', nhan: 'Nội dung', kieu: 'chu', rong: 320, giaTri: (d) => d.noiDung },
+    ...(loai === 'lau-khong-cap-nhat'
+      ? []
+      : [{ id: 'han', nhan: 'Hạn', kieu: 'ngay', giaTri: (d) => d.han } satisfies CotLuoi<DongCanhBao>]),
+    {
+      id: 'soNgay',
+      nhan: NHAN[loai].soNgay,
+      kieu: 'so',
+      rong: 130,
+      giaTri: (d) => d.soNgay,
+      hien: (d) => <span className={`font-semibold ${mau}`}>{d.soNgay}</span>,
+    },
+  ]
 }
 
 /**
@@ -22,55 +47,22 @@ const NHAN: Record<CanhBaoDef['loai'], { tieuDe: string; soNgay: string; trong: 
 export function CanhBao({ loai }: { loai: CanhBaoDef['loai'] }) {
   const { data: ds } = useSuspenseQuery(truyVanCanhBao(loai))
   const di = useNavigate()
-  const n = NHAN[loai]
   return (
-    <>
-      <p className="mt-0 mb-3 text-[12.5px] text-faint">
-        {ds.length} mục · bấm một dòng để mở đúng chỗ cần xử lý
-      </p>
-      <KhungBang nhan="Cảnh báo">
-        <thead>
-          <tr>
-            <th className={LOP_TH}>Nghiệp vụ</th>
-            <th className={LOP_TH}>Hồ sơ</th>
-            <th className={LOP_TH}>Nội dung</th>
-            {n.tieuDe && <th className={LOP_TH}>{n.tieuDe}</th>}
-            <th className={`${LOP_TH} text-right`}>{n.soNgay}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ds.map((d, i) => (
-            <tr
-              key={`${d.nguon}-${i}`}
-              onClick={() => void di({ href: d.lienKet })}
-              className="cursor-pointer hover:bg-nav-hover"
-            >
-              <td className={`${LOP_TD} text-[12px] whitespace-nowrap text-faint`}>{d.nghiepVu}</td>
-              <td className={`${LOP_TD} min-w-[220px]`}>
-                <b className="text-ink">{d.hoSoTen}</b>
-                <span className="block text-[11.5px] text-faint">
-                  <code>{d.hoSoMa}</code> · {d.donViTen}
-                </span>
-              </td>
-              <td className={LOP_TD}>{d.noiDung}</td>
-              {n.tieuDe && <td className={`${LOP_TD} whitespace-nowrap tabular-nums`}>{ngayVn(d.han)}</td>}
-              <td
-                className={`${LOP_TD} text-right font-semibold whitespace-nowrap tabular-nums ${loai === 'sap-han' ? 'text-warn' : 'text-danger'}`}
-              >
-                {d.soNgay} ngày
-              </td>
-            </tr>
-          ))}
-          {ds.length === 0 && (
-            <tr>
-              <td colSpan={5} className={`${LOP_TD} text-center text-faint`}>
-                {n.trong}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </KhungBang>
-    </>
+    <Luoi
+      ma={`canh-bao-${loai}`}
+      tieuDe={
+        loai === 'qua-han'
+          ? 'Hồ sơ quá hạn'
+          : loai === 'sap-han'
+            ? 'Hồ sơ sắp đến hạn'
+            : 'Hồ sơ lâu không cập nhật'
+      }
+      cot={cotCua(loai)}
+      dong={ds}
+      khoa={(d) => `${d.nguon}-${d.hoSoId}-${d.noiDung}`}
+      moDong={(d) => void di({ href: d.lienKet })}
+      rong={NHAN[loai].trong}
+    />
   )
 }
 
