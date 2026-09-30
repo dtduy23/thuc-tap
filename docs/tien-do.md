@@ -91,7 +91,17 @@
   được KÉO VỀ hồ sơ GDOS khi người liên kết xem danh sách (mỗi phút một lần, tối đa 200; đã xóa thì
   không kéo lại); mở ra thì lấy nội dung gốc + tóm tắt; tệp gốc tải từ Native (0024: cột tệp được rỗng).
   Gửi lại văn bản mang mã bản giả / Native báo 404-422 → gửi lại từ tệp gốc. **Đã chạy với Native thật.**
-  Tiếp: Văn bản đến, Soạn thảo, Phân công, Mẫu văn bản.
+- **Bước D (30/09): các công cụ văn bản còn lại, như gdos.fox.ai.vn** — cổng chuyển tiếp
+  `/api/native/document/*` (`native/chuyen-tiep.ts`: danh sách cho phép + quyền `VAN_BAN.*` + token
+  theo người; 10 test). Màn: **Mẫu văn bản** (thẻ số liệu, lưới, xem — bố cục + bản minh họa AI,
+  thêm/sửa với trình soạn thân mẫu kiểu Word: chip trường bấm/kéo chèn, thể thức NĐ30), **Soạn thảo
+  văn bản** (nguồn: văn bản đã tóm tắt hoặc tệp; chọn mẫu; AI gợi ý trường; AI soạn; sửa, sao chép,
+  xuất .doc), **Phân công từ văn bản** (AI từ văn bản đã tóm tắt / từ tệp chạy nền; thêm, sửa, đổi
+  trạng thái tại bảng, xóa, tải tệp đính kèm), **Đơn vị nhận việc** (danh sách AI chọn khi giao
+  việc), **Văn bản đến** (văn bản nguồn QLVB/Cổng DVC/Email: xem, tóm tắt, soạn trả lời, giao việc).
+  Tóm tắt văn bản thêm hai thao tác: soạn văn bản từ bản tóm tắt, AI phân công. HTML thô qua
+  DOMPurify (`lib/html-sach.ts`). **Đã chạy với Native thật** (29 mẫu, 40 nhiệm vụ, 6 đơn vị) —
+  phần gọi AI soạn/phân công để người dùng tự thử vì ghi vào dữ liệu Native dùng chung.
 
 ## Mốc 3 — Dự án (từ PMS)
 

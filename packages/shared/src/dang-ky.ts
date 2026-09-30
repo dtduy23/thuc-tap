@@ -181,11 +181,13 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nguon: 'native',
     mo: 'Văn bản đi qua Document Service của FOXAI Native. Tóm tắt, soạn thảo là chức năng của văn bản — không phải một nhóm "AI".',
     con: [
-      { id: 'vb-den', nhan: 'Văn bản đến', phac: true },
+      { id: 'vb-den', nhan: 'Văn bản đến' },
       { id: 'vb-tom-tat', nhan: 'Tóm tắt văn bản' },
-      { id: 'vb-soan-thao', nhan: 'Soạn thảo văn bản', hanhDong: 'CREATE', phac: true },
-      { id: 'vb-phan-cong', nhan: 'Phân công từ văn bản', hanhDong: 'ASSIGN', phac: true },
-      { id: 'vb-mau', nhan: 'Mẫu văn bản', phac: true },
+      { id: 'vb-soan-thao', nhan: 'Soạn thảo văn bản', hanhDong: 'CREATE' },
+      { id: 'vb-phan-cong', nhan: 'Phân công từ văn bản', hanhDong: 'ASSIGN' },
+      { id: 'vb-mau', nhan: 'Mẫu văn bản' },
+      // Danh sách AI chọn khi phân công — cấu hình riêng của nghiệp vụ văn bản.
+      { id: 'vb-don-vi', nhan: 'Đơn vị nhận việc' },
     ],
   },
   {

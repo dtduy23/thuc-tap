@@ -142,6 +142,9 @@ const vanBan = createRoute({
 const chucNang = createRoute({
   getParentRoute: () => portal,
   path: '/$chucNang',
+  // "nguon": mở sẵn một văn bản làm nguồn (vd Soạn thảo văn bản từ bản tóm tắt).
+  validateSearch: (s: Record<string, unknown>): { nguon?: string } =>
+    typeof s.nguon === 'string' && /^[0-9a-f-]{36}$/i.test(s.nguon) ? { nguon: s.nguon } : {},
   component: function ManChucNang() {
     const { chucNang: id } = chucNang.useParams()
     return <TrangChucNang id={id} />

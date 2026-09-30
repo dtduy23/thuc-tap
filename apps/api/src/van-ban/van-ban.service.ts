@@ -45,6 +45,7 @@ const COT = {
   soKyTuGoc: vanBan.soKyTuGoc,
   soKyTuTomTat: vanBan.soKyTuTomTat,
   daHieuChinh: vanBan.daHieuChinh,
+  nativeId: vanBan.nativeId,
   // Văn bản kéo về từ Native: người tạo ghi bên Native; còn lại: tài khoản GDOS.
   nguoiTao: sql<string | null>`coalesce(${vanBan.nguoiTaoNative}, ten_tai_khoan(${vanBan.nguoiTao}))`,
   donViTen: sql<string>`ten_don_vi(${vanBan.donViId})`,
@@ -61,6 +62,7 @@ interface DongDb {
   soKyTuGoc: number | null
   soKyTuTomTat: number | null
   daHieuChinh: boolean
+  nativeId: string | null
   nguoiTao: string | null
   donViTen: string
   createdAt: Date
@@ -82,6 +84,8 @@ const chuyen = (d: DongDb): VanBanDong => ({
       ? Math.round((1 - d.soKyTuTomTat / d.soKyTuGoc) * 1000) / 10
       : null,
   daHieuChinh: d.daHieuChinh,
+  // Mã bản giả không có ở Native thật — không đưa ra ngoài.
+  nativeId: d.nativeId && !d.nativeId.startsWith('gia-') ? d.nativeId : null,
   nguoiTao: d.nguoiTao,
   donViTen: d.donViTen,
   taoLuc: d.createdAt.toISOString(),

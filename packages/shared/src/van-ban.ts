@@ -54,6 +54,8 @@ export interface VanBanDong {
   /** % rút gọn = 1 − tóm tắt / gốc. */
   tyLeRutGon: number | null
   daHieuChinh: boolean
+  /** Mã văn bản bên FOXAI Native — để dùng công cụ Native (phân công, soạn thảo) theo văn bản này. */
+  nativeId: string | null
   nguoiTao: string | null
   donViTen: string
   taoLuc: string

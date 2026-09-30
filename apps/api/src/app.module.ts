@@ -14,6 +14,7 @@ import { NGUON_DONG_GOP } from './xuyen-suot/nguon-dong-gop.js'
 import { HoSoDuAnService } from './du-an/ho-so.service.js'
 import { NhapDuAnService } from './du-an/nhap.service.js'
 import { KHO_TEP, KhoTepThuMuc } from './kho-tep/kho-tep.js'
+import { ChuyenTiepNativeController, GOI_NATIVE } from './native/chuyen-tiep.controller.js'
 import { KET_NOI_NATIVE, taoKetNoiNative } from './native/ket-noi-native.js'
 import { LienKetNativeService } from './native/lien-ket.service.js'
 import { XAC_THUC_NATIVE, XacThucNativeGia, XacThucNativeHttp } from './native/xac-thuc-native.js'
@@ -48,6 +49,7 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     VanBanController,
     KetNoiController,
     LienKetNativeController,
+    ChuyenTiepNativeController,
   ],
   providers: [
     { provide: CAU_HINH, useFactory: () => docCauHinh() },
@@ -82,6 +84,7 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
       useFactory: (ch: CauHinh, lienKet: LienKetNativeService) => taoKetNoiNative(ch.native, lienKet),
       inject: [CAU_HINH, LienKetNativeService],
     },
+    { provide: GOI_NATIVE, useFactory: () => fetch.bind(globalThis) },
     { provide: KHO_TEP, useFactory: (ch: CauHinh) => new KhoTepThuMuc(ch.thuMucTep), inject: [CAU_HINH] },
     // Toàn cục: mọi route mặc định bị chặn cho tới khi khai rõ (xem bao-ve.ts).
     { provide: APP_GUARD, useClass: BaoVeGuard },

@@ -14,8 +14,8 @@ câu trả lời — ADR-0003 cấm tự chọn.
 ## Quyết định
 
 1. **Chỉ máy chủ GDOS gọi Native.** Trình duyệt không bao giờ gọi thẳng, không giữ token Native.
-   Mọi nghiệp vụ gọi qua MỘT giao diện `KetNoiNative` (`apps/api/src/native/ket-noi-native.ts`),
-   không module nào tự gọi HTTP sang Native.
+   Hồ sơ văn bản gọi qua MỘT giao diện `KetNoiNative` (`apps/api/src/native/ket-noi-native.ts`);
+   công cụ của Native đi qua cổng chuyển tiếp (mục 8). Không module nào khác tự gọi HTTP sang Native.
 2. **Hồ sơ nằm ở Postgres của GDOS, Native chỉ xử lý.** Bảng `van_ban` (RLS theo đơn vị, nhật
    ký, xóa mềm như mọi bảng nghiệp vụ) giữ tên, loại, trạng thái, nội dung gốc, bản tóm tắt; tệp
    gốc ở kho tệp của GDOS. Native tạm ngừng thì văn bản cũ vẫn xem được; lỗi gọi Native được ghi
@@ -38,6 +38,17 @@ câu trả lời — ADR-0003 cấm tự chọn.
    Người chưa liên kết vẫn xem được văn bản của đơn vị mình.
 7. **Cấu hình kết nối ở biến môi trường máy chủ, không nhập qua màn hình.** Quản trị › Kết nối
    › Dịch vụ nền tảng chỉ XEM chế độ, địa chỉ và KIỂM TRA kết nối.
+8. **Công cụ của Native — mẫu văn bản, soạn thảo, phân công nhiệm vụ, đơn vị nhận việc — đi qua
+   CỔNG CHUYỂN TIẾP `/api/native/document/*`** (`native/chuyen-tiep.ts`). Đây là dữ liệu và
+   công cụ CỦA Native, dùng chung với các ứng dụng khác trên Native; GDOS không chép sang bảng riêng
+   (khác văn bản — mục 2). Cổng chỉ cho đi đường dẫn trong DANH SÁCH CHO PHÉP (mã bản ghi phải đúng
+   dạng UUID, tham số truy vấn lọc theo danh sách), mỗi đường gắn một quyền GDOS (`VAN_BAN.*`: xem →
+   READ, tạo/soạn → CREATE, sửa mẫu/đơn vị → UPDATE, xóa mẫu → DELETE, phân công → ASSIGN), gọi
+   bằng token của chính người dùng. Native trả 401 → làm mới token một lần rồi gửi lại; vẫn 401 →
+   trả 403 "liên kết hết hạn" (không trả 401 — web hiểu là hết phiên GDOS). Lỗi Native dịch sang câu
+   tiếng Việt; lỗi 5xx không để lộ chi tiết. Chỉ chạy với Native thật (bản giả chỉ có tóm tắt).
+   Lưu ý khi soạn thảo: thể thức nhập ở màn Soạn thảo được Native **ghi đè và lưu** vào
+   `default_meta` của mẫu — đó là hành vi của Native, như GDOS cũ.
 
 ## Bật bản thật
 
@@ -53,8 +64,10 @@ cho GDOS — 06_TichHop-Webhook) khi GDOS có tên miền công khai.
 - Làm xong: Tóm tắt văn bản (danh sách theo chuẩn lưới, tải lên, xem gốc — tóm tắt song
   song, sửa tóm tắt, gửi/tóm tắt lại, tải tệp gốc) và Dịch vụ nền tảng (danh sách, kiểm tra) —
   liên kết tài khoản Native theo từng người.
-- Còn phác: Văn bản đến, Soạn thảo, Phân công từ văn bản, Mẫu văn bản — cùng khung này, theo
-  đặc tả 03–06.
+- Làm xong (30/09, bước D): Văn bản đến (hồ sơ `van_ban` nguồn QLVB / Cổng DVC / Email kéo về
+  từ Native), Soạn thảo văn bản, Phân công từ văn bản, Mẫu văn bản, Đơn vị nhận việc — qua cổng
+  chuyển tiếp (mục 8). HTML Native trả về đi qua DOMPurify (ADR-0005) trước khi vào trang.
+- Văn bản đến thật sự đổ về khi đối tác gửi vào `/inbound` của Native — xem "Còn để sau".
 
 ## Phương án đã loại
 
