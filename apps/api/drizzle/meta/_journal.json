@@ -120,6 +120,20 @@
       "when": 1790740051428,
       "tag": "0016_don-doc-bao-mat",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790741820520,
+      "tag": "0017_giam-sat-linh-vuc",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790741845955,
+      "tag": "0018_giam-sat-linh-vuc-bao-mat",
+      "breakpoints": true
     }
   ]
 }

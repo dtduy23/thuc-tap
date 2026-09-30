@@ -62,6 +62,7 @@ export interface TaoDuAn {
   tongMuc: number
   ngayBatDau: string
   canCu?: string
+  diaDiem?: string
 }
 
 export const taoDuAn = (dl: TaoDuAn) => goiApi<HoSoDuAn>('/du-an', { method: 'POST', body: dl })

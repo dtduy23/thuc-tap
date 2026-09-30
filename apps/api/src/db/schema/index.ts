@@ -251,6 +251,8 @@ export const duAn = pgTable(
     tongMuc: numeric('tong_muc', { precision: 15, scale: 0, mode: 'number' }).notNull().default(0),
     ngayBatDau: date('ngay_bat_dau', { mode: 'string' }).notNull(),
     tienDoMoTa: text('tien_do_mo_ta'),
+    /** Địa điểm đầu tư — lên cột của Biểu 01. */
+    diaDiem: text('dia_diem'),
     /** Ngày đơn vị cập nhật gần nhất — cảnh báo "lâu không cập nhật". */
     capNhatNgay: date('cap_nhat_ngay', { mode: 'string' }),
     canBoId: uuid('can_bo_id').references(() => taiKhoan.id),
@@ -499,4 +501,32 @@ export const duAnDonDoc = pgTable(
     ...thoiDiem,
   },
   (t) => [index('du_an_don_doc_du_an_idx').on(t.duAnId, t.ngay)],
+)
+
+/**
+ * Giám sát theo lĩnh vực: tài khoản được XEM mọi dự án của một lĩnh vực, ở mọi đơn
+ * vị (vd Sở chuyên ngành theo dõi dự án CNTT của các xã). Chỉ xem — sửa vẫn theo
+ * đơn vị chủ đầu tư. `don_vi_id` = đơn vị của tài khoản, trigger tự đặt.
+ */
+export const giamSatLinhVuc = pgTable(
+  'giam_sat_linh_vuc',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    taiKhoanId: uuid('tai_khoan_id')
+      .notNull()
+      .references(() => taiKhoan.id),
+    linhVucId: uuid('linh_vuc_id')
+      .notNull()
+      .references(() => danhMucGiaTri.id),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    nguoiTao: uuid('nguoi_tao'),
+    ...thoiDiem,
+  },
+  (t) => [
+    uniqueIndex('giam_sat_linh_vuc_uq')
+      .on(t.taiKhoanId, t.linhVucId)
+      .where(sql`${t.deletedAt} is null`),
+  ],
 )

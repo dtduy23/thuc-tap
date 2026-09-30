@@ -18,6 +18,10 @@ export interface BaoCaoDef {
   loai: 'dinh-ky' | 'tra-cuu' | 'xuat'
   /** Mặc định READ; xuất dữ liệu thường là EXPORT. */
   hanhDong?: HanhDong
+  /** Tham số chuẩn màn xem báo cáo cho nhập — màn không cần biết nghiệp vụ. */
+  thamSo?: readonly ThamSoBaoCao[]
+  /** Các trục phân nhóm được (tối đa 3 cấp). Có mục này thì hiện ô "Phân nhóm". */
+  nhomTheo?: readonly { id: string; nhan: string }[]
 }
 
 export interface ChiSoDef {
@@ -149,3 +153,70 @@ export type GocNhinTongQuan = (typeof GOC_NHIN_TONG_QUAN)[number]
 
 export const LOAI_CHI_SO = ['tat-ca', 'xep-hang'] as const
 export type LoaiChiSo = (typeof LOAI_CHI_SO)[number]
+
+// ── Báo cáo: một định dạng bảng chung — web vẽ, API xuất Excel ──────────────
+
+/** Tham số chuẩn của báo cáo. Màn xem báo cáo vẽ ô nhập theo danh sách này. */
+export const THAM_SO_BAO_CAO = {
+  nam: 'Năm báo cáo',
+  'giai-doan': 'Giai đoạn (từ năm — đến năm)',
+  'den-ngay': 'Số liệu đến ngày',
+  'linh-vuc': 'Lĩnh vực',
+} as const
+export type ThamSoBaoCao = keyof typeof THAM_SO_BAO_CAO
+
+/** Giá trị tham số đã kiểm (API điền mặc định cho tham số vắng). */
+export interface GiaTriThamSo {
+  nam: number
+  tuNam: number
+  denNam: number
+  denNgay: string
+  linhVucId: string | null
+  /** Mã trục phân nhóm theo thứ tự cấp, lấy từ BaoCaoDef.nhomTheo. */
+  nhom: string[]
+}
+
+export interface CotBaoCao {
+  nhan: string
+  /** so: căn phải, có CỘNG ở dòng nhóm / dòng tổng. ngay: YYYY-MM-DD. Mặc định chữ. */
+  kieu?: 'chu' | 'so' | 'ngay' | 'phan-tram'
+  /** Cột số KHÔNG cộng ở dòng nhóm / tổng (điểm, số ngày trễ…). */
+  khongCong?: boolean
+  /** Độ rộng cột trong Excel (ký tự). */
+  rong?: number
+}
+
+export interface DongBaoCao {
+  /** 0 = dòng chi tiết; 1..3 = dòng nhóm cấp 1..3 (cộng các dòng chi tiết bên dưới nó). */
+  cap: number
+  o: (string | number | null)[]
+  lienKet?: string
+  mau?: 'danger' | 'warn' | 'ok'
+}
+
+export interface KetQuaBaoCao {
+  ma: string
+  tieuDe: string
+  phuDe: string
+  cot: CotBaoCao[]
+  /** Hàng tiêu đề trên: gộp các cột lá liên tiếp [tu, tu + so). Cột ngoài nhóm kéo dài hai hàng. */
+  nhomCot?: { nhan: string; tu: number; so: number }[]
+  dong: DongBaoCao[]
+  /** Có dòng TỔNG SỐ ở đầu bảng (cộng mọi cột số). */
+  coTong: boolean
+  ghiChu?: string
+  /** Tên tệp Excel, không có đuôi. */
+  tenTep: string
+}
+
+/** Tìm một báo cáo trong registry (kèm module chủ) — màn xem và API cùng dùng. */
+export function timBaoCao(
+  modules: readonly (ModuleDef & { dongGop?: DongGop })[],
+  id: string,
+): { module: ModuleDef & { dongGop?: DongGop }; muc: BaoCaoDef } | null {
+  for (const m of modules) {
+    const muc = m.dongGop?.baoCao?.find((b) => b.id === id)
+    if (muc) return { module: m, muc }
+  }
+  return null
+}

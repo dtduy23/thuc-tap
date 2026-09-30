@@ -90,6 +90,7 @@ const COT_DU_AN = {
   canBoTen: sql<string | null>`ten_tai_khoan(${duAn.canBoId})`,
   canCu: duAn.canCu,
   tienDoMoTa: duAn.tienDoMoTa,
+  diaDiem: duAn.diaDiem,
   vuongMacMo: sql<number>`(select count(*)::int from du_an_vuong_mac v
                             where v.du_an_id = "du_an"."id" and v.ngay_giai_quyet is null and v.deleted_at is null)`,
   daGiaiNgan: sql<number>`(select coalesce(sum(g.so_tien), 0)::float8 from du_an_giai_ngan g
@@ -177,6 +178,7 @@ export class DuAnService {
     const tongMuc = soNguyen(than, 'tongMuc', 0, 1e12) ?? 0
     const ngayBatDau = ngay(than, 'ngayBatDau')
     const canCu = chuoiHoacRong(than, 'canCu', 500) ?? null
+    const diaDiem = chuoiHoacRong(than, 'diaDiem', 300) ?? null
     const canBoId = chuoiHoacRong(than, 'canBoId', 40) ?? nd.taiKhoanId
     let ma = chuoiHoacRong(than, 'ma', 40) ?? null
     if (ma) {
@@ -229,6 +231,7 @@ export class DuAnService {
           nhomDuAn,
           linhVucId: linhVucId ?? null,
           canCu,
+          diaDiem,
           tongMuc,
           ngayBatDau,
           canBoId: maUuid(canBoId, 'canBoId'),
@@ -284,6 +287,7 @@ export class DuAnService {
       ngayBatDau: ngayHoacRong(than, 'ngayBatDau') ?? undefined,
       canCu: chuoiHoacRong(than, 'canCu', 500),
       tienDoMoTa: chuoiHoacRong(than, 'tienDoMoTa', 4000),
+      diaDiem: chuoiHoacRong(than, 'diaDiem', 300),
       canBoId: chuoiHoacRong(than, 'canBoId', 40),
     }
     if (gt.linhVucId) maUuid(gt.linhVucId, 'linhVucId')
@@ -660,6 +664,7 @@ async function docHoSo(tx: GiaoDich, nd: NguoiDungPhien, id: string): Promise<Ho
     ...chuyenDuAn(da, buoc, homNay()),
     canCu: da.canCu,
     tienDoMoTa: da.tienDoMoTa,
+    diaDiem: da.diaDiem,
     buoc: buoc.map((b) => chuyenBuoc(b, ten)),
     thanhVien: tv.map((t) => ({ ...t, vaiTro: t.vaiTro as VaiTroThanhVien })),
     phienBan,

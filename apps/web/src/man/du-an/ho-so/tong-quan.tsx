@@ -95,6 +95,7 @@ function ThongTin({ hs }: { hs: HoSoDuAn }) {
     tongMuc: String(hs.tongMuc),
     ngayBatDau: hs.ngayBatDau,
     canCu: hs.canCu ?? '',
+    diaDiem: hs.diaDiem ?? '',
     tienDoMoTa: hs.tienDoMoTa ?? '',
   })
   const [canBo, datCanBo] = useState(hs.canBo)
@@ -117,6 +118,7 @@ function ThongTin({ hs }: { hs: HoSoDuAn }) {
           tongMuc: Math.round(Number(f.tongMuc) || 0),
           ngayBatDau: f.ngayBatDau,
           canCu: f.canCu,
+          diaDiem: f.diaDiem,
           tienDoMoTa: f.tienDoMoTa,
           canBoId: canBo?.id ?? null,
         }),
@@ -181,6 +183,13 @@ function ThongTin({ hs }: { hs: HoSoDuAn }) {
             />
           </div>
           <ONhap id="tt-can-cu" nhan="Căn cứ" maxLength={500} value={f.canCu} onChange={doi('canCu')} />
+          <ONhap
+            id="tt-dia-diem"
+            nhan="Địa điểm đầu tư"
+            maxLength={300}
+            value={f.diaDiem}
+            onChange={doi('diaDiem')}
+          />
           <ChonCanBo gt={canBo} doi={datCanBo} khoa={khoa} />
           <div className="mb-3.5">
             <label htmlFor="tt-tien-do" className="mb-1.5 block text-[12.5px] font-semibold text-body">

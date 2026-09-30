@@ -28,6 +28,7 @@ export default function TaoDuAn() {
     tongMuc: '',
     ngayBatDau: homNay(),
     canCu: '',
+    diaDiem: '',
   })
   const [loi, datLoi] = useState<string>()
   const doi = (k: keyof typeof f) => (e: { target: { value: string } }) =>
@@ -48,6 +49,7 @@ export default function TaoDuAn() {
         tongMuc: Math.round(Number(f.tongMuc) || 0),
         ngayBatDau: f.ngayBatDau,
         canCu: f.canCu.trim() || undefined,
+        diaDiem: f.diaDiem.trim() || undefined,
       }),
     onSuccess: async (hs) => {
       capNhatHoSo(qc, hs)
@@ -116,6 +118,13 @@ export default function TaoDuAn() {
             maxLength={500}
             value={f.canCu}
             onChange={doi('canCu')}
+          />
+          <ONhap
+            id="da-dia-diem"
+            nhan="Địa điểm đầu tư"
+            maxLength={300}
+            value={f.diaDiem}
+            onChange={doi('diaDiem')}
           />
           <ONhap
             id="da-ma"

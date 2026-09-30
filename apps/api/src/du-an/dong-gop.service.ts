@@ -3,6 +3,7 @@ import {
   congNgay,
   DANH_SACH_MODULE,
   homNay,
+  ngayKetThucDuKien,
   NGUONG_LAU_CAP_NHAT,
   NGUONG_SAP_HAN,
   soNgayGiua,
@@ -10,6 +11,8 @@ import {
   type CanhBaoDef,
   type DongCanhBao,
   type DotDonDoc,
+  type GiaTriThamSo,
+  type KetQuaBaoCao,
   type GocNhinTongQuan,
   type KhoiSoLieu,
   type LoaiChiSo,
@@ -21,14 +24,17 @@ import { chuoi, mang, maUuid } from '../chung/kiem-than.js'
 import { CoSoDuLieu, dbCua } from '../db/co-so-du-lieu.js'
 import { trongPhamVi, type GiaoDich } from '../db/pham-vi.js'
 import {
+  danhMucGiaTri,
   duAn,
   duAnBuoc,
   duAnDonDoc,
+  duAnGiaiNgan,
   duAnPhienBan,
   duAnThanhVien,
   duAnVon,
   duAnVuongMac,
 } from '../db/schema/index.js'
+import { bc35, bieu01, bieu0203, danhSach, type DuLieuBaoCao } from './bao-cao.js'
 import { chiSoDuAn, tongQuanDuAn, type DuAnTongHop } from './dieu-hanh.js'
 import { DuAnService } from './du-an.service.js'
 import type { NguoiDungPhien } from '../xac-thuc/bao-ve.js'
@@ -237,24 +243,121 @@ export class DongGopDuAnService implements NguonDongGop {
     if (!nd.quyen.has('DU_AN.READ')) return null
     const ds = await this.taiTongHop(nd)
     const ids = ds.map((x) => x.d.id)
-    const nhaThau = ids.length
-      ? await trongPhamVi(this.db, nd.nguCanh, (tx) =>
-          tx
-            .select({
-              duAnId: duAnThanhVien.duAnId,
-              tenDonVi: sql<string>`ten_don_vi_cua_tai_khoan(${duAnThanhVien.taiKhoanId})`,
-            })
-            .from(duAnThanhVien)
-            .where(
-              and(
-                inArray(duAnThanhVien.duAnId, ids),
-                eq(duAnThanhVien.vaiTro, 'nha-thau'),
-                isNull(duAnThanhVien.deletedAt),
-              ),
-            ),
-        )
-      : []
-    return chiSoDuAn(ds, loai, nhaThau)
+    return chiSoDuAn(ds, loai, await this.nhaThauCua(nd, ids))
+  }
+
+  /** Nhà thầu (tên đơn vị) của các dự án — cho xếp hạng và danh sách xuất. */
+  private async nhaThauCua(
+    nd: NguoiDungPhien,
+    ids: string[],
+  ): Promise<{ duAnId: string; tenDonVi: string }[]> {
+    if (ids.length === 0) return []
+    return trongPhamVi(this.db, nd.nguCanh, (tx) =>
+      tx
+        .select({
+          duAnId: duAnThanhVien.duAnId,
+          tenDonVi: sql<string>`ten_don_vi_cua_tai_khoan(${duAnThanhVien.taiKhoanId})`,
+        })
+        .from(duAnThanhVien)
+        .where(
+          and(
+            inArray(duAnThanhVien.duAnId, ids),
+            eq(duAnThanhVien.vaiTro, 'nha-thau'),
+            isNull(duAnThanhVien.deletedAt),
+          ),
+        ),
+    )
+  }
+
+  // ── Báo cáo (Biểu 01/02/03, Điều 35, danh sách xuất) ──────────────────────
+
+  async baoCao(nd: NguoiDungPhien, ma: string, ts: GiaTriThamSo): Promise<KetQuaBaoCao> {
+    const dl = await this.taiDuLieuBaoCao(nd)
+    const hn = homNay()
+    switch (ma) {
+      case 'du-an-bieu-01':
+        return bieu01(dl, ts)
+      case 'du-an-bieu-02':
+        return bieu0203(dl, ts, '02')
+      case 'du-an-bieu-03':
+        return bieu0203(dl, ts, '03')
+      case 'du-an-bc35':
+        return bc35(dl, ts, hn)
+      case 'du-an-danh-sach':
+        return danhSach(dl, ts, hn)
+      default:
+        throw new NotFoundException('Không có báo cáo này')
+    }
+  }
+
+  private async taiDuLieuBaoCao(nd: NguoiDungPhien): Promise<DuLieuBaoCao> {
+    const ds = await this.taiTongHop(nd)
+    const ids = ds.map((x) => x.d.id)
+    const [phu, nhaThau] = await Promise.all([
+      trongPhamVi(this.db, nd.nguCanh, async (tx) => ({
+        nguonVon: await tx
+          .select({ id: danhMucGiaTri.id, ten: danhMucGiaTri.ten })
+          .from(danhMucGiaTri)
+          .where(and(eq(danhMucGiaTri.loai, 'nguon-von'), isNull(danhMucGiaTri.deletedAt)))
+          .orderBy(asc(danhMucGiaTri.thuTu), asc(danhMucGiaTri.ten)),
+        ...(ids.length === 0
+          ? { thongTin: [], buoc: [], von: [], giaiNgan: [] }
+          : {
+              thongTin: await tx
+                .select({ id: duAn.id, diaDiem: duAn.diaDiem, tienDoMoTa: duAn.tienDoMoTa })
+                .from(duAn)
+                .where(inArray(duAn.id, ids)),
+              buoc: await tx
+                .select({
+                  duAnId: duAnBuoc.duAnId,
+                  han: duAnBuoc.han,
+                  laNhap: duAnBuoc.laNhap,
+                  ngayHoanThanh: duAnBuoc.ngayHoanThanh,
+                })
+                .from(duAnBuoc)
+                .where(and(inArray(duAnBuoc.duAnId, ids), isNull(duAnBuoc.deletedAt))),
+              von: await tx
+                .select({
+                  duAnId: duAnVon.duAnId,
+                  nam: duAnVon.nam,
+                  nguonVonId: duAnVon.nguonVonId,
+                  keHoach: duAnVon.keHoach,
+                })
+                .from(duAnVon)
+                .where(and(inArray(duAnVon.duAnId, ids), isNull(duAnVon.deletedAt))),
+              giaiNgan: await tx
+                .select({
+                  duAnId: duAnGiaiNgan.duAnId,
+                  nam: duAnGiaiNgan.nam,
+                  nguonVonId: duAnGiaiNgan.nguonVonId,
+                  ngay: duAnGiaiNgan.ngay,
+                  soTien: duAnGiaiNgan.soTien,
+                })
+                .from(duAnGiaiNgan)
+                .where(and(inArray(duAnGiaiNgan.duAnId, ids), isNull(duAnGiaiNgan.deletedAt))),
+            }),
+      })),
+      this.nhaThauCua(nd, ids),
+    ])
+    const them: DuLieuBaoCao['them'] = new Map()
+    for (const t of phu.thongTin) {
+      const b = phu.buoc.filter((x) => x.duAnId === t.id)
+      const xong = b.map((x) => x.ngayHoanThanh).filter((x): x is string => !!x)
+      them.set(t.id, {
+        diaDiem: t.diaDiem,
+        tienDoMoTa: t.tienDoMoTa,
+        ketThuc: ngayKetThucDuKien(b),
+        xongNgay: xong.length ? xong.sort().at(-1)! : null,
+      })
+    }
+    return {
+      ds,
+      them,
+      von: phu.von.map((v) => ({ ...v, keHoach: Number(v.keHoach) })),
+      giaiNgan: phu.giaiNgan.map((g) => ({ ...g, soTien: Number(g.soTien) })),
+      nguonVon: phu.nguonVon,
+      nhaThau,
+    }
   }
 
   /** Mọi dự án người này thấy + KPI từng dự án (bước, số phiên bản, kế hoạch vốn tới nay). */

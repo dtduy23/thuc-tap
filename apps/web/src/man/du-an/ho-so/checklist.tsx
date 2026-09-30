@@ -10,7 +10,9 @@ import {
   type TrangThaiBuoc,
 } from '@gdos/shared'
 import { Fragment, useMemo, useState } from 'react'
+import { taiExcelChecklist } from '@/lib/bao-cao'
 import { suaBuoc, thaoTacBuoc, xoaBuoc } from '@/lib/du-an'
+import { LoiApi } from '@/lib/http'
 import { ngayGio, ngayVn } from '@/lib/ngay'
 import { Chip, KhungBang, LOP_TD, LOP_TH, Nut, ThongBao } from '@/ui/co-ban'
 import { ChipBuoc } from '../chung'
@@ -35,6 +37,7 @@ const CAC_LOC: [Loc, string][] = [
 export default function Checklist({ hs }: { hs: HoSoDuAn }) {
   const [loc, datLoc] = useState<Loc>('tat-ca')
   const [mo, datMo] = useState<string>()
+  const [loiTai, datLoiTai] = useState<string>()
   const hn = homNay()
 
   const doSau = useMemo(() => {
@@ -65,7 +68,8 @@ export default function Checklist({ hs }: { hs: HoSoDuAn }) {
 
   return (
     <>
-      <div role="group" aria-label="Lọc bước" className="mb-3 flex flex-wrap gap-1">
+      {loiTai && <ThongBao kieu="loi">{loiTai}</ThongBao>}
+      <div role="group" aria-label="Lọc bước" className="mb-3 flex flex-wrap items-center gap-1">
         {CAC_LOC.map(([k, n]) => (
           <button
             key={k}
@@ -78,6 +82,18 @@ export default function Checklist({ hs }: { hs: HoSoDuAn }) {
             {k !== 'tat-ca' && <span className="ml-1 text-faint tabular-nums">{dem[k] ?? 0}</span>}
           </button>
         ))}
+        <span className="ml-auto">
+          <Nut
+            onClick={() => {
+              datLoiTai(undefined)
+              taiExcelChecklist(hs.id).catch((e: unknown) =>
+                datLoiTai(e instanceof LoiApi ? e.message : 'Không tải được tệp.'),
+              )
+            }}
+          >
+            ⬇ Xuất Excel
+          </Nut>
+        </span>
       </div>
 
       <KhungBang nhan="Checklist các bước">

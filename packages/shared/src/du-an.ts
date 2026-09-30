@@ -278,6 +278,8 @@ export interface ThanhVienDuAn {
 export interface HoSoDuAn extends DuAnDong {
   canCu: string | null
   tienDoMoTa: string | null
+  /** Địa điểm đầu tư (Biểu 01). */
+  diaDiem: string | null
   buoc: BuocDuAn[]
   thanhVien: ThanhVienDuAn[]
   /** Mới nhất trước. Phiên bản 1 là kế hoạch gốc. */

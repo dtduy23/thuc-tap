@@ -6,6 +6,8 @@
 import type {
   CanhBaoDef,
   DongCanhBao,
+  GiaTriThamSo,
+  KetQuaBaoCao,
   GocNhinTongQuan,
   KhoiSoLieu,
   LoaiChiSo,
@@ -23,6 +25,8 @@ export interface NguonDongGop {
   tongQuan?(nd: NguoiDungPhien, gocNhin: GocNhinTongQuan): Promise<KhoiSoLieu | null>
   /** Điều hành › Bộ chỉ số. */
   chiSo?(nd: NguoiDungPhien, loai: LoaiChiSo): Promise<KhoiSoLieu | null>
+  /** Báo cáo module khai trong dongGop.baoCao. Quyền đã kiểm ở điểm gom; tham số đã kiểm. */
+  baoCao?(nd: NguoiDungPhien, ma: string, ts: GiaTriThamSo): Promise<KetQuaBaoCao>
 }
 
 export const NGUON_DONG_GOP = Symbol('NGUON_DONG_GOP')

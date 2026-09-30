@@ -8,6 +8,7 @@
  *       ├── /doi-mat-khau
  *       ├── /cai-dat        cài đặt cá nhân (tông màu, sáng/tối)
  *       ├── /du-an/$id      hồ sơ một dự án — các thẻ là trục phạm vi, không lên cây
+ *       ├── /bao-cao/$ma    một báo cáo — cùng màn dù mở từ Điều hành hay từ module chủ
  *       └── /$chucNang      MỘT route động phủ toàn bộ registry — thêm chức năng
  *                           không phải sửa file này
  */
@@ -24,6 +25,7 @@ import { KhungPortal } from '@/khung/khung-portal'
 import { duongDanNoiBo } from '@/lib/duong-dan'
 import { goiApi, LoiApi } from '@/lib/http'
 import { KHOA_TOI, truyVanToi } from '@/lib/phien'
+import { docThamSoUrl, TrangBaoCao } from '@/trang/bao-cao'
 import { TrangCaiDat } from '@/trang/cai-dat'
 import { THE_HO_SO, TrangHoSoDuAn, type MaThe } from '@/trang/ho-so-du-an'
 import { TrangChucNang, KhongTimThay } from '@/trang/chuc-nang'
@@ -113,6 +115,16 @@ const hoSoDuAn = createRoute({
   },
 })
 
+const baoCao = createRoute({
+  getParentRoute: () => portal,
+  path: '/bao-cao/$ma',
+  validateSearch: docThamSoUrl,
+  component: function ManBaoCao() {
+    const { ma } = baoCao.useParams()
+    return <TrangBaoCao ma={ma} ts={baoCao.useSearch()} />
+  },
+})
+
 const chucNang = createRoute({
   getParentRoute: () => portal,
   path: '/$chucNang',
@@ -124,7 +136,7 @@ const chucNang = createRoute({
 
 const cayRoute = goc.addChildren([
   dangNhap,
-  portal.addChildren([trangChu, doiMatKhau, caiDat, hoSoDuAn, chucNang]),
+  portal.addChildren([trangChu, doiMatKhau, caiDat, hoSoDuAn, baoCao, chucNang]),
 ])
 
 export function taoRouter(queryClient: QueryClient) {

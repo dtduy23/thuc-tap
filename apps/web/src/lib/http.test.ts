@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { goiApi, LoiApi } from './http'
+import { goiApi, LoiApi, tenTepTu } from './http'
 
 interface GoiGhiLai {
   url: string
@@ -73,5 +73,15 @@ describe('goiApi', () => {
   it('204 trả undefined', async () => {
     const { goi } = fetchGia(() => new Response(null, { status: 204 }))
     expect(await goiApi('/x', { method: 'POST', goi })).toBeUndefined()
+  })
+})
+
+describe('tenTepTu', () => {
+  it('ưu tiên filename* UTF-8, rồi filename, rồi tên mặc định', () => {
+    expect(tenTepTu(`attachment; filename="Bieu01.xlsx"; filename*=UTF-8''Bi%E1%BB%83u01.xlsx`, 'x')).toBe(
+      'Biểu01.xlsx',
+    )
+    expect(tenTepTu('attachment; filename="a.xlsx"', 'x')).toBe('a.xlsx')
+    expect(tenTepTu(null, 'mac-dinh.xlsx')).toBe('mac-dinh.xlsx')
   })
 })

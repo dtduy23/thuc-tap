@@ -1,7 +1,10 @@
-import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, Query } from '@nestjs/common'
-import { LOC_DU_AN, type LocDuAn } from '@gdos/shared'
+import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, Query, Res } from '@nestjs/common'
+import { homNay, LOC_DU_AN, type LocDuAn } from '@gdos/shared'
+import type { Response } from 'express'
 import { maUuid } from '../chung/kiem-than.js'
 import { CanQuyen, NguoiDung, type NguoiDungPhien } from '../xac-thuc/bao-ve.js'
+import { headerTaiExcel, vietExcel } from '../xuyen-suot/bao-cao-chung.js'
+import { checklist } from './bao-cao.js'
 import { DongGopDuAnService } from './dong-gop.service.js'
 import { DuAnService } from './du-an.service.js'
 
@@ -54,6 +57,14 @@ export class DuAnController {
   @CanQuyen('DU_AN.READ')
   hoSo(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string) {
     return this.dv.hoSo(nd, maUuid(id))
+  }
+
+  /** Checklist tiến độ của một dự án ra Excel — ai xem được dự án là tải được. */
+  @Get(':id/checklist/excel')
+  @CanQuyen('DU_AN.READ')
+  async checklistExcel(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string, @Res() res: Response) {
+    const kq = checklist(await this.dv.hoSo(nd, maUuid(id)), homNay())
+    res.set(headerTaiExcel(kq.tenTep)).send(await vietExcel(kq))
   }
 
   @Patch(':id')

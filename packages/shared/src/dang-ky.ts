@@ -13,6 +13,14 @@
  */
 import type { ModuleDef } from './phan-he.js'
 
+/** Trục phân nhóm của các báo cáo dự án. */
+const NHOM_BAO_CAO_DU_AN = [
+  { id: 'don-vi', nhan: 'Chủ đầu tư' },
+  { id: 'linh-vuc', nhan: 'Lĩnh vực' },
+  { id: 'hinh-thuc', nhan: 'Hình thức' },
+  { id: 'nhom-du-an', nhan: 'Nhóm dự án' },
+] as const
+
 export const DANH_SACH_MODULE: readonly ModuleDef[] = [
   // ══ TẦNG 1 · NGHIỆP VỤ ═════════════════════════════════════════════════
 
@@ -36,7 +44,6 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'dieu-hanh',
     maQuyen: 'BAO_CAO',
     nguon: 'db',
-    phac: true,
     mo: 'Trung tâm báo cáo của mọi nghiệp vụ. Báo cáo do module nghiệp vụ khai báo một lần, hiện cả ở đây lẫn trong module (ADR-0007).',
     con: [
       { id: 'bc-tat-ca', nhan: 'Tất cả báo cáo' },
@@ -78,7 +85,7 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
 
         mo: 'Gửi nhắc việc quá hạn. Chỉ cơ quan quản lý (Điều 36 NĐ 45).',
       },
-      { id: 'da-bao-cao', nhan: 'Báo cáo dự án', phac: true },
+      { id: 'da-bao-cao', nhan: 'Báo cáo dự án' },
     ],
     dongGop: {
       baoCao: [
@@ -87,24 +94,31 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
           ten: 'Biểu 01 — Dự án đầu tư công',
           loai: 'dinh-ky',
           mo: 'Tổng mức, kế hoạch vốn năm, giải ngân năm theo nguồn vốn.',
+          thamSo: ['nam', 'den-ngay', 'linh-vuc'],
+          nhomTheo: NHOM_BAO_CAO_DU_AN,
         },
         {
           id: 'du-an-bieu-02',
           ten: 'Biểu 02 — Chi thường xuyên (chuyển tiếp)',
           loai: 'dinh-ky',
           mo: 'Hoạt động chi thường xuyên bắt đầu từ các năm trước.',
+          thamSo: ['nam', 'giai-doan', 'den-ngay', 'linh-vuc'],
+          nhomTheo: NHOM_BAO_CAO_DU_AN,
         },
         {
           id: 'du-an-bieu-03',
           ten: 'Biểu 03 — Chi thường xuyên (mới)',
           loai: 'dinh-ky',
           mo: 'Hoạt động chi thường xuyên bắt đầu trong năm báo cáo.',
+          thamSo: ['nam', 'giai-doan', 'den-ngay', 'linh-vuc'],
+          nhomTheo: NHOM_BAO_CAO_DU_AN,
         },
         {
           id: 'du-an-bc35',
           ten: 'Nghĩa vụ báo cáo Điều 35',
           loai: 'dinh-ky',
           mo: 'Dự án hoàn thành: hạn chủ đầu tư cung cấp thông tin (20 ngày), hạn tổng hợp gửi Bộ (30 ngày).',
+          thamSo: ['linh-vuc'],
         },
         {
           id: 'du-an-danh-sach',
@@ -112,6 +126,8 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
           loai: 'xuat',
           hanhDong: 'EXPORT',
           mo: 'Xuất danh sách dự án kèm tiến độ, giải ngân ra Excel.',
+          thamSo: ['linh-vuc'],
+          nhomTheo: NHOM_BAO_CAO_DU_AN,
         },
       ],
       chiSo: [

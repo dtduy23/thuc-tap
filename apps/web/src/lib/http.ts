@@ -122,3 +122,40 @@ export async function taiLenTep<T>(duongDan: string, du: FormData, daThuLai = fa
   if (!res.ok) throw new LoiApi(res.status, await docThongDiep(res))
   return (await res.json()) as T
 }
+
+/** Tên tệp từ Content-Disposition — ưu tiên filename* (UTF-8, tiếng Việt). */
+export function tenTepTu(cd: string | null, macDinh: string): string {
+  const utf8 = cd && /filename\*=UTF-8''([^;]+)/i.exec(cd)
+  if (utf8?.[1]) {
+    try {
+      return decodeURIComponent(utf8[1])
+    } catch {
+      // Mã hóa hỏng — dùng tên thường.
+    }
+  }
+  const thuong = cd && /filename="([^"]+)"/i.exec(cd)
+  return thuong?.[1] ?? macDinh
+}
+
+/**
+ * Tải một tệp do API sinh (Excel…) về máy. Cùng luật hết phiên với goiApi: 401
+ * thì làm mới đúng một lần rồi tải lại — thẻ <a href> không làm được việc này.
+ */
+export async function taiVeTep(duongDan: string, macDinh: string, daThuLai = false): Promise<void> {
+  let res: Response
+  try {
+    res = await fetch(`/api${duongDan}`)
+  } catch {
+    throw new LoiApi(MA_MAT_KET_NOI, 'Không kết nối được máy chủ. Kiểm tra đường truyền rồi thử lại.')
+  }
+  if (res.status === 401 && !daThuLai && (await lamMoiPhien(fetch))) return taiVeTep(duongDan, macDinh, true)
+  if (!res.ok) throw new LoiApi(res.status, await docThongDiep(res))
+  const url = URL.createObjectURL(await res.blob())
+  const a = document.createElement('a')
+  a.href = url
+  a.download = tenTepTu(res.headers.get('Content-Disposition'), macDinh)
+  document.body.append(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 10_000)
+}
