@@ -549,9 +549,10 @@ export const vanBan = pgTable(
     /** tai-len (người dùng tải) · qlvb · cong-dvc · email · khac (tích hợp). */
     nguon: text('nguon').notNull().default('tai-len'),
     tenTep: text('ten_tep').notNull(),
-    khoaTep: text('khoa_tep').notNull(),
-    loaiTep: text('loai_tep').notNull(),
-    kichThuoc: integer('kich_thuoc').notNull(),
+    /** Khóa trong kho tệp GDOS — rỗng: văn bản kéo về từ Native, tệp gốc nằm ở Native. */
+    khoaTep: text('khoa_tep'),
+    loaiTep: text('loai_tep'),
+    kichThuoc: integer('kich_thuoc'),
     /** Mã bản ghi phía Native — rỗng khi chưa gửi được. */
     nativeId: text('native_id'),
     /** chua-gui · cho · dang-xu-ly · xong · loi */
@@ -565,6 +566,8 @@ export const vanBan = pgTable(
     /** Người dùng đã sửa lại bản tóm tắt của AI. */
     daHieuChinh: boolean('da_hieu_chinh').notNull().default(false),
     nguoiTao: uuid('nguoi_tao'),
+    /** Người tạo ghi bên Native (văn bản kéo về từ Native). */
+    nguoiTaoNative: text('nguoi_tao_native'),
     dongBoLuc: timestamp('dong_bo_luc', { withTimezone: true }),
     ...thoiDiem,
   },

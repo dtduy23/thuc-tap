@@ -5,17 +5,20 @@ import { useState } from 'react'
 import { ChipVanBan } from '@/man/van-ban/tom-tat'
 import { LoiApi, taiVeTep } from '@/lib/http'
 import { ngayGio } from '@/lib/ngay'
-import { chayLaiVanBan, suaTomTat, truyVanChiTietVanBan } from '@/lib/van-ban'
+import { chayLaiVanBan, suaTomTat, taiTomTatDoc, truyVanChiTietVanBan } from '@/lib/van-ban'
 import { Chip, Nut, ThongBao } from '@/ui/co-ban'
 
 const KHUNG =
   'min-h-[360px] rounded-[10px] border border-line bg-nen shadow-[0_1px_2px_rgba(16,34,54,.06),0_4px_14px_rgba(16,34,54,.05)]'
 
 /** Một văn bản: bản gốc và bản tóm tắt SONG SONG để đối chiếu; sửa lại tóm tắt được. */
-export function TrangVanBan({ id }: { id: string }) {
+export function TrangVanBan({ id, moSua = false }: { id: string; moSua?: boolean }) {
   const qc = useQueryClient()
   const { data: vb } = useSuspenseQuery(truyVanChiTietVanBan(id))
-  const [sua, datSua] = useState<string>()
+  // Mở từ nút "Sửa" ở danh sách: vào thẳng chế độ sửa (khi đã có bản tóm tắt).
+  const [sua, datSua] = useState<string | undefined>(() =>
+    moSua && vb.quyen.sua && vb.tomTat ? vb.tomTat : undefined,
+  )
   const [loi, datLoi] = useState<string>()
   const [ban, datBan] = useState(false)
   const dangChay = vb.trangThai === 'cho' || vb.trangThai === 'dang-xu-ly'
@@ -69,6 +72,7 @@ export function TrangVanBan({ id }: { id: string }) {
             {vb.trangThai === 'chua-gui' || vb.trangThai === 'loi' ? 'Gửi lại tóm tắt' : 'Tóm tắt lại'}
           </Nut>
         )}
+        {vb.tomTat && <Nut onClick={() => void taiTomTatDoc(vb.id)}>⬇ Bản tóm tắt (.doc)</Nut>}
         {vb.quyen.sua && sua === undefined && !dangChay && (
           <Nut onClick={() => datSua(vb.tomTat ?? '')}>Sửa tóm tắt</Nut>
         )}

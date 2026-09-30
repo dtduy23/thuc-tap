@@ -12,8 +12,8 @@ export interface CotLuoi<T> {
   kieu: KieuCot
   /** Giá trị THÔ để lọc, sắp, xuất Excel. Ngày: YYYY-MM-DD. Danh mục: mã. */
   giaTri: (d: T) => string | number | null
-  /** Cách vẽ ô — vắng thì in giá trị (danh mục in nhãn). */
-  hien?: (d: T) => ReactNode
+  /** Cách vẽ ô — vắng thì in giá trị (danh mục in nhãn). `stt`: số thứ tự dòng trong phần đang lọc. */
+  hien?: (d: T, stt: number) => ReactNode
   /** Danh mục: các lựa chọn (vắng thì lấy từ dữ liệu). */
   luaChon?: readonly { giaTri: string; nhan: string }[]
   /** Bề rộng mặc định (px). */

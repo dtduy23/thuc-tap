@@ -46,7 +46,8 @@ export interface VanBanDong {
   loai: string
   nguon: NguonVanBan
   tenTep: string
-  kichThuoc: number
+  /** null: văn bản kéo về từ Native, tệp gốc nằm ở Native. */
+  kichThuoc: number | null
   trangThai: TrangThaiVanBan
   soKyTuGoc: number | null
   soKyTuTomTat: number | null
@@ -64,7 +65,7 @@ export interface VanBanChiTiet extends VanBanDong {
   moHinh: string | null
   loi: string | null
   /** Người xem có được gửi Native (tài khoản đã liên kết) và sửa không. */
-  quyen: { xuLy: boolean; sua: boolean }
+  quyen: { xuLy: boolean; sua: boolean; xoa: boolean }
 }
 
 /** Tình trạng dùng Native của người đang xem — màn văn bản hiện thông báo theo đây. */

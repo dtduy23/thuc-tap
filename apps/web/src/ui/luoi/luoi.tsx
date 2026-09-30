@@ -202,8 +202,8 @@ export function Luoi<T>({ ma, tieuDe, cot, dong, khoa, moDong, mauDong, congCu, 
   const daChonHet = oChon.length > 0 && oChon.every((id) => chon!.ds.has(id))
   const coChon = oChon.some((id) => chon!.ds.has(id))
 
-  const dinhDang = (c: CotLuoi<T>, d: T): ReactNode => {
-    if (c.hien) return c.hien(d)
+  const dinhDang = (c: CotLuoi<T>, d: T, stt: number): ReactNode => {
+    if (c.hien) return c.hien(d, stt)
     const v = c.giaTri(d)
     if (v === null || v === '') return <span className="text-faint">—</span>
     if (c.kieu === 'so') return typeof v === 'number' ? v.toLocaleString('vi-VN') : v
@@ -388,7 +388,7 @@ export function Luoi<T>({ ma, tieuDe, cot, dong, khoa, moDong, mauDong, congCu, 
             </tr>
           </thead>
           <tbody>
-            {trangNay.map((d) => {
+            {trangNay.map((d, k) => {
               const id = khoa(d)
               const mau = mauDong?.(d)
               return (
@@ -423,7 +423,7 @@ export function Luoi<T>({ ma, tieuDe, cot, dong, khoa, moDong, mauDong, congCu, 
                         style={g.style}
                         className={`${td} ${g.lop} ${i < soGhim ? 'z-10' : ''} group-hover:bg-nav-hover ${c.kieu === 'so' ? 'text-right tabular-nums' : ''} ${catChu}`}
                       >
-                        {dinhDang(c, d)}
+                        {dinhDang(c, d, tr * tl.soDong + k + 1)}
                       </td>
                     )
                   })}

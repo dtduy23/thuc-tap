@@ -17,7 +17,15 @@ import { AppModule } from '../app.module.js'
 import { CAU_HINH, docCauHinh } from '../cau-hinh.js'
 import { CoSoDuLieu } from '../db/co-so-du-lieu.js'
 import { lienKetNative, taiKhoan } from '../db/schema/index.js'
-import { KET_NOI_NATIVE, NativeChuaNoi, NativeGia, NativeThat, tuDto } from '../native/ket-noi-native.js'
+import {
+  KET_NOI_NATIVE,
+  NativeChuaNoi,
+  NativeGia,
+  NativeThat,
+  tuDto,
+  type VanBanTrenNative,
+} from '../native/ket-noi-native.js'
+import { VanBanService } from './van-ban.service.js'
 import { LienKetNativeService } from '../native/lien-ket.service.js'
 import {
   MaHoaBiMat,
@@ -43,6 +51,37 @@ class DemLamMoi extends XacThucNativeGia {
 }
 const xacThuc = new DemLamMoi()
 
+/** Native giả có sẵn MỘT văn bản trong tài khoản người dùng (tạo từ gdos.fox.ai.vn trước đây). */
+class NativeCoSan extends NativeGia {
+  override dsTomTat(): Promise<VanBanTrenNative[]> {
+    return Promise.resolve([
+      {
+        nativeId: 'n-100',
+        ten: '912/CV-UBND — Công văn thử kéo về',
+        loai: 'Công văn',
+        nguon: 'QLVB',
+        nguoiTao: 'Chủ tịch UBND',
+        taoLuc: '2026-09-25T02:00:00Z',
+        trangThai: 'xong',
+        soKyTuGoc: 700,
+        soKyTuTomTat: 300,
+      },
+    ])
+  }
+  override docTomTat(nativeId: string) {
+    if (nativeId !== 'n-100') return super.docTomTat(nativeId)
+    return Promise.resolve({
+      nativeId,
+      trangThai: 'xong' as const,
+      soKyTuGoc: 700,
+      soKyTuTomTat: 300,
+      noiDungGoc: 'Nội dung gốc trên Native.',
+      tomTat: 'Tóm tắt do AI của Native.',
+      moHinh: 'mo-hinh-thu',
+    })
+  }
+}
+
 beforeAll(async () => {
   db = await taoCoSoThu()
   await napMau(db)
@@ -52,7 +91,7 @@ beforeAll(async () => {
     .overrideProvider(CoSoDuLieu)
     .useValue({ db: db.coSo, kiemTra: () => Promise.resolve('ok') })
     .overrideProvider(KET_NOI_NATIVE)
-    .useValue(new NativeGia())
+    .useValue(new NativeCoSan())
     .overrideProvider(XAC_THUC_NATIVE)
     .useValue(xacThuc)
     .compile()
@@ -99,7 +138,7 @@ describe('tóm tắt văn bản (Native giả)', () => {
     expect(xong.tomTat).toContain('Tiến độ đạt 80%')
     expect(xong.noiDungGoc).toBe(VAN_BAN)
     expect(xong.tyLeRutGon).toBeGreaterThan(0)
-    expect(xong.quyen).toEqual({ xuLy: true, sua: true })
+    expect(xong.quyen).toEqual({ xuLy: true, sua: true, xoa: true })
   })
 
   it('sửa tóm tắt: GDOS giữ bản đã hiệu chỉnh; tải tệp gốc về đúng nội dung', async () => {
@@ -286,5 +325,37 @@ describe('liên kết tài khoản FOXAI Native (ADR-0009)', () => {
     const m = new MaHoaBiMat('khoa-mot'.repeat(5))
     expect(m.giai(m.ma('bi-mat'))).toBe('bi-mat')
     expect(new MaHoaBiMat('khoa-hai'.repeat(5)).giai(m.ma('bi-mat'))).toBeNull()
+  })
+})
+
+describe('kéo văn bản đã có trên Native về (như màn cũ ở gdos.fox.ai.vn)', () => {
+  it('xem danh sách: văn bản của tài khoản Native hiện ra, giữ người tạo và nguồn bên Native', async () => {
+    const cv = await vao('chuyenvien.a')
+    ;(Reflect.get(app.get(VanBanService), 'keoVeLuc') as Map<string, number>).clear()
+    const ds = (await cv.get('/api/van-ban')).body as VanBanDong[]
+    const vb = ds.find((d) => d.ten.startsWith('912/CV-UBND'))!
+    expect(vb).toMatchObject({
+      nguoiTao: 'Chủ tịch UBND',
+      nguon: 'qlvb',
+      trangThai: 'xong',
+      tyLeRutGon: 57.1,
+    })
+    expect(vb.taoLuc.slice(0, 10)).toBe('2026-09-25')
+    // Mở ra: GDOS lấy nội dung gốc và bản tóm tắt từ Native.
+    const ct = (await cv.get(`/api/van-ban/${vb.id}`)).body as VanBanChiTiet
+    expect([ct.noiDungGoc, ct.tomTat]).toEqual(['Nội dung gốc trên Native.', 'Tóm tắt do AI của Native.'])
+  })
+
+  it('xã khác (chưa liên kết) không thấy; xóa rồi thì lần kéo sau không kéo lại', async () => {
+    const b = await vao('canbo.b')
+    expect(((await b.get('/api/van-ban')).body as VanBanDong[]).some((d) => d.ten.startsWith('912/CV'))).toBe(
+      false,
+    )
+    const cv = await vao('chuyenvien.a')
+    const vb = ((await cv.get('/api/van-ban')).body as VanBanDong[]).find((d) => d.ten.startsWith('912/CV'))!
+    expect((await cv.post(`/api/van-ban/${vb.id}/xoa`).set(GHI)).status).toBe(200)
+    ;(Reflect.get(app.get(VanBanService), 'keoVeLuc') as Map<string, number>).clear()
+    const sau = (await cv.get('/api/van-ban')).body as VanBanDong[]
+    expect(sau.some((d) => d.ten.startsWith('912/CV'))).toBe(false)
   })
 })

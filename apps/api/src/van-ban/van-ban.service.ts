@@ -16,9 +16,9 @@ import {
   type VanBanChiTiet,
   type VanBanDong,
 } from '@gdos/shared'
-import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
-import type { Readable } from 'node:stream'
+import { Readable } from 'node:stream'
 import { chuoi, chuoiHoacRong, maUuid, motTrong } from '../chung/kiem-than.js'
 import { CoSoDuLieu, dbCua } from '../db/co-so-du-lieu.js'
 import { trongPhamVi, type GiaoDich } from '../db/pham-vi.js'
@@ -27,6 +27,7 @@ import type { TepTaiLen } from '../du-an/ho-so.service.js'
 import { KHO_TEP, type KhoTep } from '../kho-tep/kho-tep.js'
 import {
   KET_NOI_NATIVE,
+  LoiNative,
   type KetNoiNative,
   type KetQuaTomTat,
   type NguoiGoi,
@@ -44,7 +45,8 @@ const COT = {
   soKyTuGoc: vanBan.soKyTuGoc,
   soKyTuTomTat: vanBan.soKyTuTomTat,
   daHieuChinh: vanBan.daHieuChinh,
-  nguoiTao: sql<string | null>`ten_tai_khoan(${vanBan.nguoiTao})`,
+  // Văn bản kéo về từ Native: người tạo ghi bên Native; còn lại: tài khoản GDOS.
+  nguoiTao: sql<string | null>`coalesce(${vanBan.nguoiTaoNative}, ten_tai_khoan(${vanBan.nguoiTao}))`,
   donViTen: sql<string>`ten_don_vi(${vanBan.donViId})`,
   createdAt: vanBan.createdAt,
 }
@@ -54,7 +56,7 @@ interface DongDb {
   loai: string
   nguon: string
   tenTep: string
-  kichThuoc: number
+  kichThuoc: number | null
   trangThai: string
   soKyTuGoc: number | null
   soKyTuTomTat: number | null
@@ -89,14 +91,31 @@ const chuyen = (d: DongDb): VanBanDong => ({
 const DANG_CHAY: TrangThaiVanBan[] = ['cho', 'dang-xu-ly']
 /** Mỗi lần xem danh sách chỉ hỏi Native tối đa chừng này văn bản đang chạy. */
 const DONG_BO_TOI_DA = 20
+/** Kéo văn bản từ Native về: tối đa chừng này văn bản mới nhất, mỗi người một lần mỗi phút. */
+const KEO_VE_TOI_DA = 200
+const KEO_VE_CACH_MS = 60_000
+
+const NGUON_NATIVE: Record<string, NguonVanBan> = {
+  QLVB: 'qlvb',
+  CONG_DVC: 'cong-dvc',
+  EMAIL: 'email',
+  OTHER: 'khac',
+  UPLOAD: 'tai-len',
+}
+
+/** Mã bản giả ("gia-…") không có ở Native thật — gửi lại từ tệp gốc thay vì gọi theo mã đó. */
+const laMaGia = (nativeId: string) => nativeId.startsWith('gia-')
 
 /**
- * Xử lý văn bản (ADR-0009): hồ sơ ở GDOS (RLS theo đơn vị), tệp gốc ở kho tệp của
- * GDOS, FOXAI Native chỉ xử lý. Gọi Native NGOÀI giao dịch database — Native chậm
- * không giữ khóa bảng. Native lỗi thì văn bản vẫn lưu, ghi lỗi, gửi lại được.
+ * Xử lý văn bản (ADR-0009): hồ sơ ở GDOS (RLS theo đơn vị), FOXAI Native xử lý. Văn
+ * bản đã có trong tài khoản Native của người dùng được KÉO VỀ hồ sơ GDOS khi họ xem
+ * danh sách (như màn cũ ở gdos.fox.ai.vn). Gọi Native NGOÀI giao dịch database.
  */
 @Injectable()
 export class VanBanService {
+  /** Lần kéo văn bản từ Native gần nhất của từng người. */
+  private readonly keoVeLuc = new Map<string, number>()
+
   constructor(
     @Inject(CoSoDuLieu) private readonly csdl: CoSoDuLieu,
     @Inject(KHO_TEP) private readonly kho: KhoTep,
@@ -107,9 +126,8 @@ export class VanBanService {
     return dbCua(this.csdl)
   }
 
-  /** Người đang dùng + tài khoản Native liên kết (null: chưa liên kết → không gọi Native được). */
+  /** Người đang dùng + liên kết Native của CHÍNH họ (null: chưa liên kết → không gọi Native). */
   private async toi(nd: NguoiDungPhien) {
-    // "Đã liên kết" = có liên kết Native của CHÍNH người này (kho bí mật, RLS chỉ thấy dòng mình).
     const [t] = await trongPhamVi(this.db, nd.nguCanh, (tx) =>
       tx
         .select({
@@ -142,6 +160,7 @@ export class VanBanService {
   }
 
   async danhSach(nd: NguoiDungPhien): Promise<VanBanDong[]> {
+    await this.keoTuNative(nd)
     await this.dongBo(nd)
     const ds = await trongPhamVi(this.db, nd.nguCanh, (tx) =>
       tx.select(COT).from(vanBan).where(isNull(vanBan.deletedAt)).orderBy(desc(vanBan.createdAt)),
@@ -175,6 +194,7 @@ export class VanBanService {
       quyen: {
         xuLy: !!goi && this.native.cheDo !== 'chua' && nd.quyen.has('VAN_BAN.UPDATE'),
         sua: nd.quyen.has('VAN_BAN.UPDATE'),
+        xoa: nd.quyen.has('VAN_BAN.DELETE'),
       },
     }
   }
@@ -218,22 +238,40 @@ export class VanBanService {
     return this.chiTiet(nd, id)
   }
 
-  /** Gửi lại (chưa gửi được) hoặc chạy lại tóm tắt (lỗi, muốn tóm tắt lại). */
+  /**
+   * Gửi lại (chưa gửi được) hoặc tóm tắt lại. Mã bản giả, hoặc Native báo không còn văn
+   * bản (404, 422) → gửi lại từ tệp gốc trong kho GDOS thay vì gọi theo mã cũ.
+   */
   async chayLai(nd: NguoiDungPhien, id: string): Promise<VanBanChiTiet> {
     const vb = await this.mot(nd, id)
     const ai = this.canGoi((await this.toi(nd)).goi)
     if (vb.trangThai === 'dang-xu-ly')
       throw new BadRequestException('AI đang tóm tắt văn bản này — chờ xong đã')
-    if (!vb.nativeId) {
+    const guiLaiTuTep = async () => {
+      if (!vb.khoaTep) throw new BadRequestException('Văn bản không có tệp gốc trong GDOS để gửi lại')
       const noiDung = await docHet(await this.kho.mo(vb.khoaTep))
       await this.gui(
         nd,
         id,
-        { ten: vb.ten, loai: vb.loai, tenTep: vb.tenTep, mime: vb.loaiTep, noiDung, tuDong: true },
+        {
+          ten: vb.ten,
+          loai: vb.loai,
+          tenTep: vb.tenTep,
+          mime: vb.loaiTep ?? 'application/octet-stream',
+          noiDung,
+          tuDong: true,
+        },
         ai,
       )
-    } else {
-      await this.capNhat(nd, id, await this.thu(() => this.native.chayLai(vb.nativeId!, ai)))
+    }
+    if (!vb.nativeId || (laMaGia(vb.nativeId) && this.native.cheDo === 'that')) await guiLaiTuTep()
+    else {
+      try {
+        await this.capNhat(nd, id, await this.native.chayLai(vb.nativeId, ai))
+      } catch (e) {
+        if (e instanceof LoiNative && (e.ma === 404 || e.ma === 422) && vb.khoaTep) await guiLaiTuTep()
+        else await this.capNhat(nd, id, { loi: e instanceof Error ? e.message : String(e) })
+      }
     }
     return this.chiTiet(nd, id)
   }
@@ -249,26 +287,44 @@ export class VanBanService {
         .where(eq(vanBan.id, id)),
     )
     const { goi } = await this.toi(nd)
-    if (vb.nativeId && goi && this.native.cheDo !== 'chua')
+    if (vb.nativeId && !laMaGia(vb.nativeId) && goi && this.native.cheDo !== 'chua')
       await this.native.suaTomTat(vb.nativeId, tomTat, goi).catch(() => undefined)
     return this.chiTiet(nd, id)
   }
 
+  /** Xóa (mềm) ở GDOS và xóa bên Native. Dòng xóa mềm giữ mã Native — lần kéo sau không kéo lại. */
+  async xoa(nd: NguoiDungPhien, id: string): Promise<{ ok: true }> {
+    const vb = await this.mot(nd, id)
+    await trongPhamVi(this.db, nd.nguCanh, (tx) =>
+      tx.update(vanBan).set({ deletedAt: new Date() }).where(eq(vanBan.id, id)),
+    )
+    const { goi } = await this.toi(nd)
+    if (vb.nativeId && !laMaGia(vb.nativeId) && goi && this.native.cheDo !== 'chua')
+      await this.native.xoa(vb.nativeId, goi).catch(() => undefined)
+    return { ok: true }
+  }
+
+  /** Tệp gốc: trong kho GDOS; văn bản kéo về từ Native thì tải từ Native. */
   async moTep(
     nd: NguoiDungPhien,
     id: string,
   ): Promise<{ ten: string; loai: string; kichThuoc: number; noiDung: Readable }> {
     const vb = await this.mot(nd, id)
-    try {
-      return {
-        ten: vb.tenTep,
-        loai: vb.loaiTep,
-        kichThuoc: vb.kichThuoc,
-        noiDung: await this.kho.mo(vb.khoaTep),
+    if (vb.khoaTep) {
+      try {
+        return {
+          ten: vb.tenTep,
+          loai: vb.loaiTep ?? 'application/octet-stream',
+          kichThuoc: vb.kichThuoc ?? 0,
+          noiDung: await this.kho.mo(vb.khoaTep),
+        }
+      } catch {
+        throw new NotFoundException('Tệp không còn trong kho — liên hệ bộ phận kỹ thuật')
       }
-    } catch {
-      throw new NotFoundException('Tệp không còn trong kho — liên hệ bộ phận kỹ thuật')
     }
+    if (!vb.nativeId) throw new NotFoundException('Văn bản không có tệp gốc')
+    const t = await this.native.taiTep(vb.nativeId, this.canGoi((await this.toi(nd)).goi))
+    return { ten: t.ten, loai: t.loai, kichThuoc: t.noiDung.length, noiDung: Readable.from(t.noiDung) }
   }
 
   // ── nội bộ ─────────────────────────────────────────────────────────────
@@ -307,12 +363,60 @@ export class VanBanService {
   }
 
   /**
-   * Hỏi Native trạng thái các văn bản đang chạy — thay mặt NGƯỜI TẠO (Native kiểm quyền
-   * theo tài khoản gửi). Không có Native / người tạo chưa liên kết thì để nguyên.
+   * Kéo văn bản đã có trong tài khoản Native của người này về hồ sơ GDOS (đơn vị của họ).
+   * Mỗi người tối đa một lần mỗi phút. Đã có mã Native trong GDOS (kể cả đã xóa) thì bỏ qua.
    */
+  private async keoTuNative(nd: NguoiDungPhien) {
+    if (this.native.cheDo === 'chua') return
+    const truoc = this.keoVeLuc.get(nd.taiKhoanId)
+    if (truoc && Date.now() - truoc < KEO_VE_CACH_MS) return
+    const { donViId, goi } = await this.toi(nd)
+    if (!goi) return
+    this.keoVeLuc.set(nd.taiKhoanId, Date.now())
+    let ds
+    try {
+      ds = await this.native.dsTomTat(goi, KEO_VE_TOI_DA)
+    } catch {
+      return // Native không trả lời: danh sách vẫn hiện văn bản đã có trong GDOS.
+    }
+    if (ds.length === 0) return
+    await trongPhamVi(this.db, nd.nguCanh, async (tx) => {
+      const co = await tx
+        .select({ nativeId: vanBan.nativeId })
+        .from(vanBan)
+        .where(
+          inArray(
+            vanBan.nativeId,
+            ds.map((d) => d.nativeId),
+          ),
+        )
+      const daCo = new Set(co.map((c) => c.nativeId))
+      const moi = ds.filter((d) => !daCo.has(d.nativeId))
+      if (moi.length === 0) return
+      await tx.insert(vanBan).values(
+        moi.map((d) => ({
+          donViId,
+          ten: d.ten.slice(0, 500),
+          loai: d.loai,
+          nguon: (d.nguon && NGUON_NATIVE[d.nguon]) || 'tai-len',
+          tenTep: d.ten.slice(0, 200),
+          nativeId: d.nativeId,
+          trangThai: d.trangThai,
+          soKyTuGoc: d.soKyTuGoc,
+          soKyTuTomTat: d.soKyTuTomTat,
+          loi: d.loi ?? null,
+          nguoiTao: nd.taiKhoanId,
+          nguoiTaoNative: d.nguoiTao,
+          createdAt: d.taoLuc ? new Date(d.taoLuc) : new Date(),
+          dongBoLuc: new Date(),
+        })),
+      )
+    })
+  }
+
   /**
-   * Hỏi Native trạng thái các văn bản đang chạy — bằng token của NGƯỜI ĐANG XEM (đã
-   * liên kết). Chưa liên kết / chưa nối Native thì để nguyên, người khác xem sẽ cập nhật.
+   * Hỏi Native bằng token của NGƯỜI ĐANG XEM (đã liên kết): văn bản đang chạy; khi mở
+   * một văn bản, cả văn bản đã xong mà GDOS chưa có nội dung (vừa kéo về từ Native).
    */
   private async dongBo(nd: NguoiDungPhien, chiId?: string) {
     if (this.native.cheDo === 'chua') return
@@ -325,14 +429,19 @@ export class VanBanService {
         .where(
           and(
             isNull(vanBan.deletedAt),
-            inArray(vanBan.trangThai, DANG_CHAY),
             sql`${vanBan.nativeId} is not null`,
-            chiId ? eq(vanBan.id, chiId) : undefined,
+            chiId
+              ? and(
+                  eq(vanBan.id, chiId),
+                  or(inArray(vanBan.trangThai, DANG_CHAY), isNull(vanBan.tomTat), isNull(vanBan.noiDungGoc)),
+                )
+              : inArray(vanBan.trangThai, DANG_CHAY),
           ),
         )
         .limit(DONG_BO_TOI_DA),
     )
     for (const v of ds) {
+      if (this.native.cheDo === 'that' && laMaGia(v.nativeId!)) continue
       const kq = await this.thu(() => this.native.docTomTat(v.nativeId!, goi))
       // Đọc lỗi (mạng chập chờn, hết liên kết) không đánh dấu văn bản là lỗi — lần sau đọc lại.
       if (!('nativeId' in kq)) continue

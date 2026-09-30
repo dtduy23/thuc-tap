@@ -54,6 +54,31 @@ export interface KetNoiNative {
   docTomTat(nativeId: string, ai: NguoiGoi): Promise<KetQuaTomTat>
   chayLai(nativeId: string, ai: NguoiGoi): Promise<KetQuaTomTat>
   suaTomTat(nativeId: string, tomTat: string, ai: NguoiGoi): Promise<void>
+  /** Văn bản đã có trong tài khoản Native của người này (mới nhất trước) — kéo về hồ sơ GDOS. */
+  dsTomTat(ai: NguoiGoi, soToiDa: number): Promise<VanBanTrenNative[]>
+  /** Tệp gốc lưu trên Native (văn bản kéo về từ Native không có bản trong kho tệp GDOS). */
+  taiTep(nativeId: string, ai: NguoiGoi): Promise<{ ten: string; loai: string; noiDung: Buffer }>
+  xoa(nativeId: string, ai: NguoiGoi): Promise<void>
+}
+
+/** Một văn bản trong danh sách của Native. */
+export interface VanBanTrenNative extends KetQuaTomTat {
+  ten: string
+  loai: string
+  /** null: tải lên thủ công · QLVB · CONG_DVC · EMAIL · OTHER */
+  nguon: string | null
+  nguoiTao: string | null
+  taoLuc: string | null
+}
+
+/** Lỗi Native trả về kèm mã HTTP — để phân biệt "không còn bản ghi" (404, 422) với lỗi khác. */
+export class LoiNative extends ServiceUnavailableException {
+  constructor(
+    readonly ma: number,
+    thongDiep: string,
+  ) {
+    super(thongDiep)
+  }
 }
 
 export const KET_NOI_NATIVE = Symbol('KET_NOI_NATIVE')
@@ -100,6 +125,15 @@ export class NativeChuaNoi implements KetNoiNative {
     return this.khong()
   }
   suaTomTat(): Promise<void> {
+    return this.khong()
+  }
+  dsTomTat(): Promise<VanBanTrenNative[]> {
+    return this.khong()
+  }
+  taiTep(): Promise<{ ten: string; loai: string; noiDung: Buffer }> {
+    return this.khong()
+  }
+  xoa(): Promise<void> {
     return this.khong()
   }
 }
@@ -153,7 +187,7 @@ export class NativeGia implements KetNoiNative {
   /** Lần đọc đầu sau khi gửi: "đang xử lý"; lần sau: xong — đủ để web thấy trạng thái chạy. */
   docTomTat(nativeId: string): Promise<KetQuaTomTat> {
     const v = this.kho.get(nativeId)
-    if (!v) throw new ServiceUnavailableException('Native không còn bản ghi này')
+    if (!v) return Promise.reject(new LoiNative(404, 'Native không còn bản ghi này'))
     v.lanDoc++
     if (v.trangThai === 'cho') v.trangThai = 'dang-xu-ly'
     else if (v.trangThai === 'dang-xu-ly') {
@@ -167,7 +201,7 @@ export class NativeGia implements KetNoiNative {
 
   chayLai(nativeId: string): Promise<KetQuaTomTat> {
     const v = this.kho.get(nativeId)
-    if (!v) throw new ServiceUnavailableException('Native không còn bản ghi này')
+    if (!v) return Promise.reject(new LoiNative(404, 'Native không còn bản ghi này'))
     Object.assign(v, { trangThai: 'cho', loi: null })
     return Promise.resolve(this.ban(nativeId))
   }
@@ -175,6 +209,26 @@ export class NativeGia implements KetNoiNative {
   suaTomTat(nativeId: string, tomTat: string): Promise<void> {
     const v = this.kho.get(nativeId)
     if (v) Object.assign(v, { tomTat, soKyTuTomTat: tomTat.length, trangThai: 'xong' })
+    return Promise.resolve()
+  }
+
+  /** Bản giả chỉ có văn bản gửi từ GDOS — đã nằm trong hồ sơ GDOS, không có gì để kéo về. */
+  dsTomTat(): Promise<VanBanTrenNative[]> {
+    return Promise.resolve([])
+  }
+
+  taiTep(nativeId: string): Promise<{ ten: string; loai: string; noiDung: Buffer }> {
+    const v = this.kho.get(nativeId)
+    if (!v) return Promise.reject(new LoiNative(404, 'Native không còn bản ghi này'))
+    return Promise.resolve({
+      ten: `${nativeId}.txt`,
+      loai: 'text/plain',
+      noiDung: Buffer.from(v.noiDungGoc ?? ''),
+    })
+  }
+
+  xoa(nativeId: string): Promise<void> {
+    this.kho.delete(nativeId)
     return Promise.resolve()
   }
 
@@ -239,7 +293,8 @@ export class NativeThat implements KetNoiNative {
     })
     if (!res.ok) {
       const than = await res.text().catch(() => '')
-      throw new ServiceUnavailableException(
+      throw new LoiNative(
+        res.status,
         `FOXAI Native trả lỗi ${res.status}${than ? `: ${than.slice(0, 300)}` : ''}`,
       )
     }
@@ -285,7 +340,58 @@ export class NativeThat implements KetNoiNative {
       body: JSON.stringify({ summary_content: tomTat }),
     })
   }
+
+  async dsTomTat(ai: NguoiGoi, soToiDa: number): Promise<VanBanTrenNative[]> {
+    const kq: VanBanTrenNative[] = []
+    // Native trả tối đa 100 dòng mỗi trang.
+    for (let trang = 1; kq.length < soToiDa; trang++) {
+      const r = await this.hoi<{ data: DtoDong[]; total_pages?: number }>(
+        `/summarize?page=${trang}&page_size=${Math.min(100, soToiDa)}`,
+        ai,
+      )
+      kq.push(...r.data.map(tuDtoDong))
+      if (r.data.length === 0 || trang >= (r.total_pages ?? 1)) break
+    }
+    return kq.slice(0, soToiDa)
+  }
+
+  async taiTep(nativeId: string, ai: NguoiGoi) {
+    const res = await this.goi(`${this.diaChi}/api/document/summarize/${encodeURIComponent(nativeId)}/file`, {
+      headers: { Authorization: `Bearer ${await this.token.layToken(ai)}` },
+      signal: AbortSignal.timeout(60_000),
+    })
+    if (!res.ok) throw new LoiNative(res.status, `FOXAI Native trả lỗi ${res.status} khi tải tệp gốc`)
+    const cd = res.headers.get('Content-Disposition') ?? ''
+    const utf8 = /filename*=UTF-8''([^;]+)/i.exec(cd)?.[1]
+    const thuong = /filename="?([^";]+)"?/i.exec(cd)?.[1]
+    return {
+      ten: utf8 ? decodeURIComponent(utf8) : (thuong ?? 'tep-goc'),
+      loai: res.headers.get('Content-Type') ?? 'application/octet-stream',
+      noiDung: Buffer.from(await res.arrayBuffer()),
+    }
+  }
+
+  async xoa(nativeId: string, ai: NguoiGoi) {
+    await this.hoi(`/summarize/${encodeURIComponent(nativeId)}`, ai, { method: 'DELETE' })
+  }
 }
+
+interface DtoDong extends DtoTomTat {
+  document_name: string
+  document_type: string
+  source?: string | null
+  creator_name?: string | null
+  created_at?: string | null
+}
+
+export const tuDtoDong = (d: DtoDong): VanBanTrenNative => ({
+  ...tuDto(d),
+  ten: d.document_name,
+  loai: d.document_type,
+  nguon: d.source ?? null,
+  nguoiTao: d.creator_name ?? null,
+  taoLuc: d.created_at ?? null,
+})
 
 /** Chọn bản cài theo cấu hình. */
 export function taoKetNoiNative(

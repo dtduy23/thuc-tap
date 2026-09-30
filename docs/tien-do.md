@@ -33,6 +33,11 @@
   (anh Toàn chốt). `native/xac-thuc-native.ts` (đăng nhập `/api/auth/*`, mã hóa AES-GCM),
   `native/lien-ket.service.ts` (token theo người, làm mới một lần), bảng `lien_ket_native` (0022/0023),
   Cài đặt cá nhân › Liên kết FOXAI Native. Bật thật: `.env` đặt `NATIVE_URL`, bỏ `NATIVE_GIA`.
+- **Bước C (30/09): màn Tóm tắt văn bản như gdos.fox.ai.vn** — thẻ số liệu, "Thêm văn bản" (hộp thoại), bảng
+  STT + thao tác (xem, sửa, tải tóm tắt .doc, xóa) + lọc chuẩn lưới. Văn bản đã có trong tài khoản Native
+  được KÉO VỀ hồ sơ GDOS khi người liên kết xem danh sách (mỗi phút một lần, tối đa 200; đã xóa thì
+  không kéo lại); mở ra thì lấy nội dung gốc + tóm tắt; tệp gốc tải từ Native (0024: cột tệp được rỗng).
+  Gửi lại văn bản mang mã bản giả / Native báo 404-422 → gửi lại từ tệp gốc. **Đã chạy với Native thật.**
   Tiếp: Văn bản đến, Soạn thảo, Phân công, Mẫu văn bản.
 
 ## Mốc 3 — Dự án (từ PMS)

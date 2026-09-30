@@ -55,3 +55,30 @@ export const truyVanLienKetNative = queryOptions({
 export const lienKetNative = (tenDangNhap: string, matKhau: string) =>
   goiApi<LienKetNativeDong>('/native/lien-ket', { method: 'POST', body: { tenDangNhap, matKhau } })
 export const huyLienKetNative = () => goiApi<LienKetNativeDong>('/native/lien-ket/huy', { method: 'POST' })
+
+export const xoaVanBan = (id: string) => goiApi<{ ok: true }>(`/van-ban/${id}/xoa`, { method: 'POST' })
+
+const thoatHtml = (s: string) =>
+  s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
+
+/** Tải bản tóm tắt ra tệp .doc (Word mở được) — như màn cũ ở gdos.fox.ai.vn. */
+export async function taiTomTatDoc(id: string): Promise<'ok' | 'chua-co'> {
+  const vb = await goiApi<VanBanChiTiet>(`/van-ban/${id}`)
+  if (!vb.tomTat) return 'chua-co'
+  const html =
+    `<html><head><meta charset="utf-8"><title>${thoatHtml(vb.ten)}</title></head>` +
+    `<body style="font-family:'Times New Roman';font-size:13pt">` +
+    `<h2 style="text-align:center">BẢN TÓM TẮT VĂN BẢN</h2>` +
+    `<p><b>Tên văn bản:</b> ${thoatHtml(vb.ten)}<br><b>Loại văn bản:</b> ${thoatHtml(vb.loai)}` +
+    ` &nbsp;|&nbsp; <b>Người tạo:</b> ${thoatHtml(vb.nguoiTao ?? '')}</p><hr>` +
+    `<p>${thoatHtml(vb.tomTat).replace(/\n/g, '<br>')}</p></body></html>`
+  const url = URL.createObjectURL(new Blob(['\ufeff', html], { type: 'application/msword' }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${vb.ten.slice(0, 60).replace(/[\\/:*?"<>|]/g, '')} - Tom tat.doc`
+  document.body.append(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 10_000)
+  return 'ok'
+}

@@ -65,6 +65,13 @@ export class VanBanController {
     return this.dv.suaTomTat(nd, maUuid(id), than)
   }
 
+  @Post(':id/xoa')
+  @HttpCode(200)
+  @CanQuyen('VAN_BAN.DELETE')
+  xoa(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string) {
+    return this.dv.xoa(nd, maUuid(id))
+  }
+
   @Get(':id/tep')
   @CanQuyen('VAN_BAN.READ')
   async tep(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string, @Res() res: Response) {

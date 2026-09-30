@@ -130,9 +130,12 @@ const baoCao = createRoute({
 const vanBan = createRoute({
   getParentRoute: () => portal,
   path: '/van-ban/$id',
+  validateSearch: (s: Record<string, unknown>): { sua?: boolean } =>
+    s.sua === true || s.sua === 'true' ? { sua: true } : {},
   component: function ManVanBan() {
     const { id } = vanBan.useParams()
-    return <TrangVanBan id={id} />
+    const { sua } = vanBan.useSearch()
+    return <TrangVanBan key={id} id={id} moSua={!!sua} />
   },
 })
 
