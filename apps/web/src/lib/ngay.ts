@@ -28,3 +28,7 @@ function ghep(dinhDang: Intl.DateTimeFormat, iso: string, coGio: boolean): strin
 
 export const ngayGio = (iso: string) => ghep(NGAY_GIO, iso, true)
 export const ngay = (iso: string) => ghep(NGAY, iso, false)
+
+/** Ngày nghiệp vụ 'YYYY-MM-DD' → 30/09/2026. Không qua Date — không lệch múi giờ. */
+export const ngayVn = (s: string | null | undefined): string =>
+  s ? `${s.slice(8, 10)}/${s.slice(5, 7)}/${s.slice(0, 4)}` : '—'

@@ -9,6 +9,10 @@ import { lazy, type ComponentType, type LazyExoticComponent } from 'react'
  */
 export const MAN_HINH: Partial<Record<string, LazyExoticComponent<ComponentType>>> = {
   'nk-tat-ca': lazy(() => import('@/man/nhat-ky-ds')),
+  'da-tat-ca': lazy(() => import('@/man/du-an/danh-sach').then((m) => ({ default: m.TatCaDuAn }))),
+  'da-cua-toi': lazy(() => import('@/man/du-an/danh-sach').then((m) => ({ default: m.DuAnCuaToi }))),
+  'da-cho-xac-nhan': lazy(() => import('@/man/du-an/danh-sach').then((m) => ({ default: m.DuAnChoXacNhan }))),
+  'da-tao': lazy(() => import('@/man/du-an/tao')),
   'tk-ds': lazy(() => import('@/man/tai-khoan-ds')),
   'tk-khoa': lazy(() => import('@/man/tai-khoan-khoa')),
   'tk-tao': lazy(() => import('@/man/tai-khoan-tao')),

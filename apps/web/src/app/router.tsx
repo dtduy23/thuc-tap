@@ -7,6 +7,7 @@
  *       ├── /               trang chủ
  *       ├── /doi-mat-khau
  *       ├── /cai-dat        cài đặt cá nhân (tông màu, sáng/tối)
+ *       ├── /du-an/$id      hồ sơ một dự án — các thẻ là trục phạm vi, không lên cây
  *       └── /$chucNang      MỘT route động phủ toàn bộ registry — thêm chức năng
  *                           không phải sửa file này
  */
@@ -24,6 +25,7 @@ import { duongDanNoiBo } from '@/lib/duong-dan'
 import { goiApi, LoiApi } from '@/lib/http'
 import { KHOA_TOI, truyVanToi } from '@/lib/phien'
 import { TrangCaiDat } from '@/trang/cai-dat'
+import { THE_HO_SO, TrangHoSoDuAn, type MaThe } from '@/trang/ho-so-du-an'
 import { TrangChucNang, KhongTimThay } from '@/trang/chuc-nang'
 import { TrangDangNhap } from '@/trang/dang-nhap'
 import { TrangDoiMatKhau } from '@/trang/doi-mat-khau'
@@ -98,6 +100,19 @@ const doiMatKhau = createRoute({
 
 const caiDat = createRoute({ getParentRoute: () => portal, path: '/cai-dat', component: TrangCaiDat })
 
+const hoSoDuAn = createRoute({
+  getParentRoute: () => portal,
+  path: '/du-an/$id',
+  validateSearch: (s: Record<string, unknown>): { the?: MaThe } => ({
+    the: THE_HO_SO.some((t) => t.id === s.the) ? (s.the as MaThe) : undefined,
+  }),
+  component: function ManHoSoDuAn() {
+    const { id } = hoSoDuAn.useParams()
+    const { the } = hoSoDuAn.useSearch()
+    return <TrangHoSoDuAn id={id} the={the ?? 'tong-quan'} />
+  },
+})
+
 const chucNang = createRoute({
   getParentRoute: () => portal,
   path: '/$chucNang',
@@ -107,7 +122,10 @@ const chucNang = createRoute({
   },
 })
 
-const cayRoute = goc.addChildren([dangNhap, portal.addChildren([trangChu, doiMatKhau, caiDat, chucNang])])
+const cayRoute = goc.addChildren([
+  dangNhap,
+  portal.addChildren([trangChu, doiMatKhau, caiDat, hoSoDuAn, chucNang]),
+])
 
 export function taoRouter(queryClient: QueryClient) {
   return createRouter({ routeTree: cayRoute, context: { queryClient }, defaultPreload: 'intent' })

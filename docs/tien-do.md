@@ -4,16 +4,52 @@
 
 ## Các mốc
 
-| Mốc   | Nội dung                                                                             | Trạng thái                                         |
-| ----- | ------------------------------------------------------------------------------------ | -------------------------------------------------- |
-| **0** | Khởi tạo repo, CI, ADR, khung dùng chung                                             | ✅ Xong — **CI/CD giao kỹ thuật FOXAI** (xem dưới) |
-| **1** | Nền móng: tài khoản, đơn vị, vai trò & quyền, RLS, nhật ký, khung portal + cây 4 cấp | ✅ Xong — nhánh `moc-1-nen-mong`, chưa đẩy         |
-| **2** | Đưa lên máy thử (image, nginx, CI/CD)                                                | Chưa bắt đầu                                       |
-| **3** | Module Dự án (từ PMS)                                                                | Chưa bắt đầu                                       |
-| **4** | Module Khiếu nại đất đai                                                             | Chưa bắt đầu                                       |
-| **5** | Nối FOXAI Native (văn bản, tóm tắt, hỏi đáp)                                         | Chưa bắt đầu — **chờ đội Native**                  |
-| **6** | Điều hành: dashboard, báo cáo                                                        | Chưa bắt đầu                                       |
-| **7** | Thiết lập: bật/tắt module theo đơn vị, cảnh báo, luồng duyệt                         | Chưa bắt đầu                                       |
+| Mốc   | Nội dung                                                                             | Trạng thái                                                   |
+| ----- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| **0** | Khởi tạo repo, CI, ADR, khung dùng chung                                             | ✅ Xong — **CI/CD giao kỹ thuật FOXAI** (xem dưới)           |
+| **1** | Nền móng: tài khoản, đơn vị, vai trò & quyền, RLS, nhật ký, khung portal + cây 4 cấp | ✅ Xong — nhánh `moc-1-nen-mong`, chưa đẩy                   |
+| **2** | Đưa lên máy thử (image, nginx, CI/CD)                                                | Chưa bắt đầu                                                 |
+| **3** | Module Dự án (từ PMS)                                                                | 🔄 Phiên 2/6 — tạo dự án, checklist, nhà thầu gửi / xác nhận |
+| **4** | Module Khiếu nại đất đai                                                             | Chưa bắt đầu                                                 |
+| **5** | Nối FOXAI Native (văn bản, tóm tắt, hỏi đáp)                                         | Chưa bắt đầu — **chờ đội Native**                            |
+| **6** | Điều hành: dashboard, báo cáo                                                        | Chưa bắt đầu                                                 |
+| **7** | Thiết lập: bật/tắt module theo đơn vị, cảnh báo, luồng duyệt                         | Chưa bắt đầu                                                 |
+
+## Mốc 3 — Dự án (từ PMS)
+
+Người dùng chốt: làm **đủ chức năng PMS**, **không** chuyển dữ liệu dự án (tự nạp bằng Nhập Excel).
+Tổ chức theo ADR-0007 (một chủ — nhiều lối vào) và ADR-0008 (mô hình dữ liệu).
+
+| Phiên | Việc                                                                                                                       | Trạng thái    |
+| ----- | -------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| **1** | Lược đồ, RLS, 6 quy trình mẫu NĐ 45, tính hạn dùng chung, loại đơn vị mở rộng                                              | ✅ 30/09/2026 |
+| **2** | API + màn: danh sách (3 bộ lọc), tạo từ quy trình mẫu, hồ sơ (Tổng quan · Checklist · Thành viên), nhà thầu gửi → xác nhận | ✅ 30/09/2026 |
+| 3     | Kế hoạch & điều chỉnh (bước nháp, chốt kế hoạch, phiên bản), thêm/xóa bước tùy biến, Gantt                                 |               |
+| 4     | Văn bản (MinIO) · Kinh phí & giải ngân · Vướng mắc · thẻ Nhật ký                                                           |               |
+| 5     | Đóng góp theo ADR-0007: báo cáo (Biểu 01/02/03, BC35), chỉ số KPI, cảnh báo, việc của tôi · Đôn đốc                        |               |
+| 6     | Nhập / xuất Excel · giám sát theo lĩnh vực · màn quản lý Danh mục nghiệp vụ, Quy trình mẫu                                 |               |
+
+### Phiên 1–2 (30/09/2026)
+
+**Đã làm**
+
+- Chủ đầu tư là đơn vị (RLS tự giới hạn). Nhà thầu, tư vấn là đơn vị doanh nghiệp + thành viên dự án,
+  chỉ gửi cập nhật qua hàm `buoc_gui_cap_nhat` — database chặn việc tự đánh dấu xong.
+- Tạo dự án chép quy trình mẫu, tính hạn nối chuỗi (giữ công thức PMS), mã tự sinh `DA-năm-số`.
+- Bước: hoàn thành · bỏ hoàn thành · bỏ qua có lý do · khôi phục · sửa số ngày / hạn ghi đè (hạn
+  các bước sau dời theo).
+- Quyền trên từng dự án = quyền vai ∩ vị trí: chủ đầu tư sửa; lãnh đạo đơn vị xác nhận; thành viên
+  ngoài đơn vị chỉ gửi.
+- Danh bạ tài khoản + hàm lấy tên qua ranh giới RLS: chủ đầu tư cấp xã chọn được nhà thầu; nhà thầu
+  thấy tên chủ đầu tư.
+- Test: 14 bảo mật database + 14 đầu cuối. **Đã kiểm trên trình duyệt**: tạo dự án 53 bước, xem
+  tổng quan, ghi nhận bước.
+
+**Khác PMS, có lý do**
+
+- Cập nhật của nhà thầu do chủ đầu tư **hoặc lãnh đạo đơn vị** xác nhận (PMS: Sở / chủ đầu tư).
+- Cột "văn bản mẫu" của quy trình được ghi vào ghi chú của bước; ô số văn bản để trống cho đơn vị
+  điền số thật.
 
 ## Mốc 1 — Nền móng
 
