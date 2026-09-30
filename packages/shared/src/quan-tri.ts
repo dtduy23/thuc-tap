@@ -44,6 +44,8 @@ export interface TaiKhoanDong {
   phaiDoiMatKhau: boolean
   taoLuc: string
   phanCong: PhanCong[]
+  /** Lĩnh vực được giám sát: XEM mọi dự án của lĩnh vực đó ở mọi đơn vị, không sửa. */
+  giamSatLinhVuc: { id: string; ten: string }[]
 }
 
 /** Trả MỘT lần khi tạo tài khoản / đặt lại mật khẩu — không lưu, không xem lại được. */

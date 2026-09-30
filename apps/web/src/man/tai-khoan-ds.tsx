@@ -1,10 +1,12 @@
 import type { PhanCong, TaiKhoanDong } from '@gdos/shared'
-import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { useMemo, useState, type FormEvent } from 'react'
+import { truyVanDanhMuc } from '@/lib/du-an'
 import { lamMoiPhienNgay, LoiApi } from '@/lib/http'
 import { ngay } from '@/lib/ngay'
 import { KHOA_TOI, truyVanToi } from '@/lib/phien'
 import {
+  datGiamSat,
   datLaiMatKhau,
   datPhanCong,
   KHOA_TAI_KHOAN,
@@ -92,6 +94,11 @@ export default function TaiKhoanDs({ chiKhoa = false }: { chiKhoa?: boolean }) {
                       {tomTatPhanCong(p)}
                     </Chip>
                   ))}
+                  {tk.giamSatLinhVuc.map((l) => (
+                    <Chip key={l.id} mau="xam">
+                      Giám sát {l.ten}
+                    </Chip>
+                  ))}
                   {!tk.laQuanTri && tk.phanCong.length === 0 && (
                     <span className="text-faint">Chưa phân công</span>
                   )}
@@ -129,6 +136,8 @@ function ChiTietTaiKhoan({ tk, dong }: { tk: TaiKhoanDong; dong: () => void }) {
   const [nativeUserId, datNative] = useState(tk.nativeUserId ?? '')
   const [laQuanTri, datLaQuanTri] = useState(tk.laQuanTri)
   const [pc, datPc] = useState<PhanCong[]>(tk.phanCong)
+  const [gs, datGs] = useState<string[]>(tk.giamSatLinhVuc.map((l) => l.id))
+  const { data: linhVuc = [] } = useQuery(truyVanDanhMuc('linh-vuc'))
   const [thongBao, datThongBao] = useState<{ ok: boolean; cau: string }>()
   const [matKhauTam, datMatKhauTam] = useState<string>()
 
@@ -150,6 +159,11 @@ function ChiTietTaiKhoan({ tk, dong }: { tk: TaiKhoanDong; dong: () => void }) {
   const luuPhanCong = useMutation({
     mutationFn: () => datPhanCong(tk.id, pc),
     onSuccess: (moi) => xong(moi, 'Đã lưu phân công. Người dùng thấy thay đổi trong tối đa 15 phút.'),
+    onError: loi,
+  })
+  const luuGiamSat = useMutation({
+    mutationFn: () => datGiamSat(tk.id, gs),
+    onSuccess: (moi) => xong(moi, 'Đã lưu lĩnh vực giám sát.'),
     onError: loi,
   })
   const dangKhoa = tk.trangThai === 'khoa' || !!tk.khoaTamDen
@@ -256,6 +270,24 @@ function ChiTietTaiKhoan({ tk, dong }: { tk: TaiKhoanDong; dong: () => void }) {
             </Nut>
             <Nut onClick={dong}>Đóng</Nut>
           </div>
+
+          <h3 className="mt-5 mb-1 text-[13px] font-semibold">Giám sát theo lĩnh vực</h3>
+          <p className="mt-0 mb-2 text-[12px] text-faint">
+            Xem (không sửa) mọi dự án thuộc lĩnh vực đã chọn ở mọi đơn vị — vd Sở chuyên ngành theo dõi dự án
+            của các xã.
+          </p>
+          {linhVuc.map((l) => (
+            <ODanhDau
+              key={l.id}
+              id={`gs-${tk.id}-${l.id}`}
+              nhan={l.ten}
+              checked={gs.includes(l.id)}
+              onChange={(e) => datGs((c) => (e.target.checked ? [...c, l.id] : c.filter((x) => x !== l.id)))}
+            />
+          ))}
+          <Nut disabled={luuGiamSat.isPending} onClick={() => luuGiamSat.mutate()}>
+            {luuGiamSat.isPending ? 'Đang lưu…' : 'Lưu lĩnh vực giám sát'}
+          </Nut>
         </div>
       </div>
     </The>

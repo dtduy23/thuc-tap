@@ -38,6 +38,9 @@ export const suaTaiKhoan = (id: string, dl: { hoTen?: string; laQuanTri?: boolea
 export const datPhanCong = (id: string, phanCong: PhanCong[]) =>
   goiApi<TaiKhoanDong>(`/tai-khoan/${id}/phan-cong`, { method: 'PUT', body: { phanCong } })
 
+export const datGiamSat = (id: string, linhVucIds: string[]) =>
+  goiApi<TaiKhoanDong>(`/tai-khoan/${id}/giam-sat`, { method: 'PUT', body: { linhVucIds } })
+
 export const khoaTaiKhoan = (id: string, khoa: boolean) =>
   goiApi<TaiKhoanDong>(`/tai-khoan/${id}/${khoa ? 'khoa' : 'mo-khoa'}`, { method: 'POST' })
 

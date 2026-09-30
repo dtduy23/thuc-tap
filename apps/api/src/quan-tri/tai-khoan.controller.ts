@@ -31,6 +31,13 @@ export class TaiKhoanController {
     return this.dv.datPhanCong(nd, maUuid(id), than)
   }
 
+  /** Giám sát theo lĩnh vực — một dạng phân công phạm vi XEM, nên cùng quyền ASSIGN. */
+  @Put(':id/giam-sat')
+  @CanQuyen('QT_TAI_KHOAN.ASSIGN')
+  datGiamSat(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string, @Body() than: unknown) {
+    return this.dv.datGiamSat(nd, maUuid(id), than)
+  }
+
   @Post(':id/khoa')
   @CanQuyen('QT_TAI_KHOAN.UPDATE')
   @HttpCode(200)

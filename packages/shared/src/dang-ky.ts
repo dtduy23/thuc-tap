@@ -239,7 +239,6 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'danh-muc',
     maQuyen: 'DM_NGHIEP_VU',
     nguon: 'db',
-    phac: true,
     mo: 'Do GDOS sở hữu, sửa được. Chỉ lên đây khi có TỪ HAI nhóm nghiệp vụ dùng tới.',
     con: [
       { id: 'dm-linh-vuc', nhan: 'Lĩnh vực' },
@@ -389,12 +388,15 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'qt-cau-hinh',
     maQuyen: 'QT_KHAI_BAO',
     nguon: 'db',
-    phac: true,
     mo: 'Bật/tắt và đổi nhãn module theo từng khách hàng — không tách nhánh mã.',
     con: [
-      { id: 'kb-cay', nhan: 'Cây phân hệ' },
-      { id: 'kb-nhan', nhan: 'Nhãn theo khách hàng' },
-      { id: 'kb-tham-so', nhan: 'Tham số nghiệp vụ' },
+      { id: 'kb-cay', nhan: 'Cây phân hệ', phac: true },
+      { id: 'kb-nhan', nhan: 'Nhãn theo khách hàng', phac: true },
+      {
+        id: 'kb-tham-so',
+        nhan: 'Tham số nghiệp vụ',
+        mo: 'Giá trị chỉ MỘT nghiệp vụ dùng (vd nguồn vốn của Dự án) — hai nghiệp vụ trở lên dùng thì lên Danh mục.',
+      },
     ],
   },
   {

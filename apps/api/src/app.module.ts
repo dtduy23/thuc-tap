@@ -3,6 +3,8 @@ import { APP_GUARD } from '@nestjs/core'
 import { CAU_HINH, docCauHinh, type CauHinh } from './cau-hinh.js'
 import { CoSoDuLieu } from './db/co-so-du-lieu.js'
 import { DanhMucController } from './danh-muc/danh-muc.controller.js'
+import { QuanLyDanhMucController } from './danh-muc/quan-ly.controller.js'
+import { QuanLyDanhMucService } from './danh-muc/quan-ly.service.js'
 import { DuAnController } from './du-an/du-an.controller.js'
 import { DuAnService } from './du-an/du-an.service.js'
 import { DongGopDuAnService } from './du-an/dong-gop.service.js'
@@ -37,6 +39,7 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     HoSoDuAnController,
     XuyenSuotController,
     DanhMucController,
+    QuanLyDanhMucController,
   ],
   providers: [
     { provide: CAU_HINH, useFactory: () => docCauHinh() },
@@ -50,6 +53,7 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     HoSoDuAnService,
     DongGopDuAnService,
     NhapDuAnService,
+    QuanLyDanhMucService,
     // Nguồn đóng góp cho nhóm xuyên suốt (ADR-0007). Module nghiệp vụ mới: thêm vào đây.
     {
       provide: NGUON_DONG_GOP,

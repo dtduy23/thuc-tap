@@ -5,7 +5,7 @@ import { randomInt, randomUUID } from 'node:crypto'
 import { chuoi, chuoiHoacRong, chuoiTuyChon, coKhong, mang, maUuid } from '../chung/kiem-than.js'
 import { CoSoDuLieu, dbCua } from '../db/co-so-du-lieu.js'
 import { maLoiPg, trongPhamVi, TRUNG_KHOA, type GiaoDich } from '../db/pham-vi.js'
-import { donVi, phanCong, taiKhoan } from '../db/schema/index.js'
+import { danhMucGiaTri, donVi, giamSatLinhVuc, phanCong, taiKhoan } from '../db/schema/index.js'
 import type { NguoiDungPhien } from '../xac-thuc/bao-ve.js'
 import { bamMatKhau, kiemTraMatKhauMoi } from '../xac-thuc/mat-khau.js'
 import { ThietLapService } from '../thiet-lap/thiet-lap.service.js'
@@ -126,6 +126,49 @@ export class TaiKhoanService {
     })
   }
 
+  /**
+   * Giám sát theo lĩnh vực: thay toàn bộ danh sách. Chỉ cho XEM dự án của lĩnh vực ở
+   * mọi đơn vị — database chặn ghi (RLS 0018), service không phải kiểm thêm.
+   */
+  async datGiamSat(nd: NguoiDungPhien, id: string, than: unknown): Promise<TaiKhoanDong> {
+    const ids = [...new Set(mang(than, 'linhVucIds', 100).map((x) => maUuid(x, 'linhVucIds')))]
+    return trongPhamVi(this.db, nd.nguCanh, async (tx) => {
+      const tk = await motTaiKhoan(tx, id)
+      if (ids.length) {
+        const lv = await tx
+          .select({ id: danhMucGiaTri.id })
+          .from(danhMucGiaTri)
+          .where(
+            and(
+              inArray(danhMucGiaTri.id, ids),
+              eq(danhMucGiaTri.loai, 'linh-vuc'),
+              isNull(danhMucGiaTri.deletedAt),
+            ),
+          )
+        if (lv.length !== ids.length) throw new BadRequestException('Có lĩnh vực không tồn tại')
+      }
+      const cu = await tx
+        .select({ id: giamSatLinhVuc.id, linhVucId: giamSatLinhVuc.linhVucId })
+        .from(giamSatLinhVuc)
+        .where(and(eq(giamSatLinhVuc.taiKhoanId, id), isNull(giamSatLinhVuc.deletedAt)))
+      const bo = cu.filter((c) => !ids.includes(c.linhVucId)).map((c) => c.id)
+      if (bo.length)
+        await tx.update(giamSatLinhVuc).set({ deletedAt: new Date() }).where(inArray(giamSatLinhVuc.id, bo))
+      const them = ids.filter((l) => !cu.some((c) => c.linhVucId === l))
+      if (them.length)
+        await tx.insert(giamSatLinhVuc).values(
+          // don_vi_id: trigger đặt lại theo đơn vị của tài khoản — ghi cho rõ.
+          them.map((linhVucId) => ({
+            taiKhoanId: id,
+            linhVucId,
+            donViId: tk.donViId,
+            nguoiTao: nd.taiKhoanId,
+          })),
+        )
+      return motTaiKhoan(tx, id)
+    })
+  }
+
   /** Khóa: thu hồi MỌI phiên ngay; vé đang cầm hết hạn trong tối đa 15 phút. */
   khoa(nd: NguoiDungPhien, id: string): Promise<TaiKhoanDong> {
     if (id === nd.taiKhoanId) throw new BadRequestException('Không tự khóa tài khoản của chính mình')
@@ -196,6 +239,13 @@ async function docTaiKhoan(tx: GiaoDich, chiId?: string): Promise<TaiKhoanDong[]
     .where(and(isNull(phanCong.deletedAt), inArray(phanCong.taiKhoanId, ids)))
     .orderBy(asc(phanCong.vai))
 
+  const gs = await tx
+    .select({ taiKhoanId: giamSatLinhVuc.taiKhoanId, id: danhMucGiaTri.id, ten: danhMucGiaTri.ten })
+    .from(giamSatLinhVuc)
+    .innerJoin(danhMucGiaTri, eq(danhMucGiaTri.id, giamSatLinhVuc.linhVucId))
+    .where(and(isNull(giamSatLinhVuc.deletedAt), inArray(giamSatLinhVuc.taiKhoanId, ids)))
+    .orderBy(asc(danhMucGiaTri.thuTu))
+
   const bayGio = new Date()
   return ds.map(({ khoaDen, createdAt, trangThai, ...d }) => ({
     ...d,
@@ -205,6 +255,7 @@ async function docTaiKhoan(tx: GiaoDich, chiId?: string): Promise<TaiKhoanDong[]
     phanCong: pcs
       .filter((p) => p.taiKhoanId === d.id)
       .map((p) => ({ vai: p.vai as PhanCong['vai'], phamVi: p.phamVi ?? 'tat-ca' })),
+    giamSatLinhVuc: gs.filter((g) => g.taiKhoanId === d.id).map(({ id, ten }) => ({ id, ten })),
   }))
 }
 

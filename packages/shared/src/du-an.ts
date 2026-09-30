@@ -557,3 +557,34 @@ export interface KetQuaNhapDuAn {
 
 /** Tối đa số dòng một lần nhập — nhập nhiều hơn thì chia tệp. */
 export const SO_DONG_NHAP_TOI_DA = 500
+
+// ── Quản lý danh mục, quy trình mẫu ─────────────────────────────────────────
+
+/** Loại danh mục → module quản lý (mã quyền). Nguồn vốn chỉ Dự án dùng → tham số của Tầng 2. */
+export const QUYEN_DANH_MUC: Record<GiaTriDanhMuc['loai'], string> = {
+  'linh-vuc': 'DM_NGHIEP_VU',
+  'loai-van-ban': 'DM_NGHIEP_VU',
+  'nguon-von': 'QT_KHAI_BAO',
+}
+
+export interface DongDanhMucQuanLy extends GiaTriDanhMuc {
+  thuTu: number
+  /** Số chỗ đang dùng trên TOÀN hệ thống — > 0 thì không xóa được. */
+  soDung: number
+}
+
+export interface DanhMucQuanLy {
+  /** Người xem sửa được không: có quyền VÀ ở đơn vị gốc (danh mục dùng chung toàn hệ thống). */
+  suaDuoc: boolean
+  ds: DongDanhMucQuanLy[]
+}
+
+export interface QuyTrinhMauChiTiet extends QuyTrinhMauDong {
+  buoc: BuocMau[]
+  /** Số dự án đang theo quy trình này. */
+  soDung: number
+  suaDuoc: boolean
+}
+
+/** Mã quy trình / mã danh mục: chữ thường không dấu, số, gạch nối. */
+export const MA_DANH_MUC = /^[a-z0-9][a-z0-9-]{0,58}[a-z0-9]$/
