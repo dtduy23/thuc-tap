@@ -1,5 +1,6 @@
 export * from './cau-hinh.js'
 export * from './dang-ky.js'
+export * from './du-an.js'
 export * from './phan-he.js'
 export * from './quan-tri.js'
 export * from './vai-tro.js'

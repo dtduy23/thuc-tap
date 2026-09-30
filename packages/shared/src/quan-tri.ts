@@ -4,8 +4,21 @@
  */
 import type { PhanCong } from './vai-tro.js'
 
-export const CAP_DON_VI = { tinh: 'Tỉnh', xa: 'Xã' } as const
+/**
+ * Loại đơn vị. Chủ đầu tư là đơn vị (sở/ngành, cơ quan Đảng, xã…); nhà thầu, tư vấn
+ * là "doanh nghiệp" — có tài khoản, nhưng chỉ thấy dự án mình là thành viên (ADR-0008).
+ */
+export const CAP_DON_VI = {
+  tinh: 'Tỉnh',
+  'so-nganh': 'Sở, ban, ngành',
+  'co-quan-dang': 'Cơ quan Đảng',
+  xa: 'Xã',
+  'doanh-nghiep': 'Doanh nghiệp',
+} as const
 export type CapDonVi = keyof typeof CAP_DON_VI
+
+/** Loại đơn vị thêm được dưới một tỉnh. Tỉnh (đơn vị gốc) chỉ tạo bằng lệnh khởi tạo. */
+export const CAP_DUOI_TINH: readonly CapDonVi[] = ['so-nganh', 'co-quan-dang', 'xa', 'doanh-nghiep']
 
 export interface DonViDong {
   id: string
@@ -65,6 +78,11 @@ export const TEN_BANG: Record<string, string> = {
   tai_khoan: 'Tài khoản',
   phan_cong: 'Phân công',
   cau_hinh: 'Cấu hình hệ thống',
+  du_an: 'Dự án',
+  du_an_buoc: 'Bước dự án',
+  du_an_thanh_vien: 'Thành viên dự án',
+  danh_muc_gia_tri: 'Danh mục',
+  quy_trinh_mau: 'Quy trình mẫu',
 }
 
 export const TEN_HANH_DONG_NHAT_KY: Record<string, string> = {

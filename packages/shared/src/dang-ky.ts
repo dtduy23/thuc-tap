@@ -24,10 +24,10 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     maQuyen: 'TONG_QUAN',
     nguon: 'db',
     phac: true,
-    mo: 'Bức tranh toàn danh mục: tiến độ, cảnh báo, giải ngân.',
+    mo: 'Bức tranh chung của mọi nghiệp vụ: tiến độ, cảnh báo, giải ngân. Mỗi nghiệp vụ góp thẻ số liệu của mình (ADR-0007).',
     con: [
-      { id: 'tq-toan', nhan: 'Toàn danh mục' },
-      { id: 'tq-cdt', nhan: 'Theo chủ đầu tư' },
+      { id: 'tq-toan', nhan: 'Toàn cảnh' },
+      { id: 'tq-don-vi', nhan: 'Theo đơn vị' },
       { id: 'tq-lv', nhan: 'Theo lĩnh vực' },
     ],
   },
@@ -38,11 +38,11 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     maQuyen: 'BAO_CAO',
     nguon: 'db',
     phac: true,
-    mo: 'Báo cáo định kỳ và theo biểu mẫu.',
+    mo: 'Trung tâm báo cáo của mọi nghiệp vụ. Báo cáo do module nghiệp vụ khai báo một lần, hiện cả ở đây lẫn trong module (ADR-0007).',
     con: [
+      { id: 'bc-tat-ca', nhan: 'Tất cả báo cáo' },
       { id: 'bc-dinh-ky', nhan: 'Báo cáo định kỳ' },
-      { id: 'bc-bc35', nhan: 'Báo cáo BC35' },
-      { id: 'bc-excel', nhan: 'Xuất danh mục Excel', hanhDong: 'EXPORT' },
+      { id: 'bc-xuat', nhan: 'Xuất dữ liệu', hanhDong: 'EXPORT' },
     ],
   },
   {
@@ -54,8 +54,8 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     phac: true,
     mo: 'KPI 100 điểm: đúng hạn 40 · độ trễ 25 · điều chỉnh kế hoạch 15 · giải ngân 20 → A/B/C/D.',
     con: [
-      { id: 'bcs-kpi', nhan: 'KPI dự án' },
-      { id: 'bcs-xep-hang', nhan: 'Xếp hạng chủ đầu tư' },
+      { id: 'bcs-tat-ca', nhan: 'Tất cả chỉ số' },
+      { id: 'bcs-xep-hang', nhan: 'Xếp hạng đơn vị' },
     ],
   },
 
@@ -80,6 +80,7 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
         hanhDong: 'ASSIGN',
         mo: 'Gửi nhắc việc quá hạn. Chỉ cơ quan quản lý (Điều 36 NĐ 45).',
       },
+      { id: 'da-bao-cao', nhan: 'Báo cáo dự án' },
     ],
   },
   {
@@ -178,10 +179,11 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     maQuyen: 'QUA_HAN',
     nguon: 'db',
     phac: true,
-    mo: 'Cờ hạn luật định gắn tự động: thẩm định ≤ 20 ngày, phê duyệt ≤ 3 ngày (Điều 34 NĐ 45).',
+    mo: 'Cảnh báo đang mở của mọi nghiệp vụ. Quy tắc (hạn luật định, ngưỡng) đặt ở Tầng 2 › Quy tắc cảnh báo.',
     con: [
       { id: 'qh-sla', nhan: 'Đã quá hạn' },
       { id: 'qh-sap', nhan: 'Sắp đến hạn' },
+      { id: 'qh-lau', nhan: 'Lâu không cập nhật' },
     ],
   },
 
@@ -218,7 +220,7 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nguon: 'db',
     mo: 'Ba vai cố định (ADR-0006) và ma trận quyền sinh ra từ đó. Chỉ xem — vai đổi bằng ADR, không đổi bằng màn hình.',
     con: [
-      { id: 'vt-ds', nhan: 'Danh sách vai trò', phac: true },
+      { id: 'vt-tra-cuu', nhan: 'Tra cứu phân công', phac: true },
       { id: 'vt-ma-tran', nhan: 'Ma trận quyền' },
     ],
   },
@@ -229,7 +231,10 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     maQuyen: 'QT_DANG_NHAP',
     nguon: 'db',
     mo: 'Khóa tạm khi nhập sai, hạn vé và phiên, độ dài mật khẩu. Chỉ quản trị ở đơn vị gốc được sửa.',
-    con: [{ id: 'ch-bao-mat', nhan: 'Đăng nhập & mật khẩu' }],
+    con: [
+      { id: 'ch-bao-mat', nhan: 'Mật khẩu & phiên' },
+      { id: 'dn-sso', nhan: 'Đăng nhập một lần (SSO)', phac: true },
+    ],
   },
   {
     id: 'qt-phe-duyet',
@@ -240,23 +245,23 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     phac: true,
     mo: 'Định nghĩa luồng (quy tắc) — còn việc CHỜ DUYỆT (thể hiện) nằm ở "Việc của tôi".',
     con: [
-      { id: 'pd-ds', nhan: 'Luồng đang dùng' },
+      { id: 'pd-ds', nhan: 'Luồng theo nghiệp vụ' },
       { id: 'pd-them', nhan: 'Thêm luồng mới', hanhDong: 'CREATE' },
     ],
   },
 
   // ── Kết nối — hệ thống nói chuyện với bên ngoài qua đâu ────────────────
   {
-    id: 'qt-native',
-    nhan: 'Nền tảng Native',
+    id: 'qt-dich-vu',
+    nhan: 'Dịch vụ nền tảng',
     nhom: 'qt-ket-noi',
-    maQuyen: 'QT_NATIVE',
+    maQuyen: 'QT_DICH_VU',
     nguon: 'native',
     phac: true,
-    mo: 'FOXAI Native chỉ để gọi API. Dữ liệu nghiệp vụ nằm ở Postgres của GDOS.',
+    mo: 'Các hệ thống GDOS gọi tới: FOXAI Native trước tiên, sau là trục liên thông, Cổng dịch vụ công… Dữ liệu nghiệp vụ vẫn ở Postgres của GDOS.',
     con: [
-      { id: 'kn-dia-chi', nhan: 'Địa chỉ & kiểm tra' },
-      { id: 'kn-dich-vu', nhan: 'Trạng thái dịch vụ' },
+      { id: 'kn-ds', nhan: 'Danh sách kết nối' },
+      { id: 'kn-kiem-tra', nhan: 'Kiểm tra & trạng thái' },
     ],
   },
   {
@@ -300,6 +305,7 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     con: [
       { id: 'kb-cay', nhan: 'Cây phân hệ' },
       { id: 'kb-nhan', nhan: 'Nhãn theo khách hàng' },
+      { id: 'kb-tham-so', nhan: 'Tham số nghiệp vụ' },
     ],
   },
   {
@@ -323,7 +329,7 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     phac: true,
     mo: 'QUY TẮC cảnh báo. Còn cảnh báo ĐANG MỞ nằm ở Giám sát & Lưu vết.',
     con: [
-      { id: 'cb-sla', nhan: 'Hạn luật định (SLA)' },
+      { id: 'cb-sla', nhan: 'Hạn & ngưỡng cảnh báo' },
       { id: 'cb-kenh', nhan: 'Kênh gửi thông báo' },
     ],
   },
@@ -350,7 +356,9 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     phac: true,
     mo: 'Sức khỏe hệ thống — người xem là kỹ thuật, không phải thanh tra.',
     con: [
+      { id: 'vh-suc-khoe', nhan: 'Sức khỏe hệ thống' },
       { id: 'vh-hang-doi', nhan: 'Hàng đợi xử lý' },
+      { id: 'vh-tep', nhan: 'Lưu trữ tệp' },
       { id: 'vh-nhat-ky', nhan: 'Nhật ký hệ thống' },
     ],
   },

@@ -1,4 +1,4 @@
-import { CAP_DON_VI, type DonViDong } from '@gdos/shared'
+import { CAP_DON_VI, CAP_DUOI_TINH, type CapDonVi, type DonViDong } from '@gdos/shared'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { lamMoiPhienNgay, LoiApi } from '@/lib/http'
@@ -36,7 +36,7 @@ export default function DonViDs() {
     <>
       {thongBao && <ThongBao kieu={thongBao.ok ? 'ok' : 'loi'}>{thongBao.cau}</ThongBao>}
       {coTao && dsTinh.length > 0 && (
-        <ThemXa
+        <ThemDonVi
           dsTinh={dsTinh}
           xong={async (ten) => {
             // Xã mới chưa nằm trong vé đang cầm — làm mới để thấy và tạo được tài khoản cho nó.
@@ -102,21 +102,23 @@ export default function DonViDs() {
         </tbody>
       </KhungBang>
       <p className="mt-2 text-[12px] text-faint">
-        Tài khoản cấp tỉnh thấy dữ liệu của tỉnh và mọi xã trực thuộc; tài khoản cấp xã chỉ thấy xã mình. Đơn
-        vị gốc (tỉnh) tạo bằng lệnh khởi tạo trên máy chủ.
+        Tài khoản cấp tỉnh thấy dữ liệu của tỉnh và mọi đơn vị trực thuộc; tài khoản ở một đơn vị chỉ thấy đơn
+        vị mình. Chủ đầu tư là một đơn vị; nhà thầu, tư vấn là "doanh nghiệp" — chỉ thấy dự án mình tham gia.
+        Đơn vị gốc (tỉnh) tạo bằng lệnh khởi tạo trên máy chủ.
       </p>
     </>
   )
 }
 
-function ThemXa({ dsTinh, xong }: { dsTinh: DonViDong[]; xong: (ten: string) => Promise<void> }) {
+function ThemDonVi({ dsTinh, xong }: { dsTinh: DonViDong[]; xong: (ten: string) => Promise<void> }) {
   const [chaId, datChaId] = useState(dsTinh[0]!.id)
+  const [cap, datCap] = useState<CapDonVi>('xa')
   const [ma, datMa] = useState('')
   const [ten, datTen] = useState('')
   const [loi, datLoi] = useState<string>()
 
   const tao = useMutation({
-    mutationFn: () => taoDonVi({ chaId, ma: ma.trim(), ten: ten.trim() }),
+    mutationFn: () => taoDonVi({ chaId, cap, ma: ma.trim(), ten: ten.trim() }),
     onSuccess: async () => {
       const daTao = ten.trim()
       datMa('')
@@ -133,13 +135,20 @@ function ThemXa({ dsTinh, xong }: { dsTinh: DonViDong[]; xong: (ten: string) => 
   }
 
   return (
-    <The tieuDe="Thêm xã">
+    <The tieuDe="Thêm đơn vị">
       {loi && <ThongBao kieu="loi">{loi}</ThongBao>}
-      <form onSubmit={gui} className="grid items-end gap-x-3 sm:grid-cols-[1fr_140px_1fr_auto]">
+      <form onSubmit={gui} className="grid items-end gap-x-3 sm:grid-cols-[1fr_1fr_130px_1fr_auto]">
         <OChon id="dv-cha" nhan="Trực thuộc" value={chaId} onChange={(e) => datChaId(e.target.value)}>
           {dsTinh.map((t) => (
             <option key={t.id} value={t.id}>
               {t.ten}
+            </option>
+          ))}
+        </OChon>
+        <OChon id="dv-cap" nhan="Loại" value={cap} onChange={(e) => datCap(e.target.value as CapDonVi)}>
+          {CAP_DUOI_TINH.map((c) => (
+            <option key={c} value={c}>
+              {CAP_DON_VI[c]}
             </option>
           ))}
         </OChon>
@@ -158,7 +167,7 @@ function ThemXa({ dsTinh, xong }: { dsTinh: DonViDong[]; xong: (ten: string) => 
           nhan="Tên đơn vị"
           required
           maxLength={150}
-          placeholder="VD: Xã …"
+          placeholder={cap === 'doanh-nghiep' ? 'VD: Công ty …' : 'VD: Sở …, Xã …'}
           value={ten}
           onChange={(e) => datTen(e.target.value)}
         />

@@ -36,7 +36,7 @@ tính hai lần theo hai cách.
   hay Tầng 2. Làm cùng module Dự án (Mốc 3), kèm test chặn "báo cáo không có chủ" và "module mang
   tên nghiệp vụ ở nhóm xuyên suốt".
 - Cấp 4 của Điều hành đổi sang góc nhìn chung. Tầng 2 đổi theo review ngày 30/09/2026 (xem
-  `docs/tu-duy-xay-dung.md` mục 6). Hai thay đổi này áp vào registry khi người dùng duyệt cây chuẩn.
+  `docs/tu-duy-xay-dung.md` mục 6). Đã áp vào registry ngày 30/09/2026.
 
 ## Phương án đã loại
 

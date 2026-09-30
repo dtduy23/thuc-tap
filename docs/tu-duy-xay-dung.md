@@ -167,17 +167,17 @@ Module nghiệp vụ cần tham số, vd ngưỡng "lâu không cập nhật" c�
 
 ## 6. Cây chuẩn
 
-Ký hiệu: ● đã chạy · ○ màn phác (có chỗ, chưa xây) · ✎ đổi so với registry hiện tại, **chờ áp**.
+Ký hiệu: ● đã chạy · ○ màn phác (có chỗ, chưa xây). Khớp với `dang-ky.ts`.
 
 ```text
 TẦNG 1 — NGHIỆP VỤ
 ├─ ĐIỀU HÀNH                          (góc nhìn chung — luật 3)
-│  ├─ Tổng quan               ○ Toàn cảnh ✎ · Theo đơn vị ✎ · Theo lĩnh vực
-│  ├─ Báo cáo điều hành       ○ Tất cả báo cáo ✎ · Báo cáo định kỳ · Xuất dữ liệu ✎
-│  └─ Bộ chỉ số               ○ Tất cả chỉ số ✎ · Xếp hạng đơn vị ✎
+│  ├─ Tổng quan               ○ Toàn cảnh · Theo đơn vị · Theo lĩnh vực
+│  ├─ Báo cáo điều hành       ○ Tất cả báo cáo · Báo cáo định kỳ · Xuất dữ liệu
+│  └─ Bộ chỉ số               ○ Tất cả chỉ số · Xếp hạng đơn vị
 ├─ TÁC NGHIỆP                         (mỗi module một đối tượng có mã + hạn + người chịu trách nhiệm)
 │  ├─ Dự án                   ○ Tất cả · Tôi phụ trách · Chờ xác nhận bước · Tạo mới · Nhập Excel
-│  │                            · Đôn đốc · Báo cáo dự án ✎
+│  │                            · Đôn đốc · Báo cáo dự án
 │  ├─ Xử lý văn bản           ○ Văn bản đến · Tóm tắt · Soạn thảo · Phân công từ văn bản · Mẫu văn bản
 │  ├─ Đơn thư — Khiếu nại     ○ Tiếp nhận → Thụ lý → Giải quyết → Đã giải quyết
 │  └─ Nhiệm vụ                ○ Được giao cho tôi · Tôi đã giao · Theo dõi chung
@@ -186,25 +186,25 @@ TẦNG 1 — NGHIỆP VỤ
 │  └─ Danh mục nghiệp vụ      ○ Lĩnh vực · Quy trình mẫu · Loại văn bản
 └─ GIÁM SÁT & LƯU VẾT                 (vết — người xem là thanh tra, lãnh đạo)
    ├─ Nhật ký thao tác        ● Tất cả thao tác · ○ Theo hồ sơ · ○ Theo người dùng
-   └─ Hồ sơ quá hạn           ○ Đã quá hạn · Sắp đến hạn · Lâu không cập nhật ✎
+   └─ Hồ sơ quá hạn           ○ Đã quá hạn · Sắp đến hạn · Lâu không cập nhật
 
 TẦNG 2 — QUẢN TRỊ HỆ THỐNG
 ├─ NGƯỜI DÙNG & PHÂN QUYỀN            (ai được vào, được làm gì)
 │  ├─ Tài khoản               ● Danh sách · ● Bị khóa · ● Tạo tài khoản
 │  ├─ Đơn vị                  ● Danh sách đơn vị
-│  ├─ Vai trò & quyền         ○ Tra cứu phân công ✎ · ● Ma trận quyền
-│  ├─ Chính sách đăng nhập    ● Mật khẩu & phiên · ○ Đăng nhập một lần (SSO) ✎
-│  └─ Luồng phê duyệt         ○ Luồng theo nghiệp vụ ✎ · Thêm luồng
+│  ├─ Vai trò & quyền         ○ Tra cứu phân công · ● Ma trận quyền
+│  ├─ Chính sách đăng nhập    ● Mật khẩu & phiên · ○ Đăng nhập một lần (SSO)
+│  └─ Luồng phê duyệt         ○ Luồng theo nghiệp vụ · Thêm luồng
 ├─ KẾT NỐI                            (nói chuyện với bên ngoài qua đâu)
-│  ├─ Dịch vụ nền tảng ✎      ○ Danh sách kết nối · Kiểm tra & trạng thái
+│  ├─ Dịch vụ nền tảng      ○ Danh sách kết nối · Kiểm tra & trạng thái
 │  ├─ Nguồn dữ liệu vào       ○ Nguồn GraphQL / ERP · Bản sao dữ liệu · Công cụ API
 │  └─ Tích hợp ra             ○ Webhook · API key cho đối tác · Nhật ký gọi ra
 └─ CẤU HÌNH & VẬN HÀNH                (hệ thống chạy thế nào, đang chạy ra sao)
-   ├─ Khai báo module         ○ Cây phân hệ · Nhãn theo khách hàng · Tham số nghiệp vụ ✎
+   ├─ Khai báo module         ○ Cây phân hệ · Nhãn theo khách hàng · Tham số nghiệp vụ
    ├─ Hiển thị                ● Tên & nhận diện · ○ Trang mặc định theo vai
-   ├─ Quy tắc cảnh báo        ○ Hạn & ngưỡng cảnh báo ✎ · Kênh gửi thông báo
+   ├─ Quy tắc cảnh báo        ○ Hạn & ngưỡng cảnh báo · Kênh gửi thông báo
    ├─ Mô hình AI              ○ Mô hình mặc định · Giọng đọc · Hạn mức token theo đơn vị
-   └─ Theo dõi vận hành       ○ Sức khỏe hệ thống ✎ · Hàng đợi xử lý · Lưu trữ tệp ✎ · Nhật ký hệ thống
+   └─ Theo dõi vận hành       ○ Sức khỏe hệ thống · Hàng đợi xử lý · Lưu trữ tệp · Nhật ký hệ thống
 ```
 
 ### Vì sao Tầng 2 đổi như trên (review 30/09/2026)

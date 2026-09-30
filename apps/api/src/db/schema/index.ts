@@ -14,9 +14,11 @@ import {
   boolean,
   check,
   customType,
+  date,
   index,
   integer,
   jsonb,
+  numeric,
   pgTable,
   text,
   timestamp,
@@ -49,7 +51,10 @@ export const donVi = pgTable(
     chaId: uuid('cha_id').references((): AnyPgColumn => donVi.id),
     ...thoiDiem,
   },
-  (t) => [uniqueIndex('don_vi_ma_uq').on(t.ma), check('don_vi_cap_ck', sql`${t.cap} in ('tinh', 'xa')`)],
+  (t) => [
+    uniqueIndex('don_vi_ma_uq').on(t.ma),
+    check('don_vi_cap_ck', sql`${t.cap} in ('tinh', 'so-nganh', 'co-quan-dang', 'xa', 'doanh-nghiep')`),
+  ],
 )
 
 export const taiKhoan = pgTable(
@@ -160,3 +165,183 @@ export const cauHinh = pgTable('cau_hinh', {
   taiKhoanId: uuid('tai_khoan_id'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
+
+// ════════════════════════════════════════════════════════════════════════════
+// DANH MỤC & QUY TRÌNH MẪU — dùng chung toàn hệ thống (ADR-0008)
+// Không có don_vi_id: ai cũng ĐỌC được; chỉ tài khoản ở đơn vị GỐC được sửa
+// (policy ở migration 0009). Nhật ký của các bảng này ghi vào đơn vị gốc.
+// ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Giá trị danh mục, một bảng cho mọi loại (lĩnh vực, nguồn vốn, loại văn bản…).
+ * Chuyển một loại từ "tham số của module" lên Danh mục chỉ là đổi chỗ trên menu —
+ * dữ liệu nằm sẵn ở đây (docs/tu-duy-xay-dung.md mục 4).
+ */
+export const danhMucGiaTri = pgTable(
+  'danh_muc_gia_tri',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    loai: text('loai').notNull(),
+    ma: text('ma').notNull(),
+    ten: text('ten').notNull(),
+    mau: text('mau'),
+    thuTu: integer('thu_tu').notNull().default(0),
+    ...thoiDiem,
+  },
+  (t) => [
+    uniqueIndex('danh_muc_gia_tri_loai_ma_uq').on(t.loai, t.ma),
+    check('danh_muc_gia_tri_loai_ck', sql`${t.loai} in ('linh-vuc', 'nguon-von', 'loai-van-ban')`),
+  ],
+)
+
+/**
+ * Quy trình mẫu: khung các bước theo 3 giai đoạn. Tạo dự án từ một mẫu là chép
+ * các bước sang dự án — sửa mẫu về sau KHÔNG ảnh hưởng dự án đã tạo.
+ * Mẫu `khoa` (theo NĐ 45) không sửa được; muốn khác thì nhân bản rồi sửa bản sao.
+ */
+export const quyTrinhMau = pgTable(
+  'quy_trinh_mau',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    ma: text('ma').notNull(),
+    ten: text('ten').notNull(),
+    canCu: text('can_cu'),
+    /** Hình thức đầu tư đi theo quy trình — không bắt người dùng khai riêng. */
+    hinhThuc: text('hinh_thuc').notNull(),
+    /** Mảng BuocMau (packages/shared › du-an.ts). */
+    buoc: jsonb('buoc').notNull(),
+    khoa: boolean('khoa').notNull().default(false),
+    thuTu: integer('thu_tu').notNull().default(0),
+    ...thoiDiem,
+  },
+  (t) => [
+    uniqueIndex('quy_trinh_mau_ma_uq').on(t.ma),
+    check(
+      'quy_trinh_mau_hinh_thuc_ck',
+      sql`${t.hinhThuc} in ('dau-tu', 'thue', 'mua-sam', 'chi-thuong-xuyen', 'khac')`,
+    ),
+  ],
+)
+
+// ════════════════════════════════════════════════════════════════════════════
+// DỰ ÁN — Tác nghiệp › Dự án (ADR-0008)
+// `don_vi_id` của dự án = đơn vị CHỦ ĐẦU TƯ. RLS: thấy khi đơn vị trong phạm vi
+// HOẶC là thành viên dự án (nhà thầu, tư vấn…). Chỉ đơn vị trong phạm vi mới SỬA
+// trực tiếp; thành viên ngoài đơn vị chỉ GỬI cập nhật chờ xác nhận.
+// ════════════════════════════════════════════════════════════════════════════
+
+export const duAn = pgTable(
+  'du_an',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    ma: text('ma').notNull(),
+    ten: text('ten').notNull(),
+    trangThai: text('trang_thai').notNull().default('dang-thuc-hien'),
+    quyTrinhMa: text('quy_trinh_ma'),
+    hinhThuc: text('hinh_thuc').notNull(),
+    loaiChi: text('loai_chi').notNull(),
+    nhomDuAn: text('nhom_du_an'),
+    linhVucId: uuid('linh_vuc_id').references(() => danhMucGiaTri.id),
+    canCu: text('can_cu'),
+    /** Tổng mức đầu tư, triệu đồng. */
+    tongMuc: numeric('tong_muc', { precision: 15, scale: 0, mode: 'number' }).notNull().default(0),
+    ngayBatDau: date('ngay_bat_dau', { mode: 'string' }).notNull(),
+    tienDoMoTa: text('tien_do_mo_ta'),
+    /** Ngày đơn vị cập nhật gần nhất — cảnh báo "lâu không cập nhật". */
+    capNhatNgay: date('cap_nhat_ngay', { mode: 'string' }),
+    canBoId: uuid('can_bo_id').references(() => taiKhoan.id),
+    /** Kế hoạch đã chốt gần nhất (ảnh chụp các bước) — để so với nháp. */
+    keHoachChot: jsonb('ke_hoach_chot'),
+    donDocNgay: date('don_doc_ngay', { mode: 'string' }),
+    nguoiTao: uuid('nguoi_tao'),
+    ...thoiDiem,
+  },
+  (t) => [
+    uniqueIndex('du_an_ma_uq').on(t.ma),
+    index('du_an_don_vi_idx').on(t.donViId),
+    check('du_an_trang_thai_ck', sql`${t.trangThai} in ('dang-thuc-hien', 'hoan-thanh', 'tam-dung', 'huy')`),
+    check('du_an_loai_chi_ck', sql`${t.loaiChi} in ('dtpt', 'ctx')`),
+    check('du_an_nhom_ck', sql`${t.nhomDuAn} is null or ${t.nhomDuAn} in ('A', 'B', 'C')`),
+    check(
+      'du_an_hinh_thuc_ck',
+      sql`${t.hinhThuc} in ('dau-tu', 'thue', 'mua-sam', 'chi-thuong-xuyen', 'khac')`,
+    ),
+  ],
+)
+
+/** Một bước trong checklist của dự án. Nhóm bước (la_nhom) không có hạn riêng, không tính tiến độ. */
+export const duAnBuoc = pgTable(
+  'du_an_buoc',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    duAnId: uuid('du_an_id')
+      .notNull()
+      .references(() => duAn.id),
+    /** Luôn bằng đơn vị của dự án — trigger tự đặt, để RLS lọc không cần join. */
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    thuTu: integer('thu_tu').notNull(),
+    chaId: uuid('cha_id').references((): AnyPgColumn => duAnBuoc.id),
+    giaiDoan: text('giai_doan').notNull(),
+    stt: text('stt').notNull(),
+    laNhom: boolean('la_nhom').notNull().default(false),
+    batBuoc: boolean('bat_buoc').notNull().default(true),
+    ten: text('ten').notNull(),
+    soNgay: integer('so_ngay').notNull().default(0),
+    hanGhiDe: date('han_ghi_de', { mode: 'string' }),
+    /** Hạn tính theo chuỗi (tinhHan trong @gdos/shared) — lưu để truy vấn quá hạn. */
+    han: date('han', { mode: 'string' }),
+    ngayHoanThanh: date('ngay_hoan_thanh', { mode: 'string' }),
+    soVanBan: text('so_van_ban'),
+    donViThucHien: text('don_vi_thuc_hien'),
+    benThucHien: text('ben_thuc_hien').notNull().default('chu-dau-tu'),
+    ghiChu: text('ghi_chu'),
+    boQua: boolean('bo_qua').notNull().default(false),
+    lyDoBoQua: text('ly_do_bo_qua'),
+    /** Cập nhật do nhà thầu / tư vấn gửi, chờ chủ đầu tư xác nhận. */
+    choXacNhan: jsonb('cho_xac_nhan'),
+    sanPham: text('san_pham'),
+    anTongQuan: boolean('an_tong_quan').notNull().default(false),
+    /** Bước nháp: chưa vào kế hoạch chính thức, không tính hạn, không cảnh báo. */
+    laNhap: boolean('la_nhap').notNull().default(false),
+    ...thoiDiem,
+  },
+  (t) => [
+    index('du_an_buoc_du_an_idx').on(t.duAnId, t.thuTu),
+    index('du_an_buoc_han_idx').on(t.donViId, t.han),
+    check('du_an_buoc_giai_doan_ck', sql`${t.giaiDoan} in ('I', 'II', 'III')`),
+    check('du_an_buoc_ben_ck', sql`${t.benThucHien} in ('chu-dau-tu', 'tu-van', 'nha-thau')`),
+  ],
+)
+
+/**
+ * Thành viên dự án — người NGOÀI đơn vị chủ đầu tư được vào dự án (nhà thầu, tư
+ * vấn, giám sát), hoặc cán bộ phụ trách được chỉ định. Thay cho "chỉ định từng dự
+ * án" của PMS.
+ */
+export const duAnThanhVien = pgTable(
+  'du_an_thanh_vien',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    duAnId: uuid('du_an_id')
+      .notNull()
+      .references(() => duAn.id),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    taiKhoanId: uuid('tai_khoan_id')
+      .notNull()
+      .references(() => taiKhoan.id),
+    vaiTro: text('vai_tro').notNull(),
+    ...thoiDiem,
+  },
+  (t) => [
+    index('du_an_thanh_vien_tai_khoan_idx').on(t.taiKhoanId),
+    index('du_an_thanh_vien_du_an_idx').on(t.duAnId),
+    check('du_an_thanh_vien_vai_ck', sql`${t.vaiTro} in ('phu-trach', 'nha-thau', 'tu-van', 'giam-sat')`),
+  ],
+)

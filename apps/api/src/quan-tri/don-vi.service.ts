@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common'
-import type { CapDonVi, DonViDong } from '@gdos/shared'
+import { CAP_DON_VI, CAP_DUOI_TINH, type CapDonVi, type DonViDong } from '@gdos/shared'
 import { and, asc, eq, isNull, sql } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { chuoi, chuoiTuyChon, maUuid } from '../chung/kiem-than.js'
@@ -45,13 +45,18 @@ export class DonViService {
     const ma = docMa(than, true)
     const ten = chuoi(than, 'ten', 150, true)
     const chaId = maUuid((than as { chaId?: unknown } | null)?.chaId, 'chaId')
+    const capTho = (than as { cap?: unknown } | null)?.cap ?? 'xa'
+    if (typeof capTho !== 'string' || !CAP_DUOI_TINH.includes(capTho as CapDonVi))
+      throw new BadRequestException(
+        `Loại đơn vị phải là một trong: ${CAP_DUOI_TINH.map((c) => CAP_DON_VI[c]).join(', ')}`,
+      )
+    const cap = capTho as CapDonVi
     const id = randomUUID()
     try {
       await trongPhamVi(this.db, nd.nguCanh, async (tx) => {
         const [cha] = await docDonVi(tx, chaId)
         if (!cha) throw new BadRequestException('Đơn vị cấp trên không có trong phạm vi quản lý')
-        if (cha.cap !== 'tinh') throw new BadRequestException('Chỉ thêm được xã trực thuộc một tỉnh')
-        const cap: CapDonVi = 'xa'
+        if (cha.cap !== 'tinh') throw new BadRequestException('Chỉ thêm được đơn vị trực thuộc một tỉnh')
         // Không dùng RETURNING: dòng mới chưa nằm trong phạm vi ĐỌC của vé hiện tại.
         await tx.insert(donVi).values({ id, ma, ten, cap, chaId })
       })

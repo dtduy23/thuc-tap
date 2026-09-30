@@ -12,6 +12,7 @@ nào** — để sáu tháng sau không ai phải đoán, và AI không lặng l
 | [0005](0005-stack-va-phien-ban.md)     | Stack và phiên bản                                                     | Đã chốt    |
 | [0006](0006-vai-tro-khoi-chinh-phu.md) | Vai trò khối chính phủ: Lãnh đạo, Chuyên viên, Thanh tra + cờ quản trị | Đã chốt    |
 | [0007](0007-mot-chu-nhieu-loi-vao.md)  | Một chủ, nhiều lối vào — báo cáo, chỉ số, cảnh báo khai một lần        | Đã chốt    |
+| [0008](0008-mo-hinh-du-an.md)          | Mô hình dữ liệu Dự án: chủ đầu tư là đơn vị, nhà thầu là thành viên    | Đã chốt    |
 
 ## Viết ADR mới
 

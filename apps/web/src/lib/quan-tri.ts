@@ -2,7 +2,7 @@
  * Gọi API Tầng 2 (tài khoản, đơn vị) và nhật ký. Kiểu dữ liệu lấy từ
  * `@gdos/shared` — cùng kiểu API trả, không khai lại.
  */
-import type { DonViDong, KetQuaCapMatKhau, PhanCong, TaiKhoanDong, TrangNhatKy } from '@gdos/shared'
+import type { CapDonVi, DonViDong, KetQuaCapMatKhau, PhanCong, TaiKhoanDong, TrangNhatKy } from '@gdos/shared'
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query'
 import { goiApi } from './http'
 
@@ -44,7 +44,7 @@ export const khoaTaiKhoan = (id: string, khoa: boolean) =>
 export const datLaiMatKhau = (id: string) =>
   goiApi<KetQuaCapMatKhau>(`/tai-khoan/${id}/dat-lai-mat-khau`, { method: 'POST' })
 
-export const taoDonVi = (dl: { ma: string; ten: string; chaId: string }) =>
+export const taoDonVi = (dl: { ma: string; ten: string; chaId: string; cap: CapDonVi }) =>
   goiApi<{ id: string }>('/don-vi', { method: 'POST', body: dl })
 
 export const suaDonVi = (id: string, dl: { ma?: string; ten?: string }) =>
