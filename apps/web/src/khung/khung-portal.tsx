@@ -38,8 +38,11 @@ export function KhungPortal() {
         >
           <CayPhanHe cay={cay} dangXem={dangXem} />
         </aside>
-        <main className="min-w-0 flex-1 overflow-y-auto px-4 pt-4 pb-10 md:px-6">
-          <Outlet />
+        <main className="min-w-0 flex-1 overflow-y-auto px-4 pt-5 pb-14 md:px-[26px]">
+          {/* key theo đường dẫn: đổi trang là nội dung hiện dần lại (như PMS). */}
+          <div key={duongDan} className="hien-dan mx-auto w-full max-w-[1340px]">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

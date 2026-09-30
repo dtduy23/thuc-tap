@@ -54,8 +54,8 @@ export function TrangBaoCao({ ma, ts }: { ma: string; ts: ThamSoUrl }) {
         <span className="mx-1.5">·</span>
         Báo cáo của {m.nhan}
       </nav>
-      <h1 className="mt-0 mb-1 text-[21px] font-bold">{muc.ten}</h1>
-      <p className="mt-0 mb-4 max-w-[72ch] text-[12.5px] text-faint">{muc.mo}</p>
+      <h1 className="mt-0 mb-1 text-[20px] font-extrabold tracking-[-.01em] text-ink">{muc.ten}</h1>
+      <p className="mt-0 mb-4 max-w-[72ch] text-[13px] text-faint">{muc.mo}</p>
       <ThamSo key={JSON.stringify(ts)} ma={ma} muc={muc} ts={ts} />
       <Suspense fallback={<p className="text-faint">Đang lập báo cáo…</p>}>
         <KetQua ma={ma} ts={ts} />
@@ -269,9 +269,9 @@ export function BangBaoCao({ kq }: { kq: KetQuaBaoCao }) {
 
   return (
     <>
-      <div className="mb-2 text-center">
-        <div className="text-[15px] font-bold uppercase">{kq.tieuDe}</div>
-        <div className="text-[12px] text-faint italic">{kq.phuDe}</div>
+      <div className="mb-3 rounded-xl border border-line bg-nen px-4 py-4 text-center">
+        <div className="font-serif text-[19px] leading-snug font-bold text-brand">{kq.tieuDe}</div>
+        <div className="mt-1 text-[12.5px] text-faint italic">{kq.phuDe}</div>
       </div>
       <div className="max-h-[70vh] overflow-auto rounded-[10px] border border-line bg-nen">
         <table aria-label={kq.tieuDe} className="w-full border-collapse text-left text-[12.5px]">
@@ -372,7 +372,7 @@ export function TheBaoCao({ muc, nghiepVu }: { muc: BaoCaoDef; nghiepVu?: string
       to="/bao-cao/$ma"
       params={{ ma: muc.id }}
       search={{}}
-      className="block rounded-[10px] border border-line bg-nen px-4 py-3 hover:border-brand"
+      className="block rounded-[10px] border border-line bg-nen px-4 py-3 shadow-[0_1px_2px_rgba(16,30,54,.06)] transition-[transform,box-shadow,border-color] duration-150 hover:-translate-y-0.5 hover:border-brand hover:shadow-[0_8px_22px_rgba(16,30,54,.10)]"
     >
       <div className="flex items-center gap-2">
         <b className="text-[13.5px] text-ink">{muc.ten}</b>

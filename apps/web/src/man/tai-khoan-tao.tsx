@@ -127,7 +127,7 @@ export default function TaiKhoanTao() {
           <ODanhDau
             id="tao-quan-tri"
             nhan="Cờ quản trị hệ thống"
-            mo="Vào được Tầng 2: tài khoản, đơn vị, phân quyền. Không tự động đọc hồ sơ nghiệp vụ."
+            mo="Vào được phần Quản trị: tài khoản, đơn vị, phân quyền. Không tự động đọc hồ sơ nghiệp vụ."
             checked={laQuanTri}
             onChange={(e) => datLaQuanTri(e.target.checked)}
           />

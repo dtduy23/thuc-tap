@@ -31,7 +31,7 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'dieu-hanh',
     maQuyen: 'TONG_QUAN',
     nguon: 'db',
-    mo: 'Bức tranh chung của mọi nghiệp vụ: tiến độ, cảnh báo, giải ngân. Mỗi nghiệp vụ góp thẻ số liệu của mình (ADR-0007).',
+    mo: 'Bức tranh chung của mọi nghiệp vụ: tiến độ, cảnh báo, giải ngân.',
     con: [
       { id: 'tq-toan', nhan: 'Toàn cảnh' },
       { id: 'tq-don-vi', nhan: 'Theo đơn vị' },
@@ -44,7 +44,7 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'dieu-hanh',
     maQuyen: 'BAO_CAO',
     nguon: 'db',
-    mo: 'Trung tâm báo cáo của mọi nghiệp vụ. Báo cáo do module nghiệp vụ khai báo một lần, hiện cả ở đây lẫn trong module (ADR-0007).',
+    mo: 'Mọi báo cáo của các nghiệp vụ ở một nơi — cũng mở được ngay trong từng nghiệp vụ.',
     con: [
       { id: 'bc-tat-ca', nhan: 'Tất cả báo cáo' },
       { id: 'bc-dinh-ky', nhan: 'Báo cáo định kỳ' },
@@ -306,7 +306,7 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'qt-nguoi-dung',
     maQuyen: 'QT_VAI_TRO',
     nguon: 'db',
-    mo: 'Ba vai cố định (ADR-0006) và ma trận quyền sinh ra từ đó. Chỉ xem — vai đổi bằng ADR, không đổi bằng màn hình.',
+    mo: 'Ba vai cố định và ma trận quyền sinh ra từ đó. Chỉ xem.',
     con: [
       { id: 'vt-tra-cuu', nhan: 'Tra cứu phân công', phac: true },
       { id: 'vt-ma-tran', nhan: 'Ma trận quyền' },

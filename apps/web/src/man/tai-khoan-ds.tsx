@@ -218,7 +218,7 @@ function ChiTietTaiKhoan({ tk, dong }: { tk: TaiKhoanDong; dong: () => void }) {
             mo={
               laToi
                 ? 'Không tự bỏ được cờ của chính mình — nhờ quản trị viên khác.'
-                : 'Vào được Tầng 2: tài khoản, đơn vị, phân quyền. Không tự động đọc hồ sơ nghiệp vụ.'
+                : 'Vào được phần Quản trị: tài khoản, đơn vị, phân quyền. Không tự động đọc hồ sơ nghiệp vụ.'
             }
             disabled={laToi}
             checked={laQuanTri}

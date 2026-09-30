@@ -231,6 +231,47 @@ body {
 .tnum {
   font-variant-numeric: tabular-nums;
 }
+/*
+ * Chuyển động nhẹ như PMS — thứ làm giao diện "mềm": đổi trang hiện dần và trồi lên
+ * 5px; phần tử tương tác đổi màu mượt thay vì giật. Người tắt hiệu ứng thì tắt hết (dưới).
+ */
+@keyframes hien-dan {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.hien-dan {
+  animation: hien-dan 0.22s ease;
+}
+a,
+button,
+input,
+select,
+textarea,
+tr,
+td {
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+/* Tiêu đề một phần trong trang — gạch chân vàng như báo cáo PMS. */
+@utility tieu-de-phan {
+  margin: 20px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--vang);
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--brand);
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;

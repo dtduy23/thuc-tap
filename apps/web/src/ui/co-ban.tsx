@@ -7,8 +7,8 @@ import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAt
 type KieuNut = 'chinh' | 'phu' | 'nguy-hiem'
 const MAU_NUT: Record<KieuNut, string> = {
   chinh: 'border-brand bg-brand text-white hover:bg-brand-dim',
-  phu: 'border-line bg-nen text-body hover:bg-nav-hover',
-  'nguy-hiem': 'border-line bg-nen text-danger hover:bg-tint-danger',
+  phu: 'border-line bg-nen text-ink hover:border-brand hover:text-brand',
+  'nguy-hiem': 'border-line bg-nen text-danger hover:border-danger hover:bg-tint-danger',
 }
 
 export function Nut({
@@ -20,13 +20,13 @@ export function Nut({
     <button
       type="button"
       {...p}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-[13px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${MAU_NUT[kieu]} ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-lg border px-3.5 py-[7px] text-[13px] font-semibold active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 ${MAU_NUT[kieu]} ${className}`}
     />
   )
 }
 
 const LOP_O =
-  'w-full rounded-lg border border-line bg-nen-2 px-3 py-2 text-[13.5px] text-ink disabled:opacity-60'
+  'w-full rounded-lg border border-line bg-nen-2 px-3 py-2 text-[13.5px] text-ink outline-none focus:border-brand focus:bg-nen focus:shadow-[0_0_0_3px_var(--tint-brand)] disabled:opacity-60'
 
 export function ONhap({
   nhan,
@@ -89,8 +89,8 @@ export function The({ tieuDe, phu, children }: { tieuDe?: string; phu?: string; 
   return (
     <section className="mb-4 rounded-[10px] border border-line bg-nen shadow-[0_1px_2px_rgba(16,34,54,.06),0_4px_16px_rgba(16,34,54,.06)]">
       {tieuDe && (
-        <div className="flex items-center gap-2.5 border-b border-line-2 px-4 py-3">
-          <h2 className="m-0 text-[14px] font-semibold">{tieuDe}</h2>
+        <div className="flex items-center gap-2.5 border-b border-line px-4 py-2.5">
+          <h2 className="m-0 text-[13.5px] font-bold text-ink">{tieuDe}</h2>
           {phu && <span className="text-[11.5px] text-faint">{phu}</span>}
         </div>
       )}
@@ -108,7 +108,7 @@ export function Chip({
   children: ReactNode
 }) {
   const lop = {
-    xam: 'border border-line bg-nen-2 text-faint',
+    xam: 'bg-line-2 text-faint',
     ok: 'bg-tint-ok text-ok',
     danger: 'bg-tint-danger text-danger',
     brand: 'bg-tint-brand text-brand',
@@ -117,8 +117,9 @@ export function Chip({
   }[mau]
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap ${lop}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-[3px] text-[11.5px] font-bold whitespace-nowrap ${lop}`}
     >
+      {mau !== 'xam' && <i aria-hidden="true" className="size-[7px] flex-none rounded-full bg-current" />}
       {children}
     </span>
   )
@@ -144,8 +145,11 @@ export function ODanhDau({
 /** Bảng dữ liệu: cuộn ngang trên màn hẹp thay vì vỡ khung. */
 export function KhungBang({ children, nhan }: { children: ReactNode; nhan: string }) {
   return (
-    <div className="overflow-x-auto rounded-[10px] border border-line bg-nen">
-      <table aria-label={nhan} className="w-full border-collapse text-left text-[13px]">
+    <div className="overflow-x-auto rounded-[10px] border border-line bg-nen shadow-[0_1px_2px_rgba(16,34,54,.05)]">
+      <table
+        aria-label={nhan}
+        className="w-full border-collapse text-left text-[13px] [&_tbody_tr:hover>td]:bg-nav-hover"
+      >
         {children}
       </table>
     </div>
@@ -153,5 +157,5 @@ export function KhungBang({ children, nhan }: { children: ReactNode; nhan: strin
 }
 
 export const LOP_TH =
-  'border-b border-line bg-nen-2 px-3 py-2 text-[11.5px] font-semibold tracking-[.2px] text-faint whitespace-nowrap'
+  'border-b-[1.5px] border-line bg-nen-2 px-3 py-2 text-[11px] font-bold tracking-[.06em] text-faint uppercase whitespace-nowrap'
 export const LOP_TD = 'border-b border-line-2 px-3 py-2 align-top'

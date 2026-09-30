@@ -18,7 +18,7 @@ export function TrangChucNang({ id }: { id: string }) {
   if (!vt) return <KhongTimThay />
 
   const quyen = new Set(toi.quyen)
-  const { tang, nhom, module: m, chucNang: c } = vt
+  const { nhom, module: m, chucNang: c } = vt
   if (!quyen.has(quyenCua(m, c))) {
     return <ThongBao kieu="loi">Tài khoản không có quyền mở chức năng “{c.nhan}”.</ThongBao>
   }
@@ -28,22 +28,10 @@ export function TrangChucNang({ id }: { id: string }) {
 
   return (
     <>
-      <nav aria-label="Vị trí" className="mb-1 flex flex-wrap items-center gap-1.5 text-[11.5px] text-faint">
-        {[
-          ['C1', `Tầng ${tang.so} — ${tang.nhan}`],
-          ['C2', nhom.nhan],
-          ['C3', m.nhan],
-        ].map(([cap, nhan]) => (
-          <span key={cap} className="flex items-center gap-1.5">
-            <span className="rounded border border-line bg-nen-2 px-1 text-[9.5px] font-bold">{cap}</span>
-            {nhan} ›
-          </span>
-        ))}
-        <span className="rounded border border-line bg-nen-2 px-1 text-[9.5px] font-bold">C4</span>
-        <b className="text-body">{c.nhan}</b>
+      <nav aria-label="Vị trí" className="mb-1 text-[12px] text-faint">
+        {nhom.nhan} <span className="mx-1 opacity-60">›</span> {m.nhan}
       </nav>
-      <h1 className="mt-0 mb-1 text-[21px] font-bold">{c.nhan}</h1>
-      <p className="mt-0 mb-4 max-w-[72ch] text-[12.5px] text-faint">{c.mo ?? m.mo}</p>
+      <h1 className="mt-0 mb-3 text-[20px] font-extrabold tracking-[-.01em] text-ink">{c.nhan}</h1>
 
       {anhEm.length > 1 && (
         <div role="tablist" className="mb-4 flex gap-0.5 overflow-x-auto border-b border-line">
@@ -54,7 +42,7 @@ export function TrangChucNang({ id }: { id: string }) {
               params={{ chucNang: x.id }}
               role="tab"
               aria-selected={x.id === id}
-              className={`border-b-2 px-3 py-2 text-[13px] whitespace-nowrap ${x.id === id ? 'border-brand font-semibold text-brand' : 'border-transparent text-body'}`}
+              className={`-mb-px border-b-[2.5px] px-3.5 py-2 text-[13px] whitespace-nowrap ${x.id === id ? 'border-vang font-bold text-brand' : 'border-transparent font-medium text-faint hover:text-ink'}`}
             >
               {x.nhan}
             </Link>

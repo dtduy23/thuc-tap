@@ -43,8 +43,7 @@ export function TrangHoSoDuAn({ id, the }: { id: string; the: MaThe }) {
 
   return (
     <>
-      <nav aria-label="Vị trí" className="mb-1 flex flex-wrap items-center gap-1.5 text-[11.5px] text-faint">
-        <span>Tầng 1 — Nghiệp vụ ›</span>
+      <nav aria-label="Vị trí" className="mb-1 flex flex-wrap items-center gap-1.5 text-[12px] text-faint">
         <span>Tác nghiệp ›</span>
         <Link to="/$chucNang" params={{ chucNang: 'da-tat-ca' }} className="hover:text-brand">
           Dự án
@@ -52,7 +51,9 @@ export function TrangHoSoDuAn({ id, the }: { id: string; the: MaThe }) {
         <span>›</span>
         <b className="text-body">{hs.ma}</b>
       </nav>
-      <h1 className="mt-0 mb-1 text-[21px] leading-snug font-bold">{hs.ten}</h1>
+      <h1 className="mt-0 mb-1 text-[20px] leading-snug font-extrabold tracking-[-.01em] text-ink">
+        {hs.ten}
+      </h1>
       <p className="mt-0 mb-3 flex flex-wrap items-center gap-2 text-[12.5px] text-faint">
         <span>
           <code>{hs.ma}</code> · Chủ đầu tư: <b className="text-body">{hs.donViTen}</b>
@@ -83,7 +84,7 @@ export function TrangHoSoDuAn({ id, the }: { id: string; the: MaThe }) {
             search={{ the: t.id }}
             role="tab"
             aria-selected={t.id === dangXem.id}
-            className={`border-b-2 px-3 py-2 text-[13px] whitespace-nowrap ${t.id === dangXem.id ? 'border-brand font-semibold text-brand' : 'border-transparent text-body hover:text-brand'}`}
+            className={`-mb-px border-b-[2.5px] px-3.5 py-2 text-[13px] whitespace-nowrap ${t.id === dangXem.id ? 'border-vang font-bold text-brand' : 'border-transparent font-medium text-faint hover:text-ink'}`}
           >
             {t.nhan}
           </Link>

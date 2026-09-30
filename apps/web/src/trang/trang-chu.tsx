@@ -35,7 +35,7 @@ export function TrangChu() {
           ))}
           {toi.laQuanTri && (
             <li>
-              <b>Quản trị hệ thống</b> — Tầng 2: tài khoản, đơn vị, phân quyền
+              <b>Quản trị hệ thống</b>: tài khoản, đơn vị, phân quyền
             </li>
           )}
           {toi.phanCong.length === 0 && !toi.laQuanTri && (

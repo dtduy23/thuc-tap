@@ -47,7 +47,7 @@ export default function VaiTroMaTran() {
       <ThongBao>
         <b>Quyền = vai × phân công.</b> Vai quyết định <i>làm được gì</i>; phân công quyết định{' '}
         <i>làm ở phân hệ nào</i>. Một người có thể giữ nhiều vai; quyền là hợp của tất cả. Cờ quản trị tách
-        riêng: chỉ mở Tầng 2, không tự động đọc hồ sơ nghiệp vụ. (ADR-0006)
+        riêng: chỉ mở phần Quản trị hệ thống, không tự động đọc hồ sơ nghiệp vụ.
       </ThongBao>
 
       <h2 className="mt-5 mb-2 text-[15px] font-semibold">Vai và hành động</h2>
