@@ -11,6 +11,8 @@
  * chặn bệnh "phan-he-mo-rong" của GDOS cũ bằng máy, không bằng thiện chí.
  */
 
+import type { DongGop } from './dong-gop.js'
+
 export const TANG = [
   { so: 1, nhan: 'Nghiệp vụ', hoi: 'Màn này quan hệ với dữ liệu nghiệp vụ như thế nào?' },
   { so: 2, nhan: 'Quản trị hệ thống', hoi: 'Một cửa, đúng ba nhóm.' },
@@ -76,6 +78,8 @@ export interface ModuleDef {
   nguon: NguonDuLieu
   mo: string
   con: readonly ChucNang[]
+  /** Những gì module ĐÓNG GÓP cho nhóm xuyên suốt (ADR-0007) — xem dong-gop.ts. */
+  dongGop?: DongGop
   /** Cả module là màn phác — mọi chức năng con đều chưa xây. */
   phac?: boolean
 }

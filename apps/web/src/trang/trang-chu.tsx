@@ -3,12 +3,11 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { moTaVai } from '@/khung/thanh-tren'
 import { truyVanToi } from '@/lib/phien'
-import { The, ThongBao } from '@/ui/co-ban'
+import { The } from '@/ui/co-ban'
+import { ViecCuaToi } from './viec-cua-toi'
 
 /**
- * Trang chủ tạm thời: ai, ở đâu, được làm gì. "Việc của tôi" (gom việc từ mọi
- * module, xếp theo mốc hạn — ADR-0002) thay chỗ này khi có module nghiệp vụ đầu
- * tiên (Mốc 3); trước đó không có việc nào để gom.
+ * Trang chủ: "Việc của tôi" (gom việc từ mọi module — ADR-0007) rồi tới phạm vi và các chức năng dùng được.
  */
 export function TrangChu() {
   const { data: toi } = useSuspenseQuery(truyVanToi)
@@ -20,6 +19,8 @@ export function TrangChu() {
       <p className="mt-0 mb-5 text-[12.5px] text-faint">
         {toi.donVi.ten} · {moTaVai(toi)}
       </p>
+
+      <ViecCuaToi />
 
       <The tieuDe="Phạm vi của bạn">
         <ul className="m-0 list-none space-y-1.5 p-0 text-[13px]">
@@ -72,11 +73,6 @@ export function TrangChu() {
           </div>
         </The>
       )}
-
-      <ThongBao>
-        <b>Việc của tôi</b> — danh sách việc cần làm, xếp theo mốc hạn — sẽ có ở đây khi có module nghiệp vụ
-        đầu tiên.
-      </ThongBao>
     </>
   )
 }

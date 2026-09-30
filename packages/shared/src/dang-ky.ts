@@ -77,11 +77,87 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
         id: 'da-don-doc',
         nhan: 'Đôn đốc',
         hanhDong: 'ASSIGN',
-        phac: true,
+
         mo: 'Gửi nhắc việc quá hạn. Chỉ cơ quan quản lý (Điều 36 NĐ 45).',
       },
       { id: 'da-bao-cao', nhan: 'Báo cáo dự án', phac: true },
     ],
+    dongGop: {
+      baoCao: [
+        {
+          id: 'du-an-bieu-01',
+          ten: 'Biểu 01 — Dự án đầu tư công',
+          loai: 'dinh-ky',
+          mo: 'Tổng mức, kế hoạch vốn năm, giải ngân năm theo nguồn vốn.',
+        },
+        {
+          id: 'du-an-bieu-02',
+          ten: 'Biểu 02 — Chi thường xuyên (chuyển tiếp)',
+          loai: 'dinh-ky',
+          mo: 'Hoạt động chi thường xuyên bắt đầu từ các năm trước.',
+        },
+        {
+          id: 'du-an-bieu-03',
+          ten: 'Biểu 03 — Chi thường xuyên (mới)',
+          loai: 'dinh-ky',
+          mo: 'Hoạt động chi thường xuyên bắt đầu trong năm báo cáo.',
+        },
+        {
+          id: 'du-an-bc35',
+          ten: 'Nghĩa vụ báo cáo Điều 35',
+          loai: 'dinh-ky',
+          mo: 'Dự án hoàn thành: hạn chủ đầu tư cung cấp thông tin (20 ngày), hạn tổng hợp gửi Bộ (30 ngày).',
+        },
+        {
+          id: 'du-an-danh-sach',
+          ten: 'Danh sách dự án',
+          loai: 'xuat',
+          hanhDong: 'EXPORT',
+          mo: 'Xuất danh sách dự án kèm tiến độ, giải ngân ra Excel.',
+        },
+      ],
+      chiSo: [
+        {
+          id: 'du-an-kpi',
+          ten: 'KPI dự án',
+          mo: '100 điểm: đúng hạn 40 · độ trễ 25 · điều chỉnh kế hoạch 15 · giải ngân 20 → A/B/C/D.',
+        },
+        {
+          id: 'du-an-xep-hang',
+          ten: 'Xếp hạng chủ đầu tư',
+          mo: 'KPI bình quân các dự án của mỗi chủ đầu tư.',
+        },
+      ],
+      canhBao: [
+        { id: 'du-an-qua-han', ten: 'Bước dự án quá hạn', loai: 'qua-han', mo: 'Bước chưa xong đã quá hạn.' },
+        {
+          id: 'du-an-sap-han',
+          ten: 'Bước dự án sắp đến hạn',
+          loai: 'sap-han',
+          mo: 'Bước chưa xong đến hạn trong 10 ngày tới.',
+        },
+        {
+          id: 'du-an-lau-cap-nhat',
+          ten: 'Dự án lâu không cập nhật',
+          loai: 'lau-khong-cap-nhat',
+          mo: 'Dự án đang thực hiện mà quá 15 ngày không ai cập nhật.',
+        },
+      ],
+      viec: [
+        {
+          id: 'du-an-buoc',
+          ten: 'Bước dự án tôi phụ trách sắp / quá hạn',
+          mo: 'Dự án bạn là cán bộ phụ trách.',
+        },
+        {
+          id: 'du-an-xac-nhan',
+          ten: 'Cập nhật chờ tôi xác nhận',
+          mo: 'Nhà thầu, tư vấn gửi — chờ chủ đầu tư xác nhận.',
+        },
+        { id: 'du-an-don-doc', ten: 'Đôn đốc gửi tới dự án tôi phụ trách', mo: 'Trong 30 ngày gần nhất.' },
+        { id: 'du-an-vuong-mac', ten: 'Vướng mắc chưa giải quyết', mo: 'Ở dự án bạn phụ trách.' },
+      ],
+    },
   },
   {
     id: 'xu-ly-van-ban',
@@ -178,7 +254,6 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'giam-sat',
     maQuyen: 'QUA_HAN',
     nguon: 'db',
-    phac: true,
     mo: 'Cảnh báo đang mở của mọi nghiệp vụ. Quy tắc (hạn luật định, ngưỡng) đặt ở Tầng 2 › Quy tắc cảnh báo.',
     con: [
       { id: 'qh-sla', nhan: 'Đã quá hạn' },

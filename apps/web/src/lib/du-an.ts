@@ -3,6 +3,7 @@
  * màn vẽ lại một lần, không phải tải lại.
  */
 import type {
+  DotDonDoc,
   DuAnDong,
   GiaTriDanhMuc,
   HoSoDuAn,
@@ -124,3 +125,11 @@ export const moLaiVuongMac = (id: string, vmId: string) =>
   goiApi<HoSoDuAn>(`/du-an/${id}/vuong-mac/${vmId}/mo-lai`, { method: 'POST' })
 export const xoaVuongMac = (id: string, vmId: string) =>
   goiApi<HoSoDuAn>(`/du-an/${id}/vuong-mac/${vmId}/xoa`, { method: 'POST' })
+
+export const truyVanLichSuDonDoc = queryOptions({
+  queryKey: [...KHOA_DU_AN, 'don-doc'],
+  queryFn: () => goiApi<DotDonDoc[]>('/du-an/don-doc'),
+})
+
+export const guiDonDoc = (duAnIds: string[], noiDung: string) =>
+  goiApi<{ dot: string; soDuAn: number }>('/du-an/don-doc', { method: 'POST', body: { duAnIds, noiDung } })

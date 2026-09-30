@@ -25,6 +25,8 @@ import { donVi, taiKhoan } from '../db/schema/index.js'
 import { NhatKyController } from '../nhat-ky/nhat-ky.controller.js'
 import { MAU, napMau, taoCoSoThu, type CoSoThu, type TenMau } from '../test/co-so-thu.js'
 import { DuAnController } from '../du-an/du-an.controller.js'
+import { HoSoDuAnController } from '../du-an/ho-so.controller.js'
+import { XuyenSuotController } from '../xuyen-suot/xuyen-suot.controller.js'
 import { ThietLapController } from '../thiet-lap/thiet-lap.controller.js'
 import { XacThucController } from '../xac-thuc/xac-thuc.controller.js'
 import { DonViController } from './don-vi.controller.js'
@@ -412,6 +414,8 @@ describe('mã quyền khai ở controller', () => {
       XacThucController,
       ThietLapController,
       DuAnController,
+      HoSoDuAnController,
+      XuyenSuotController,
     ]) {
       for (const ten of Object.getOwnPropertyNames(C.prototype)) {
         const q = Reflect.getMetadata(

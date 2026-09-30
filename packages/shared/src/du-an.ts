@@ -468,3 +468,12 @@ export function tinhTaiChinh(
     phanTramKeHoach: pt(daGiaiNgan, keHoachDenNay),
   }
 }
+
+/** Một đợt đôn đốc — cùng một lần gửi cho nhiều dự án. */
+export interface DotDonDoc {
+  dot: string
+  ngay: string
+  noiDung: string
+  nguoiGui: string | null
+  duAn: { id: string; ma: string; ten: string }[]
+}

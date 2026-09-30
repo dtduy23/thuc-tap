@@ -5,7 +5,10 @@ import { CoSoDuLieu } from './db/co-so-du-lieu.js'
 import { DanhMucController } from './danh-muc/danh-muc.controller.js'
 import { DuAnController } from './du-an/du-an.controller.js'
 import { DuAnService } from './du-an/du-an.service.js'
+import { DongGopDuAnService } from './du-an/dong-gop.service.js'
 import { HoSoDuAnController } from './du-an/ho-so.controller.js'
+import { XuyenSuotController } from './xuyen-suot/xuyen-suot.controller.js'
+import { NGUON_DONG_GOP } from './xuyen-suot/nguon-dong-gop.js'
 import { HoSoDuAnService } from './du-an/ho-so.service.js'
 import { KHO_TEP, KhoTepThuMuc } from './kho-tep/kho-tep.js'
 import { NhatKyController } from './nhat-ky/nhat-ky.controller.js'
@@ -31,6 +34,7 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     ThietLapController,
     DuAnController,
     HoSoDuAnController,
+    XuyenSuotController,
     DanhMucController,
   ],
   providers: [
@@ -43,6 +47,13 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     ThietLapService,
     DuAnService,
     HoSoDuAnService,
+    DongGopDuAnService,
+    // Nguồn đóng góp cho nhóm xuyên suốt (ADR-0007). Module nghiệp vụ mới: thêm vào đây.
+    {
+      provide: NGUON_DONG_GOP,
+      useFactory: (duAn: DongGopDuAnService) => [duAn],
+      inject: [DongGopDuAnService],
+    },
     { provide: KHO_TEP, useFactory: (ch: CauHinh) => new KhoTepThuMuc(ch.thuMucTep), inject: [CAU_HINH] },
     // Toàn cục: mọi route mặc định bị chặn cho tới khi khai rõ (xem bao-ve.ts).
     { provide: APP_GUARD, useClass: BaoVeGuard },

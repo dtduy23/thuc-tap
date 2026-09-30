@@ -35,3 +35,26 @@ describe('registry GDOS', () => {
     expect(nhom.size).toBe(7)
   })
 })
+
+describe('đóng góp theo ADR-0007', () => {
+  it('chỉ module nghiệp vụ có đóng góp; mã không trùng, mang tiền tố của module chủ', async () => {
+    const { kiemTraDongGop } = await import('./dong-gop.js')
+    expect(kiemTraDongGop(DANH_SACH_MODULE)).toEqual([])
+  })
+
+  it('không module nào ở nhóm xuyên suốt mang tên một nghiệp vụ (luật 3)', () => {
+    const tenNghiepVu = DANH_SACH_MODULE.filter((m) => m.nhom === 'tac-nghiep').map((m) =>
+      m.nhan.toLowerCase(),
+    )
+    const xuyenSuot = DANH_SACH_MODULE.filter((m) => m.nhom === 'dieu-hanh' || m.nhom === 'giam-sat')
+    for (const m of xuyenSuot) for (const t of tenNghiepVu) expect(m.nhan.toLowerCase()).not.toContain(t)
+  })
+
+  it('người chỉ có quyền Dự án thấy đóng góp của Dự án; không quyền thì không thấy', async () => {
+    const { dongGopCua } = await import('./dong-gop.js')
+    const coQuyen = dongGopCua(DANH_SACH_MODULE, 'baoCao', new Set(['DU_AN.READ']))
+    expect(coQuyen.map((d) => d.muc.id)).toContain('du-an-bieu-01')
+    expect(coQuyen.map((d) => d.muc.id)).not.toContain('du-an-danh-sach') // cần EXPORT
+    expect(dongGopCua(DANH_SACH_MODULE, 'baoCao', new Set())).toEqual([])
+  })
+})

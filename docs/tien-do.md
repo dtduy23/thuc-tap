@@ -9,7 +9,7 @@
 | **0** | Khởi tạo repo, CI, ADR, khung dùng chung                                             | ✅ Xong — **CI/CD giao kỹ thuật FOXAI** (xem dưới) |
 | **1** | Nền móng: tài khoản, đơn vị, vai trò & quyền, RLS, nhật ký, khung portal + cây 4 cấp | ✅ Xong — nhánh `moc-1-nen-mong`, chưa đẩy         |
 | **2** | Đưa lên máy thử (image, nginx, CI/CD)                                                | Chưa bắt đầu                                       |
-| **3** | Module Dự án (từ PMS)                                                                | 🔄 Phiên 4/6 — đủ 9 thẻ hồ sơ dự án                |
+| **3** | Module Dự án (từ PMS)                                                                | 🔄 Phiên 5a/6 — + cảnh báo, đôn đốc, việc của tôi  |
 | **4** | Module Khiếu nại đất đai                                                             | Chưa bắt đầu                                       |
 | **5** | Nối FOXAI Native (văn bản, tóm tắt, hỏi đáp)                                         | Chưa bắt đầu — **chờ đội Native**                  |
 | **6** | Điều hành: dashboard, báo cáo                                                        | Chưa bắt đầu                                       |
@@ -26,8 +26,24 @@ Tổ chức theo ADR-0007 (một chủ — nhiều lối vào) và ADR-0008 (mô
 | **2** | API + màn: danh sách (3 bộ lọc), tạo từ quy trình mẫu, hồ sơ (Tổng quan · Checklist · Thành viên), nhà thầu gửi → xác nhận | ✅ 30/09/2026 |
 | **3** | Kế hoạch & điều chỉnh (bước nháp, chốt kế hoạch, phiên bản), thêm/xóa bước tùy biến, Gantt                                 | ✅ 30/09/2026 |
 | **4** | Văn bản (kho tệp) · Kinh phí & giải ngân · Vướng mắc · thẻ Nhật ký                                                         | ✅ 30/09/2026 |
-| 5     | Đóng góp theo ADR-0007: báo cáo (Biểu 01/02/03, BC35), chỉ số KPI, cảnh báo, việc của tôi · Đôn đốc                        |               |
+| 5     | Đóng góp theo ADR-0007: báo cáo (Biểu 01/02/03, BC35), chỉ số KPI, cảnh báo, việc của tôi · Đôn đốc                        | 🔄 5a xong    |
 | 6     | Nhập / xuất Excel · giám sát theo lĩnh vực · màn quản lý Danh mục nghiệp vụ, Quy trình mẫu                                 |               |
+
+### Phiên 5a — đóng góp (ADR-0007): cảnh báo, đôn đốc, việc của tôi (30/09/2026)
+
+**Đã làm**
+
+- `@gdos/shared › dong-gop.ts`: module nghiệp vụ khai `dongGop` (báo cáo · chỉ số · cảnh báo · việc).
+  Test chặn: chỉ nhóm Tác nghiệp / Danh mục có đóng góp; mã mang tiền tố module chủ; không module
+  xuyên suốt nào mang tên nghiệp vụ. Quyền xem đóng góp = quyền của chủ (`dongGopCua`).
+- API: giao diện `NguonDongGop` + danh sách `NGUON_DONG_GOP` (app.module) — thêm nghiệp vụ là thêm
+  một nguồn. Điểm gom `/api/canh-bao?loai=` (cần `QUA_HAN.READ`) và `/api/viec-cua-toi`.
+- Dự án đóng góp: bước quá hạn, sắp hạn (10 ngày), dự án lâu không cập nhật (15 ngày); việc: bước
+  của dự án tôi phụ trách, cập nhật chờ tôi xác nhận, bị đôn đốc (30 ngày), vướng mắc mở.
+- **Đôn đốc** (Điều 36): chọn nhiều dự án → một đợt; bảng `du_an_don_doc` (vết, không sửa); chỉ dự án
+  thuộc đơn vị trong phạm vi; quyền `DU_AN.ASSIGN` (lãnh đạo).
+- Web: Giám sát › Hồ sơ quá hạn (3 cấp 4 — một màn), Dự án › Đôn đốc, trang chủ có **Việc của tôi**.
+- Test: 7 đầu cuối. **Đã kiểm trên trình duyệt**: Việc của tôi, Sắp đến hạn.
 
 ### Phiên 4 — văn bản, kinh phí & giải ngân, vướng mắc, nhật ký (30/09/2026)
 

@@ -479,3 +479,24 @@ export const duAnVuongMac = pgTable(
   },
   (t) => [index('du_an_vuong_mac_du_an_idx').on(t.duAnId)],
 )
+
+/** Một lần đôn đốc (Điều 36 NĐ 45) gửi tới một dự án. Vết — không sửa; hiện ở "Việc của tôi" của cán bộ phụ trách. */
+export const duAnDonDoc = pgTable(
+  'du_an_don_doc',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    duAnId: uuid('du_an_id')
+      .notNull()
+      .references(() => duAn.id),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    ngay: date('ngay', { mode: 'string' }).notNull(),
+    noiDung: text('noi_dung').notNull(),
+    /** Mã đợt — cùng một lần bấm gửi cho nhiều dự án. */
+    dot: uuid('dot').notNull(),
+    nguoiGui: uuid('nguoi_gui'),
+    ...thoiDiem,
+  },
+  (t) => [index('du_an_don_doc_du_an_idx').on(t.duAnId, t.ngay)],
+)

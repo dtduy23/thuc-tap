@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, Query } fr
 import { LOC_DU_AN, type LocDuAn } from '@gdos/shared'
 import { maUuid } from '../chung/kiem-than.js'
 import { CanQuyen, NguoiDung, type NguoiDungPhien } from '../xac-thuc/bao-ve.js'
+import { DongGopDuAnService } from './dong-gop.service.js'
 import { DuAnService } from './du-an.service.js'
 
 /**
@@ -11,13 +12,30 @@ import { DuAnService } from './du-an.service.js'
  */
 @Controller('du-an')
 export class DuAnController {
-  constructor(@Inject(DuAnService) private readonly dv: DuAnService) {}
+  constructor(
+    @Inject(DuAnService) private readonly dv: DuAnService,
+    @Inject(DongGopDuAnService) private readonly dongGop: DongGopDuAnService,
+  ) {}
 
   @Get()
   @CanQuyen('DU_AN.READ')
   danhSach(@NguoiDung() nd: NguoiDungPhien, @Query('loc') loc?: string) {
     const l: LocDuAn = LOC_DU_AN.includes(loc as LocDuAn) ? (loc as LocDuAn) : 'tat-ca'
     return this.dv.danhSach(nd, l)
+  }
+
+  /** Lịch sử đôn đốc — đợt nào, gửi dự án nào, ai gửi. */
+  @Get('don-doc')
+  @CanQuyen('DU_AN.READ')
+  lichSuDonDoc(@NguoiDung() nd: NguoiDungPhien) {
+    return this.dongGop.lichSuDonDoc(nd)
+  }
+
+  /** Gửi đôn đốc (Điều 36) — cơ quan quản lý: quyền giao việc. */
+  @Post('don-doc')
+  @CanQuyen('DU_AN.ASSIGN')
+  guiDonDoc(@NguoiDung() nd: NguoiDungPhien, @Body() than: unknown) {
+    return this.dongGop.guiDonDoc(nd, than)
   }
 
   @Get('chu-dau-tu')
