@@ -38,7 +38,8 @@
   web chỉ nghe `127.0.0.1:8080`.
 - `apps/web/nginx.conf` — phục vụ bản tĩnh, `try_files` cho SPA, chuyển tiếp đúng một tiền tố `/api`,
   cache dài cho `/assets/` và `no-cache` cho `index.html`, kèm CSP + `X-Frame-Options: DENY`.
-- `compose.trien-khai.yaml` — api · web · postgres · minio + service `di-tru` (profile `cong-cu`).
+- `compose.trien-khai.yaml` — api · web · postgres, cộng `di-tru` (profile `cong-cu`) và `minio`
+  (profile `kho-tep`, CHƯA chạy: mã không có dòng nào gọi MinIO, kho tệp đang là bản thư mục).
   **Không chứa bí mật**: đọc `.env` do kỹ thuật đặt một lần trên máy thử, và `.the-anh` do CI ghi.
 - Lệnh `di-tru` (`apps/api/src/cli/di-tru.ts`) — CHỈ chạy migration, để đường triển khai tự động
   không phải gọi `khoi-tao` (lệnh đó còn tạo quản trị viên và có nhập mật khẩu).
@@ -49,6 +50,10 @@
 
 **Chưa kiểm được**
 
+- **Máy thử từ chối `docker pull minio/minio`** ("pull access denied … may require 'docker login'"),
+  trong khi image official như `postgres:16-alpine` kéo về bình thường. Chưa rõ vì mirror registry
+  hay vì Docker Hub chặn ảnh không thuộc `library/`. Chưa chặn gì — MinIO đã cho ra khỏi `up`. Đến
+  Mốc 4 phải giải quyết, hoặc đẩy bản sao MinIO lên registry của FOXAI.
 - Không dựng được image ở máy này (không có Docker) và **không chạy được `pnpm kiem-tra` đầy đủ**:
   máy đang có **Node 22**, repo cần **Node 24** — 16 tệp test API chết ngay ở `crypto.argon2`
   (`undefined` trên Node 22), không liên quan thay đổi nào. Đã xanh: `lint`, `format:check`,

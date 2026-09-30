@@ -91,8 +91,15 @@ services:
       retries: 20
     networks: [gdos]
 
+  # CHƯA CHẠY — `profiles` giữ nó ngoài `up`. Mã hiện không có dòng nào gọi MinIO:
+  # kho tệp chạy bằng bản THƯ MỤC (KHO_TEP_THU_MUC, xem kho-tep.ts), MinIO là việc
+  # của Mốc 4. Để nó trong `up` chỉ tổ kéo về một image không ai dùng — và trên máy
+  # thử thì `docker pull minio/minio` còn bị từ chối, làm đỏ cả lượt triển khai.
+  # Mốc 4 bật lại: bỏ `profiles`, nối MinIO vào KhoTep, và đặt healthcheck ĐÃ KIỂM
+  # (cách cũ `mc ready local` chưa ai chạy thật bao giờ nên không giữ ở đây).
   minio:
     image: minio/minio:latest
+    profiles: ['kho-tep']
     restart: unless-stopped
     command: server /data --console-address ':9001'
     environment:
@@ -100,11 +107,6 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Thiếu MINIO_ROOT_PASSWORD trong .env}
     volumes:
       - ./.du-lieu/minio:/data
-    healthcheck:
-      test: ['CMD', 'mc', 'ready', 'local']
-      interval: 10s
-      timeout: 3s
-      retries: 10
     networks: [gdos]
 
 # Mạng khai dải cố định để TIN_PROXY trong .env nói đúng một dải, không phải
