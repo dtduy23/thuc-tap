@@ -53,7 +53,7 @@ docker build -f apps/api/Dockerfile -t gdos-api .
 docker build -f apps/web/Dockerfile -t gdos-web .
 ```
 
-`build` chạy bằng runner `foxai-build`; `deploy` bằng runner **`foxai-develop` nằm ngay trên máy
+`build` chạy bằng runner `foxai-build`; `deploy` bằng runner **`deploy-gdos` nằm ngay trên máy
 thử**, nên không cần khóa SSH và không cần đặt biến CI/CD nào.
 
 Máy thử chuẩn bị một lần: thư mục `/opt/foxai/gdos`, `.du-lieu/tep` thuộc uid 1000 (API chạy

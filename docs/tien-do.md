@@ -30,7 +30,8 @@
 - **Máy thử: `160.30.252.37`, thư mục `/opt/foxai/gdos`** (cùng lệ với các dự án khác ở
   `/opt/foxai/*`), phục vụ ở **https://gdosfox.fox.ai.vn**. Máy quản bằng aaPanel — nginx do panel
   sinh, đừng chép tay vhost vào.
-- **Deploy KHÔNG dùng SSH**: runner `foxai-develop` đã ký sẵn ngay trên máy thử, job chạy tại chỗ.
+- **Deploy KHÔNG dùng SSH**: runner `deploy-gdos` (tên `SRV04 GDOS`, shell executor) ký ngay trên
+  máy thử, job chạy tại chỗ.
   Không có khóa SSH nào phải giữ, không phải đặt biến CI/CD nào. (`build` vẫn ở `foxai-build`.)
 - Máy thử phục vụ ở **https://gdosfox.fox.ai.vn** (người dùng chốt 30/09/2026). TLS + tên miền do
   nginx CỦA MÁY CHỦ lo — mẫu vhost ở `nginx.may-thu.conf`, còn trống đường dẫn chứng thư; container
@@ -434,6 +435,6 @@ thật → GDOS dùng 5433.
 | ~~GDOS gọi Native thay mặt người dùng bằng cách nào?~~ — liên kết tài khoản Native theo người (ADR-0009) | —                     | —          |
 | ~~Tên miền phụ cho máy thử~~ — `gdosfox.fox.ai.vn` (chốt 30/09/2026)                                     | —                     | —          |
 | Chứng thư TLS cho `gdosfox.fox.ai.vn` — Let's Encrypt qua aaPanel hay chứng thư `*.fox.ai.vn` sẵn có     | Hạ tầng               | Mốc 2      |
-| ~~Triển khai bằng SSH hay bằng runner trên máy thử~~ — runner `foxai-develop` tại chỗ (30/09/2026)       | —                     | —          |
+| ~~Triển khai bằng SSH hay bằng runner trên máy thử~~ — runner `deploy-gdos` tại chỗ (30/09/2026)         | —                     | —          |
 | Có lên pnpm 11.13.1 (11.12.0 là bản lỗi) không                                                           | Người dùng            | —          |
 | ~~Ngưỡng khóa tài khoản~~ — đã chỉnh được trên màn Cấu hình hệ thống (phiên 5)                           | —                     | —          |

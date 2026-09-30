@@ -15,7 +15,7 @@
 #
 # HAI RUNNER, SHELL EXECUTOR (docs/FOXAI-CICD-Runbook.md của repo cũ):
 #   `foxai-build`     máy build — dựng image, đẩy lên registry
-#   `foxai-develop`   CHÍNH MÁY THỬ — nên deploy chạy tại chỗ, không SSH, không
+#   `deploy-gdos`     CHÍNH MÁY THỬ (SRV-04) — deploy chạy tại chỗ, không SSH, không
 #                     khóa, không host key. Ít thứ phải giữ bí mật hơn hẳn.
 #   Shell executor BỎ QUA `image:` và không gắn tag → pipeline treo "stuck".
 # ============================================================================
@@ -69,7 +69,7 @@ build:
 # ── deploy ───────────────────────────────────────────────────────────────────
 # BẤM TAY (`when: manual`) — máy thử không tự đổi sau mỗi commit.
 #
-# Chạy bằng runner `foxai-develop` NẰM NGAY TRÊN MÁY THỬ, nên không cần biến
+# Chạy bằng runner `deploy-gdos` NẰM NGAY TRÊN MÁY THỬ, nên không cần biến
 # CI/CD nào cả. Thứ duy nhất phải chuẩn bị một lần trên máy thử:
 #
 #   mkdir -p /opt/foxai/gdos/.du-lieu/tep
