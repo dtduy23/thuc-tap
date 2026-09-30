@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common'
 import { APP_GUARD } from '@nestjs/core'
 import { CAU_HINH, docCauHinh, type CauHinh } from './cau-hinh.js'
 import { CoSoDuLieu } from './db/co-so-du-lieu.js'
+import { DanhMucController } from './danh-muc/danh-muc.controller.js'
+import { DuAnController } from './du-an/du-an.controller.js'
+import { DuAnService } from './du-an/du-an.service.js'
 import { NhatKyController } from './nhat-ky/nhat-ky.controller.js'
 import { NhatKyService } from './nhat-ky/nhat-ky.service.js'
 import { DonViController } from './quan-tri/don-vi.controller.js'
@@ -23,6 +26,8 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     DonViController,
     NhatKyController,
     ThietLapController,
+    DuAnController,
+    DanhMucController,
   ],
   providers: [
     { provide: CAU_HINH, useFactory: () => docCauHinh() },
@@ -32,6 +37,7 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     DonViService,
     NhatKyService,
     ThietLapService,
+    DuAnService,
     // Toàn cục: mọi route mặc định bị chặn cho tới khi khai rõ (xem bao-ve.ts).
     { provide: APP_GUARD, useClass: BaoVeGuard },
   ],

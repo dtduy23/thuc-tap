@@ -206,3 +206,115 @@ export function kiemMaDuAn(ma: string): string | null {
   if (!/^[A-Za-z0-9._\-/]+$/.test(ma)) return 'Mã dự án chỉ gồm chữ không dấu, số và các ký tự - _ . /'
   return null
 }
+
+// ── Hợp đồng dữ liệu API ↔ web ─────────────────────────────────────────────
+
+/** Cập nhật nhà thầu / tư vấn gửi, chờ chủ đầu tư xác nhận. */
+export interface CapNhatCho {
+  ngay: string
+  ghiChu: string
+  nguoiGui: string
+  nguoiGuiTen: string | null
+  luc: string
+}
+
+export interface BuocDuAn {
+  id: string
+  thuTu: number
+  chaId: string | null
+  giaiDoan: GiaiDoan
+  stt: string
+  laNhom: boolean
+  batBuoc: boolean
+  ten: string
+  soNgay: number
+  hanGhiDe: string | null
+  han: string | null
+  ngayHoanThanh: string | null
+  soVanBan: string | null
+  donViThucHien: string | null
+  benThucHien: BenThucHien
+  ghiChu: string | null
+  boQua: boolean
+  lyDoBoQua: string | null
+  choXacNhan: CapNhatCho | null
+  sanPham: string | null
+  anTongQuan: boolean
+  laNhap: boolean
+}
+
+export interface DuAnDong {
+  id: string
+  ma: string
+  ten: string
+  trangThai: TrangThaiDuAn
+  donViId: string
+  donViTen: string
+  hinhThuc: HinhThuc
+  loaiChi: LoaiChi
+  nhomDuAn: NhomDuAn | null
+  linhVucId: string | null
+  linhVucTen: string | null
+  tongMuc: number
+  ngayBatDau: string
+  capNhatNgay: string | null
+  quyTrinhMa: string | null
+  canBo: { id: string; hoTen: string } | null
+  thongKe: ThongKeTienDo
+}
+
+export interface ThanhVienDuAn {
+  id: string
+  taiKhoanId: string
+  hoTen: string
+  donViTen: string
+  vaiTro: VaiTroThanhVien
+}
+
+export interface HoSoDuAn extends DuAnDong {
+  canCu: string | null
+  tienDoMoTa: string | null
+  buoc: BuocDuAn[]
+  thanhVien: ThanhVienDuAn[]
+  /** Người xem được làm gì trên CHÍNH dự án này — API tính, web chỉ để ẩn/hiện nút. */
+  quyen: {
+    /** Sửa thông tin, ghi nhận bước, xác nhận cập nhật — đơn vị chủ đầu tư. */
+    sua: boolean
+    /** Xác nhận (hoặc trả lại) cập nhật nhà thầu gửi — chủ đầu tư, lãnh đạo đơn vị. */
+    xacNhan: boolean
+    /** Gửi cập nhật chờ xác nhận — nhà thầu, tư vấn của dự án. */
+    gui: boolean
+    /** Thêm / bớt thành viên. */
+    thanhVien: boolean
+  }
+}
+
+export interface QuyTrinhMauDong {
+  id: string
+  ma: string
+  ten: string
+  canCu: string | null
+  hinhThuc: HinhThuc
+  soBuoc: number
+  khoa: boolean
+}
+
+export interface GiaTriDanhMuc {
+  id: string
+  loai: 'linh-vuc' | 'nguon-von' | 'loai-van-ban'
+  ma: string
+  ten: string
+  mau: string | null
+}
+
+export interface TaiKhoanDanhBa {
+  id: string
+  hoTen: string
+  tenDangNhap: string
+  donViTen: string
+  donViCap: string
+}
+
+/** Cấp 4 của module Dự án dùng CHUNG một màn danh sách, khác nhau ở bộ lọc. */
+export const LOC_DU_AN = ['tat-ca', 'cua-toi', 'cho-xac-nhan'] as const
+export type LocDuAn = (typeof LOC_DU_AN)[number]

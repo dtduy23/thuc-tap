@@ -52,3 +52,37 @@ export function maUuid(v: unknown, ten = 'id'): string {
   if (typeof v !== 'string' || !UUID.test(v)) throw new BadRequestException(`"${ten}" không hợp lệ`)
   return v
 }
+
+/** Ngày 'YYYY-MM-DD' bắt buộc. */
+export function ngay(than: unknown, ten: string): string {
+  const v = truong(than, ten)
+  if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(`${v}T00:00:00Z`)))
+    throw new BadRequestException(`"${ten}" phải là ngày YYYY-MM-DD`)
+  return v
+}
+
+/** Ngày không bắt buộc: vắng → undefined, null/rỗng → null. */
+export function ngayHoacRong(than: unknown, ten: string): string | null | undefined {
+  const v = truong(than, ten)
+  if (v === undefined) return undefined
+  if (v === null || v === '') return null
+  return ngay(than, ten)
+}
+
+/** Số nguyên trong khoảng; vắng → undefined. */
+export function soNguyen(than: unknown, ten: string, min: number, max: number): number | undefined {
+  const v = truong(than, ten)
+  if (v === undefined) return undefined
+  if (typeof v !== 'number' || !Number.isInteger(v) || v < min || v > max)
+    throw new BadRequestException(`"${ten}" phải là số nguyên từ ${min} đến ${max}`)
+  return v
+}
+
+/** Một giá trị trong danh sách cho phép; vắng → undefined. */
+export function motTrong<T extends string>(than: unknown, ten: string, choPhep: readonly T[]): T | undefined {
+  const v = truong(than, ten)
+  if (v === undefined) return undefined
+  if (typeof v !== 'string' || !choPhep.includes(v as T))
+    throw new BadRequestException(`"${ten}" phải là một trong: ${choPhep.join(', ')}`)
+  return v as T
+}
