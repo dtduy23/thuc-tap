@@ -30,9 +30,13 @@ export function TrangThaiTaiKhoan({ tk }: { tk: TaiKhoanDong }) {
   )
 }
 
-/** Danh sách tài khoản trong phạm vi + chi tiết để sửa, khóa, đặt lại mật khẩu, phân công. */
-export default function TaiKhoanDs() {
-  const { data: ds } = useSuspenseQuery(truyVanTaiKhoan)
+/**
+ * Danh sách tài khoản trong phạm vi + chi tiết để sửa, khóa, đặt lại mật khẩu, phân công.
+ * `chiKhoa`: cấp 4 "Tài khoản bị khóa" — cùng màn, lọc sẵn (khóa hẳn hoặc khóa tạm).
+ */
+export default function TaiKhoanDs({ chiKhoa = false }: { chiKhoa?: boolean }) {
+  const { data: tatCa } = useSuspenseQuery(truyVanTaiKhoan)
+  const ds = chiKhoa ? tatCa.filter((x) => x.trangThai === 'khoa' || !!x.khoaTamDen) : tatCa
   const [tim, datTim] = useState('')
   const [chon, datChon] = useState<string>()
 
@@ -106,7 +110,7 @@ export default function TaiKhoanDs() {
           {loc.length === 0 && (
             <tr>
               <td colSpan={5} className={`${LOP_TD} text-center text-faint`}>
-                Không có tài khoản nào khớp.
+                {chiKhoa ? 'Không có tài khoản nào đang bị khóa.' : 'Không có tài khoản nào khớp.'}
               </td>
             </tr>
           )}

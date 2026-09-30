@@ -8,13 +8,24 @@
  * Mặc định mở cấp 1–2, đóng cấp 3 — trừ nhánh đang xem. Trạng thái đóng/mở nhớ
  * theo máy (localStorage), không nhớ được thì thôi.
  */
-import type { NhanhTang } from '@gdos/shared'
+import { laPhac, type NhanhTang } from '@gdos/shared'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { docTam, ghiTam } from '@/lib/luu-tam'
 import { BieuTuongNhom, MuiTen } from './bieu-tuong'
 
 const KHOA_LUU = 'gdos-cay-mo'
+
+/** Dấu nhỏ cho màn phác — nhìn cây là biết khung nào đã xây, khung nào chưa. */
+const SapCo = () => (
+  <span title="Màn phác — sắp có" className="ml-auto flex-none px-1">
+    <span
+      aria-hidden="true"
+      className="block size-[7px] rounded-full border-[1.5px] border-current opacity-55"
+    />
+    <span className="sr-only">(sắp có)</span>
+  </span>
+)
 
 /** Khóa đóng/mở của tầng, nhóm, module chứa chức năng đang xem. */
 function toTienCua(cay: NhanhTang[], id: string | undefined): string[] {
@@ -88,6 +99,18 @@ export function CayPhanHe({ cay, dangXem }: { cay: NhanhTang[]; dangXem: string 
         ))}
       </div>
 
+      {cay.some((t) =>
+        t.nhom.some((n) => n.modules.some(({ module: m, con }) => con.some((c) => laPhac(m, c)))),
+      ) && (
+        <p className="m-0 flex items-center gap-1.5 px-1.5 pb-1 text-[10.5px] text-faint">
+          <span
+            aria-hidden="true"
+            className="block size-[7px] rounded-full border-[1.5px] border-current opacity-70"
+          />
+          màn phác — đã có chỗ trong khung, sắp xây
+        </p>
+      )}
+
       {cay.map((t) => {
         const k1 = `t:${t.so}`
         const mo1 = dangMo(k1)
@@ -142,7 +165,10 @@ export function CayPhanHe({ cay, dangXem }: { cay: NhanhTang[]; dangXem: string 
                                 <span className="w-4 flex-none opacity-85">
                                   <BieuTuongNhom nhom={n.ma} tang={t.so} />
                                 </span>
-                                <span className="min-w-0 flex-1">{m.nhan}</span>
+                                <span className={`min-w-0 flex-1 ${m.phac ? 'opacity-75' : ''}`}>
+                                  {m.nhan}
+                                </span>
+                                {m.phac && <SapCo />}
                                 <MuiTen mo={mo3} />
                               </button>
                               {mo3 && (
@@ -152,9 +178,10 @@ export function CayPhanHe({ cay, dangXem }: { cay: NhanhTang[]; dangXem: string 
                                       key={c.id}
                                       to="/$chucNang"
                                       params={{ chucNang: c.id }}
-                                      className={`block rounded-md px-2 py-1.5 text-[12.5px] ${c.id === dangXem ? 'bg-tint-brand font-semibold text-brand' : 'text-body hover:bg-nav-hover'}`}
+                                      className={`flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[12.5px] ${c.id === dangXem ? 'bg-tint-brand font-semibold text-brand' : 'text-body hover:bg-nav-hover'} ${laPhac(m, c) && c.id !== dangXem ? 'opacity-75' : ''}`}
                                     >
-                                      {c.nhan}
+                                      <span className="min-w-0 flex-1">{c.nhan}</span>
+                                      {c.phac && !m.phac && <SapCo />}
                                     </Link>
                                   ))}
                                 </div>

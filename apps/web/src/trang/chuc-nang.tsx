@@ -6,6 +6,7 @@ import { MAN_HINH } from '@/app/man-hinh'
 import { timViTri } from '@/lib/phan-he'
 import { truyVanToi } from '@/lib/phien'
 import { ThongBao } from '@/ui/co-ban'
+import { ManPhac } from './man-phac'
 
 /**
  * Một chức năng cấp 4. Kiểm quyền lần nữa ở đây — người dùng gõ thẳng URL thì
@@ -62,7 +63,7 @@ export function TrangChucNang({ id }: { id: string }) {
       )}
 
       <Suspense fallback={<p className="text-faint">Đang tải…</p>}>
-        {ManHinh ? <ManHinh /> : <ThongBao>Màn hình của chức năng này đang được xây dựng.</ThongBao>}
+        {ManHinh ? <ManHinh /> : <ManPhac vt={vt} />}
       </Suspense>
     </>
   )

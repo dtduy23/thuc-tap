@@ -4,11 +4,13 @@ import { lazy, type ComponentType, type LazyExoticComponent } from 'react'
  * Chức năng cấp 4 → màn hình. Tách bundle theo màn (lazy): người không có quyền
  * Tầng 2 không bao giờ tải mã màn quản trị.
  *
- * Mọi chức năng trong registry phải có màn ở đây — test man-hinh.test.ts chặn.
+ * Chức năng nào trong registry cũng phải có màn ở đây, TRỪ màn phác (`phac`) —
+ * test man-hinh.test.ts chặn cả hai chiều.
  */
 export const MAN_HINH: Partial<Record<string, LazyExoticComponent<ComponentType>>> = {
   'nk-tat-ca': lazy(() => import('@/man/nhat-ky-ds')),
   'tk-ds': lazy(() => import('@/man/tai-khoan-ds')),
+  'tk-khoa': lazy(() => import('@/man/tai-khoan-khoa')),
   'tk-tao': lazy(() => import('@/man/tai-khoan-tao')),
   'dv-ds': lazy(() => import('@/man/don-vi-ds')),
   'vt-ma-tran': lazy(() => import('@/man/vai-tro-ma-tran')),

@@ -62,6 +62,8 @@ export interface ChucNang {
   /** Hành động cần để thấy chức năng này. Mặc định READ; "Tạo mới" là CREATE, "Đôn đốc" là ASSIGN… */
   hanhDong?: HanhDong
   mo?: string
+  /** Màn PHÁC: có chỗ trên cây để thấy khung, chưa xây màn. Xây xong thì bỏ cờ này. */
+  phac?: boolean
 }
 
 /** Cấp 3 — một đối tượng nghiệp vụ. */
@@ -74,6 +76,8 @@ export interface ModuleDef {
   nguon: NguonDuLieu
   mo: string
   con: readonly ChucNang[]
+  /** Cả module là màn phác — mọi chức năng con đều chưa xây. */
+  phac?: boolean
 }
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -136,6 +140,9 @@ export interface NhanhTang {
   hoi: string
   nhom: NhanhNhom[]
 }
+
+/** Chức năng chưa xây màn (của chính nó hoặc cả module đang là màn phác). */
+export const laPhac = (m: ModuleDef, c: ChucNang): boolean => !!(m.phac || c.phac)
 
 /** Mã quyền cần để thấy một chức năng cấp 4, vd `PROJECT.READ`, `PROJECT.CREATE`. */
 export const quyenCua = (m: ModuleDef, c: ChucNang): string => `${m.maQuyen}.${c.hanhDong ?? 'READ'}`

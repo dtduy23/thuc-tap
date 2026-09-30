@@ -14,19 +14,19 @@ export class ThietLapController {
   }
 
   @Get()
-  @CanQuyen('QT_CAU_HINH.READ')
+  @CanQuyen('QT_DANG_NHAP.READ', 'QT_HIEN_THI.READ')
   xem(@NguoiDung() nd: NguoiDungPhien) {
     return this.dv.xem(nd)
   }
 
   @Put('bao-mat')
-  @CanQuyen('QT_CAU_HINH.UPDATE')
+  @CanQuyen('QT_DANG_NHAP.UPDATE')
   ghiBaoMat(@NguoiDung() nd: NguoiDungPhien, @Body() than: unknown) {
     return this.dv.ghiBaoMat(nd, than)
   }
 
   @Put('nhan-dien')
-  @CanQuyen('QT_CAU_HINH.UPDATE')
+  @CanQuyen('QT_HIEN_THI.UPDATE')
   ghiNhanDien(@NguoiDung() nd: NguoiDungPhien, @Body() than: unknown) {
     return this.dv.ghiNhanDien(nd, than)
   }

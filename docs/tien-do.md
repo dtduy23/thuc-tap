@@ -25,6 +25,22 @@
 | **4** | Tầng 2: Tài khoản · Phân công · Đơn vị · Ma trận quyền · Nhật ký thao tác (API + màn hình)                                  | ✅ 30/09/2026 |
 | **5** | Cấu hình hệ thống (chính sách bảo mật, tên & nhận diện) · tông màu kiểu PMS · cài đặt cá nhân                               | ✅ 30/09/2026 |
 
+### Sau phiên 5 — dựng đủ cây phân hệ (30/09/2026)
+
+Người dùng chốt: **cấp 1–2 cố định; bám cây cấp 3 của bản mẫu `docs/khung-mau.html`**; dựng đủ khung
+trên giao diện trước để thấy mindset, rồi mới bàn cách tổ chức PMS ở cấp 3–4. Đề xuất cây riêng cho
+PMS (tách Bảng điều hành / Cảnh báo / Biểu mẫu / KPI thành module riêng) **bị loại** — trái nguyên
+tắc: Điều hành có module chung cho mọi nghiệp vụ (Tổng quan, Báo cáo điều hành, Bộ chỉ số), phần
+riêng của dự án là cấp 4 (Theo chủ đầu tư, Theo lĩnh vực…).
+
+- Registry khai đủ 24 module / 64 chức năng theo bản mẫu. Chưa xây thì đánh `phac: true` (màn phác):
+  có chỗ trên cây, có quyền, có đường dẫn; mở ra thấy vị trí trong khung, câu hỏi của nhóm, nguồn dữ
+  liệu, mã quyền. Test chặn hai chiều (không phác thì phải có màn, phác thì không được có màn).
+- Khác bản mẫu, có lý do: thêm **Đơn vị** và **Chính sách đăng nhập** vào Người dùng & Phân quyền
+  (GDOS tự giữ tài khoản — ADR-0003); "Tên & nhận diện" là cấp 4 của **Hiển thị**; Tổ chức ở Danh
+  mục là danh bạ chỉ đọc lấy từ GDOS, không phải gương của Native.
+- Cây bỏ dòng diễn giải dưới tên tầng.
+
 ### Phiên 5 — cấu hình hệ thống, giao diện (30/09/2026)
 
 Theo góp ý của người dùng sau phiên 4: chính sách bảo mật phải chỉnh được trên màn hình, mặc định
