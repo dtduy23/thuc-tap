@@ -29,6 +29,30 @@ Tổ chức theo ADR-0007 (một chủ — nhiều lối vào) và ADR-0008 (mô
 | 5     | Đóng góp theo ADR-0007: báo cáo (Biểu 01/02/03, BC35), chỉ số KPI, cảnh báo, việc của tôi · Đôn đốc                        |               |
 | 6     | Nhập / xuất Excel · giám sát theo lĩnh vực · màn quản lý Danh mục nghiệp vụ, Quy trình mẫu                                 |               |
 
+### Phiên 4 — văn bản, kinh phí & giải ngân, vướng mắc, nhật ký (30/09/2026)
+
+**Đã làm**
+
+- Bảng `du_an_van_ban`, `du_an_von`, `du_an_giai_ngan`, `du_an_vuong_mac` — cùng RLS như bước.
+- **Kho tệp** (`apps/api/src/kho-tep`): giao diện `KhoTep` + bản lưu thư mục (`KHO_TEP_THU_MUC`,
+  production bắt buộc đặt; dev `.data/tep`). Khóa tệp do API sinh, không ghi đè, không ra ngoài
+  thư mục. Tải lên ≤ 25 MB, chỉ đuôi văn bản/ảnh/nén; tên tiếng Việt giữ nguyên khi tải về.
+- Giải ngân = **tổng các đợt** (không có ô nhập tay — PMS có cả hai nên từng lệch); % theo tổng mức
+  và theo kế hoạch vốn tới năm nay (công thức KPI giải ngân của PMS).
+- Vướng mắc: nêu (gắn bước được), giải quyết (bắt buộc ghi kết quả), mở lại. Danh sách dự án đếm
+  vướng mắc đang mở.
+- Thẻ Nhật ký = chính màn Giám sát › Nhật ký thao tác lọc theo dự án (ADR-0007), quyền `NHAT_KY.READ`
+  — chuyên viên không thấy thẻ này.
+- **Đã kiểm trên trình duyệt**: tải lên / tải về PDF tên tiếng Việt, thêm kế hoạch vốn + đợt giải
+  ngân (23,5% tổng mức, 40% kế hoạch), nêu vướng mắc.
+
+**Chưa làm**
+
+- **Kho tệp MinIO** — máy dev không có Docker nên chưa kiểm được; bản thư mục dùng được cho máy
+  chủ gắn ổ đĩa. Làm ở Mốc 2 cùng kỹ thuật FOXAI.
+- Nhà thầu tải lên văn bản, nêu vướng mắc — hiện chỉ chủ đầu tư ghi (thành viên chỉ đọc + gửi cập
+  nhật bước).
+
 ### Phiên 3 — kế hoạch & điều chỉnh, Gantt (30/09/2026)
 
 **Đã làm**
