@@ -13,9 +13,11 @@
 #     cửa duy nhất — CLAUDE.md §3: phải xanh trước khi báo xong.
 #   - Không còn ai quét bí mật lọt vào lịch sử git.
 #
-# RUNNER CỦA FOXAI LÀ SHELL EXECUTOR (docs/FOXAI-CICD-Runbook.md của repo cũ):
-#   tag `foxai-build`, chạy trên SRV-01, user chạy runner có quyền docker.
-#   Không gắn tag → không runner nào nhận → pipeline treo "stuck".
+# HAI RUNNER, SHELL EXECUTOR (docs/FOXAI-CICD-Runbook.md của repo cũ):
+#   `foxai-build`     máy build — dựng image, đẩy lên registry
+#   `foxai-develop`   CHÍNH MÁY THỬ — nên deploy chạy tại chỗ, không SSH, không
+#                     khóa, không host key. Ít thứ phải giữ bí mật hơn hẳn.
+#   Shell executor BỎ QUA `image:` và không gắn tag → pipeline treo "stuck".
 # ============================================================================
 
 stages:
@@ -38,6 +40,9 @@ variables:
   ANH_API: '$CI_REGISTRY_IMAGE/api'
   ANH_WEB: '$CI_REGISTRY_IMAGE/web'
   THE: '$CI_COMMIT_SHORT_SHA'
+  # Thư mục GDOS trên máy thử, cùng lệ với các dự án khác ở /opt/foxai/*.
+  # Trong đó phải có sẵn `.env` do kỹ thuật đặt một lần — xem chú thích job deploy.
+  THU_MUC: '/opt/foxai/gdos'
 
 build:
   stage: build
@@ -64,73 +69,52 @@ build:
 # ── deploy ───────────────────────────────────────────────────────────────────
 # BẤM TAY (`when: manual`) — máy thử không tự đổi sau mỗi commit.
 #
-# Cần bốn biến CI/CD (Settings → CI/CD → Variables), tất cả `Protected`:
-#   TRIEN_KHAI_SSH        user@may-thu  (ví dụ gdos@10.0.0.13)
-#   TRIEN_KHAI_KHOA       khóa SSH riêng — kiểu biến FILE, không phải Variable
-#   TRIEN_KHAI_HOST_KEY   một dòng known_hosts của máy thử:
-#                         ssh-keyscan -t ed25519 <máy thử>
-#   TRIEN_KHAI_THU_MUC    thư mục trên máy thử, ví dụ /srv/gdos
+# Chạy bằng runner `foxai-develop` NẰM NGAY TRÊN MÁY THỬ, nên không cần biến
+# CI/CD nào cả. Thứ duy nhất phải chuẩn bị một lần trên máy thử:
 #
-# Máy thử phục vụ ở https://gdosfox.fox.ai.vn. TLS và tên miền do nginx CỦA MÁY
-# CHỦ lo (mẫu: nginx.may-thu.conf), container web chỉ nghe 127.0.0.1:8080.
+#   mkdir -p /opt/foxai/gdos/.du-lieu/tep
+#   chown -R 1000:1000 /opt/foxai/gdos/.du-lieu/tep   # API chạy non-root (uid 1000)
+#   /opt/foxai/gdos/.env  (chmod 600, của gitlab-runner) gồm:
+#       POSTGRES_PASSWORD · AUTH_SECRET · MINIO_ROOT_USER · MINIO_ROOT_PASSWORD
+#       TIN_PROXY=172.31.0.0/16 · NATIVE_URL=
 #
-# Mật khẩu DB, AUTH_SECRET, NATIVE_URL… KHÔNG đi qua CI: nằm trong
-# `$TRIEN_KHAI_THU_MUC/.env` do kỹ thuật FOXAI đặt một lần trên máy thử
-# (xem compose.trien-khai.yaml). CI không bao giờ nhìn thấy chúng.
+# Bí mật nằm trên máy thử, KHÔNG đi qua CI và không ai phải dán vào GitLab.
 deploy:
   stage: deploy
+  tags: ['foxai-develop']
   when: manual
   environment:
     name: may-thu
     url: https://gdosfox.fox.ai.vn
   script:
     - |
-      thieu=''
-      for bien in TRIEN_KHAI_SSH TRIEN_KHAI_KHOA TRIEN_KHAI_HOST_KEY TRIEN_KHAI_THU_MUC; do
-        eval "gia_tri=\${$bien:-}"
-        [ -n "$gia_tri" ] || thieu="$thieu $bien"
-      done
-      if [ -n "$thieu" ]; then
-        echo "✗ Chưa đặt biến CI/CD:$thieu — xem chú thích job deploy trong .gitlab-ci.yml" >&2
-        exit 1
-      fi
-      command -v ssh >/dev/null || { echo '✗ Runner chưa có ssh — cài openssh-client trên SRV-01' >&2; exit 1; }
+      # Thiếu chuẩn bị thì DỪNG và nói rõ thiếu gì — không tự tạo .env, vì .env
+      # tự tạo nghĩa là mật khẩu do CI sinh và nằm trong log.
+      [ -d "$THU_MUC" ] || { echo "✗ Chưa có $THU_MUC trên máy thử" >&2; exit 1; }
+      [ -f "$THU_MUC/.env" ] || { echo "✗ Thiếu $THU_MUC/.env — xem chú thích job deploy" >&2; exit 1; }
+    - cp compose.trien-khai.yaml "$THU_MUC/compose.yaml"
     - |
-      # Khóa và known_hosts nằm trong thư mục riêng của job, xóa khi job xong.
-      ssh_dir="$CI_PROJECT_DIR/.ssh-$CI_JOB_ID"
-      mkdir -p "$ssh_dir" && chmod 700 "$ssh_dir"
-      trap 'rm -rf "$ssh_dir"' EXIT
-      cp "$TRIEN_KHAI_KHOA" "$ssh_dir/khoa" && chmod 600 "$ssh_dir/khoa"
-      printf '%s\n' "$TRIEN_KHAI_HOST_KEY" > "$ssh_dir/known_hosts"
-      # Kiểm host key thật, KHÔNG dùng StrictHostKeyChecking=no — nếu không thì
-      # bất cứ máy nào chen vào đường truyền cũng nhận được lệnh triển khai.
-      KHOA="-i $ssh_dir/khoa -o IdentitiesOnly=yes -o UserKnownHostsFile=$ssh_dir/known_hosts -o StrictHostKeyChecking=yes"
-      # Thẻ image đi kèm .env (bí mật) — mọi lệnh compose phải đọc CẢ HAI file.
+      cd "$THU_MUC"
+      # Vé của job, hết hiệu lực khi job xong; qua stdin để không hiện trong
+      # danh sách tiến trình của máy thử.
+      printf '%s' "$CI_JOB_TOKEN" | docker login --username gitlab-ci-token --password-stdin "$CI_REGISTRY"
+      # Thẻ image tách khỏi .env (bí mật) — mọi lệnh compose đọc CẢ HAI file.
+      printf 'ANH_API=%s\nANH_WEB=%s\nTHE=%s\n' "$ANH_API" "$ANH_WEB" "$THE" > .the-anh
       DC="docker compose --env-file .env --env-file .the-anh"
-
-      scp $KHOA compose.trien-khai.yaml "$TRIEN_KHAI_SSH:$TRIEN_KHAI_THU_MUC/compose.yaml"
-
-      # Máy thử đăng nhập registry bằng vé của job (hết hiệu lực khi job xong).
-      # Vé đi qua stdin, KHÔNG qua tham số dòng lệnh — tham số hiện trong danh
-      # sách tiến trình của máy thử, ai đang đăng nhập máy đó cũng đọc được.
-      printf '%s' "$CI_JOB_TOKEN" |
-        ssh $KHOA "$TRIEN_KHAI_SSH" "docker login --username gitlab-ci-token --password-stdin '$CI_REGISTRY'"
-
-      ssh $KHOA "$TRIEN_KHAI_SSH" "set -e
-        cd '$TRIEN_KHAI_THU_MUC'
-        printf 'ANH_API=%s\nANH_WEB=%s\nTHE=%s\n' '$ANH_API' '$ANH_WEB' '$THE' > .the-anh
-        $DC pull
-        $DC run --rm di-tru
-        $DC up --detach --remove-orphans
-        docker logout '$CI_REGISTRY'"
+      $DC pull
+      $DC run --rm di-tru
+      $DC up --detach --remove-orphans
+      docker logout "$CI_REGISTRY"
     - |
       # Chỉ báo xong khi ĐI HẾT chuỗi thật: nginx → api → Postgres.
+      cd "$THU_MUC"
       for _ in $(seq 1 30); do
-        if ssh $KHOA "$TRIEN_KHAI_SSH" "curl --fail --silent --show-error --output /dev/null http://127.0.0.1:8080/api/health/deps"; then
-          echo "✓ Máy thử đã chạy bản $THE"
+        if curl --fail --silent --output /dev/null http://127.0.0.1:8080/api/health/deps; then
+          echo "✓ Máy thử đã chạy bản $THE — https://gdosfox.fox.ai.vn"
           exit 0
         fi
         sleep 2
       done
-      echo "✗ Sau 60 giây /api/health/deps vẫn chưa ok — trên máy thử xem: docker compose logs api" >&2
+      echo "✗ Sau 60 giây /api/health/deps vẫn chưa ok — nhật ký API:" >&2
+      docker compose --env-file .env --env-file .the-anh logs --tail 60 api >&2
       exit 1
