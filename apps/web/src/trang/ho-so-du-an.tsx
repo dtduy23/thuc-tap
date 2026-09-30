@@ -2,6 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { lazy, Suspense } from 'react'
 import { truyVanHoSo } from '@/lib/du-an'
+import { truyVanToi } from '@/lib/phien'
 import { ChipSucKhoe, ChipTrangThai } from '@/man/du-an/chung'
 
 const TongQuan = lazy(() => import('@/man/du-an/ho-so/tong-quan'))
@@ -9,29 +10,36 @@ const Checklist = lazy(() => import('@/man/du-an/ho-so/checklist'))
 const ThanhVien = lazy(() => import('@/man/du-an/ho-so/thanh-vien'))
 const KeHoach = lazy(() => import('@/man/du-an/ho-so/ke-hoach'))
 const Gantt = lazy(() => import('@/man/du-an/ho-so/gantt'))
+const VanBan = lazy(() => import('@/man/du-an/ho-so/van-ban'))
+const KinhPhi = lazy(() => import('@/man/du-an/ho-so/kinh-phi'))
+const VuongMac = lazy(() => import('@/man/du-an/ho-so/vuong-mac'))
+const NhatKy = lazy(() => import('@/man/du-an/ho-so/nhat-ky'))
 
 /**
  * Hồ sơ MỘT dự án. Các thẻ là trục PHẠM VI của hồ sơ — không lên cây, không phải
- * cấp 5 (ADR-0002). Thẻ chưa xây vẫn hiện (mờ) để thấy trọn khung hồ sơ.
+ * cấp 5 (ADR-0002).
  */
 export const THE_HO_SO = [
   { id: 'tong-quan', nhan: 'Tổng quan', ManHinh: TongQuan },
   { id: 'checklist', nhan: 'Checklist & tiến độ', ManHinh: Checklist },
   { id: 'gantt', nhan: 'Gantt', ManHinh: Gantt },
   { id: 'ke-hoach', nhan: 'Kế hoạch & điều chỉnh', ManHinh: KeHoach },
-  { id: 'van-ban', nhan: 'Văn bản' },
-  { id: 'kinh-phi', nhan: 'Kinh phí & giải ngân' },
-  { id: 'vuong-mac', nhan: 'Vướng mắc' },
+  { id: 'van-ban', nhan: 'Văn bản', ManHinh: VanBan },
+  { id: 'kinh-phi', nhan: 'Kinh phí & giải ngân', ManHinh: KinhPhi },
+  { id: 'vuong-mac', nhan: 'Vướng mắc', ManHinh: VuongMac },
   { id: 'thanh-vien', nhan: 'Thành viên', ManHinh: ThanhVien },
-  { id: 'nhat-ky', nhan: 'Nhật ký' },
+  { id: 'nhat-ky', nhan: 'Nhật ký', ManHinh: NhatKy, quyen: 'NHAT_KY.READ' },
 ] as const
 
 export type MaThe = (typeof THE_HO_SO)[number]['id']
 
 export function TrangHoSoDuAn({ id, the }: { id: string; the: MaThe }) {
   const { data: hs } = useSuspenseQuery(truyVanHoSo(id))
-  const dangXem = THE_HO_SO.find((t) => t.id === the) ?? THE_HO_SO[0]
-  const ManHinh = 'ManHinh' in dangXem ? dangXem.ManHinh : null
+  const { data: toi } = useSuspenseQuery(truyVanToi)
+  // Thẻ có quyền riêng (Nhật ký) chỉ hiện với người có quyền của chủ thẻ.
+  const cacThe = THE_HO_SO.filter((t) => !('quyen' in t) || toi.quyen.includes(t.quyen))
+  const dangXem = cacThe.find((t) => t.id === the) ?? cacThe[0]!
+  const ManHinh = dangXem.ManHinh
 
   return (
     <>
@@ -67,35 +75,24 @@ export function TrangHoSoDuAn({ id, the }: { id: string; the: MaThe }) {
         aria-label="Các phần của hồ sơ"
         className="mb-4 flex gap-0.5 overflow-x-auto border-b border-line"
       >
-        {THE_HO_SO.map((t) =>
-          'ManHinh' in t ? (
-            <Link
-              key={t.id}
-              to="/du-an/$id"
-              params={{ id }}
-              search={{ the: t.id }}
-              role="tab"
-              aria-selected={t.id === dangXem.id}
-              className={`border-b-2 px-3 py-2 text-[13px] whitespace-nowrap ${t.id === dangXem.id ? 'border-brand font-semibold text-brand' : 'border-transparent text-body hover:text-brand'}`}
-            >
-              {t.nhan}
-            </Link>
-          ) : (
-            <span
-              key={t.id}
-              role="tab"
-              aria-disabled="true"
-              aria-selected={false}
-              title="Sắp có"
-              className="cursor-default border-b-2 border-transparent px-3 py-2 text-[13px] whitespace-nowrap text-faint opacity-60"
-            >
-              {t.nhan}
-            </span>
-          ),
-        )}
+        {cacThe.map((t) => (
+          <Link
+            key={t.id}
+            to="/du-an/$id"
+            params={{ id }}
+            search={{ the: t.id }}
+            role="tab"
+            aria-selected={t.id === dangXem.id}
+            className={`border-b-2 px-3 py-2 text-[13px] whitespace-nowrap ${t.id === dangXem.id ? 'border-brand font-semibold text-brand' : 'border-transparent text-body hover:text-brand'}`}
+          >
+            {t.nhan}
+          </Link>
+        ))}
       </div>
 
-      <Suspense fallback={<p className="text-faint">Đang tải…</p>}>{ManHinh && <ManHinh hs={hs} />}</Suspense>
+      <Suspense fallback={<p className="text-faint">Đang tải…</p>}>
+        <ManHinh hs={hs} />
+      </Suspense>
     </>
   )
 }

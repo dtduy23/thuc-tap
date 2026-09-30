@@ -51,6 +51,8 @@ export const suaDonVi = (id: string, dl: { ma?: string; ten?: string }) =>
   goiApi<DonViDong>(`/don-vi/${id}`, { method: 'PATCH', body: dl })
 
 export interface LocNhatKy {
+  /** Chỉ thao tác trên một dự án — thẻ Nhật ký trong hồ sơ. */
+  duAnId?: string
   bang?: string
   hanhDong?: string
   tu?: string

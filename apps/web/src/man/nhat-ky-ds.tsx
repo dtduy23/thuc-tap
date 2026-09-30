@@ -18,8 +18,9 @@ const MAU_HANH_DONG: Record<string, 'ok' | 'brand' | 'danger' | 'warn' | 'xam'> 
  * Nhật ký thao tác — chỉ đọc. Database tự ghi mọi thay đổi (trigger), không ai
  * sửa hay xóa được, kể cả quản trị viên.
  */
-export default function NhatKyDs() {
-  const [loc, datLoc] = useState<LocNhatKy>({})
+/** `duAnId`: dùng lại chính màn này làm thẻ Nhật ký trong hồ sơ dự án (một chủ — nhiều lối vào). */
+export default function NhatKyDs({ duAnId }: { duAnId?: string }) {
+  const [loc, datLoc] = useState<LocNhatKy>(duAnId ? { duAnId } : {})
   const [mo, datMo] = useState<number>()
   const tv = useInfiniteQuery({ ...truyVanNhatKy(loc), placeholderData: keepPreviousData })
   const ds = tv.data?.pages.flatMap((t) => t.dong) ?? []

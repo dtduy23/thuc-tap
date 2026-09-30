@@ -9,7 +9,7 @@
 | **0** | Khởi tạo repo, CI, ADR, khung dùng chung                                             | ✅ Xong — **CI/CD giao kỹ thuật FOXAI** (xem dưới) |
 | **1** | Nền móng: tài khoản, đơn vị, vai trò & quyền, RLS, nhật ký, khung portal + cây 4 cấp | ✅ Xong — nhánh `moc-1-nen-mong`, chưa đẩy         |
 | **2** | Đưa lên máy thử (image, nginx, CI/CD)                                                | Chưa bắt đầu                                       |
-| **3** | Module Dự án (từ PMS)                                                                | 🔄 Phiên 3/6 — + kế hoạch & điều chỉnh, Gantt      |
+| **3** | Module Dự án (từ PMS)                                                                | 🔄 Phiên 4/6 — đủ 9 thẻ hồ sơ dự án                |
 | **4** | Module Khiếu nại đất đai                                                             | Chưa bắt đầu                                       |
 | **5** | Nối FOXAI Native (văn bản, tóm tắt, hỏi đáp)                                         | Chưa bắt đầu — **chờ đội Native**                  |
 | **6** | Điều hành: dashboard, báo cáo                                                        | Chưa bắt đầu                                       |
@@ -25,7 +25,7 @@ Tổ chức theo ADR-0007 (một chủ — nhiều lối vào) và ADR-0008 (mô
 | **1** | Lược đồ, RLS, 6 quy trình mẫu NĐ 45, tính hạn dùng chung, loại đơn vị mở rộng                                              | ✅ 30/09/2026 |
 | **2** | API + màn: danh sách (3 bộ lọc), tạo từ quy trình mẫu, hồ sơ (Tổng quan · Checklist · Thành viên), nhà thầu gửi → xác nhận | ✅ 30/09/2026 |
 | **3** | Kế hoạch & điều chỉnh (bước nháp, chốt kế hoạch, phiên bản), thêm/xóa bước tùy biến, Gantt                                 | ✅ 30/09/2026 |
-| 4     | Văn bản (MinIO) · Kinh phí & giải ngân · Vướng mắc · thẻ Nhật ký                                                           |               |
+| **4** | Văn bản (kho tệp) · Kinh phí & giải ngân · Vướng mắc · thẻ Nhật ký                                                         | ✅ 30/09/2026 |
 | 5     | Đóng góp theo ADR-0007: báo cáo (Biểu 01/02/03, BC35), chỉ số KPI, cảnh báo, việc của tôi · Đôn đốc                        |               |
 | 6     | Nhập / xuất Excel · giám sát theo lĩnh vực · màn quản lý Danh mục nghiệp vụ, Quy trình mẫu                                 |               |
 

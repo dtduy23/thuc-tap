@@ -12,7 +12,7 @@ import type {
   VaiTroThanhVien,
 } from '@gdos/shared'
 import { queryOptions, type QueryClient } from '@tanstack/react-query'
-import { goiApi } from './http'
+import { goiApi, taiLenTep } from './http'
 
 export const KHOA_DU_AN = ['du-an'] as const
 
@@ -96,3 +96,31 @@ export const xoaBuoc = (id: string, buocId: string) =>
 
 export const chotKeHoach = (id: string, lyDo: string, canCu: string) =>
   goiApi<HoSoDuAn>(`/du-an/${id}/chot-ke-hoach`, { method: 'POST', body: { lyDo, canCu: canCu || null } })
+
+// ── Văn bản, vốn, giải ngân, vướng mắc ────────────────────────────────────
+
+export const taiLenVanBan = (id: string, du: FormData) => taiLenTep<HoSoDuAn>(`/du-an/${id}/van-ban`, du)
+export const duongDanTaiVe = (id: string, vbId: string) => `/api/du-an/${id}/van-ban/${vbId}/tai`
+export const xoaVanBan = (id: string, vbId: string) =>
+  goiApi<HoSoDuAn>(`/du-an/${id}/van-ban/${vbId}/xoa`, { method: 'POST' })
+
+export const themVon = (id: string, dl: Record<string, unknown>) =>
+  goiApi<HoSoDuAn>(`/du-an/${id}/von`, { method: 'POST', body: dl })
+export const suaVon = (id: string, vonId: string, dl: Record<string, unknown>) =>
+  goiApi<HoSoDuAn>(`/du-an/${id}/von/${vonId}`, { method: 'PATCH', body: dl })
+export const xoaVon = (id: string, vonId: string) =>
+  goiApi<HoSoDuAn>(`/du-an/${id}/von/${vonId}/xoa`, { method: 'POST' })
+
+export const themGiaiNgan = (id: string, dl: Record<string, unknown>) =>
+  goiApi<HoSoDuAn>(`/du-an/${id}/giai-ngan`, { method: 'POST', body: dl })
+export const xoaGiaiNgan = (id: string, gnId: string) =>
+  goiApi<HoSoDuAn>(`/du-an/${id}/giai-ngan/${gnId}/xoa`, { method: 'POST' })
+
+export const neuVuongMac = (id: string, dl: Record<string, unknown>) =>
+  goiApi<HoSoDuAn>(`/du-an/${id}/vuong-mac`, { method: 'POST', body: dl })
+export const giaiQuyetVuongMac = (id: string, vmId: string, ngay: string, ketQua: string) =>
+  goiApi<HoSoDuAn>(`/du-an/${id}/vuong-mac/${vmId}/giai-quyet`, { method: 'POST', body: { ngay, ketQua } })
+export const moLaiVuongMac = (id: string, vmId: string) =>
+  goiApi<HoSoDuAn>(`/du-an/${id}/vuong-mac/${vmId}/mo-lai`, { method: 'POST' })
+export const xoaVuongMac = (id: string, vmId: string) =>
+  goiApi<HoSoDuAn>(`/du-an/${id}/vuong-mac/${vmId}/xoa`, { method: 'POST' })

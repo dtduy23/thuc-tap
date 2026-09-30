@@ -247,16 +247,13 @@ describe('vướng mắc', () => {
   it('không mượn được bước của dự án khác', async () => {
     const cv = await vao('chuyenvien.a')
     const khac = (
-      await cv
-        .post('/api/du-an')
-        .set(GHI)
-        .send({
-          ten: 'Dự án khác',
-          donViId: MAU.XA_A,
-          quyTrinhMa: 'mua-sam',
-          loaiChi: 'dtpt',
-          ngayBatDau: '2026-01-05',
-        })
+      await cv.post('/api/du-an').set(GHI).send({
+        ten: 'Dự án khác',
+        donViId: MAU.XA_A,
+        quyTrinhMa: 'mua-sam',
+        loaiChi: 'dtpt',
+        ngayBatDau: '2026-01-05',
+      })
     ).body as HoSoDuAn
     const buocKhac = khac.buoc.find((b) => !b.laNhom)!
     expect(
