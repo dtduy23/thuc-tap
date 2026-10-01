@@ -2,7 +2,7 @@
  * Hợp đồng dữ liệu của Tầng 2 (tài khoản, đơn vị) và nhật ký thao tác — API trả
  * đúng các kiểu này, web đọc đúng các kiểu này. Không có gì bí mật ở đây.
  */
-import type { PhanCong } from './vai-tro.js'
+import type { MaVai, PhanCong } from './vai-tro.js'
 
 /**
  * Loại đơn vị. Chủ đầu tư là đơn vị (sở/ngành, cơ quan Đảng, xã…); nhà thầu, tư vấn
@@ -46,6 +46,18 @@ export interface TaiKhoanDong {
   phanCong: PhanCong[]
   /** Lĩnh vực được giám sát: XEM mọi dự án của lĩnh vực đó ở mọi đơn vị, không sửa. */
   giamSatLinhVuc: { id: string; ten: string }[]
+}
+
+/** Một dòng danh bạ cán bộ (Danh mục › Tổ chức) — chỉ thông tin để tra cứu, không có gì về bảo mật. */
+export interface CanBoDong {
+  id: string
+  hoTen: string
+  tenDangNhap: string
+  donViId: string
+  donViTen: string
+  donViCap: string
+  /** Các vai trò đang giữ (không trùng). */
+  vai: MaVai[]
 }
 
 /** Trả MỘT lần khi tạo tài khoản / đặt lại mật khẩu — không lưu, không xem lại được. */

@@ -68,6 +68,16 @@
 - Nhánh `develop` **chưa tồn tại** trên remote. Pipeline chỉ nổ khi có nhánh đó.
 - CSP trong `nginx.conf` chưa mở trên trình duyệt thật; màn nào trắng thì nới ở đúng chỉ thị đó.
 
+## Dọn màn phác — danh bạ và tra cứu (01/10/2026)
+
+- **Danh mục › Tổ chức** (Đơn vị, Cán bộ): danh bạ CHỈ ĐỌC trong phạm vi RLS của người xem —
+  `/api/to-chuc/don-vi`, `/api/to-chuc/can-bo` (quyền `DM_TO_CHUC.READ`). Cán bộ chỉ trả họ tên, tên đăng
+  nhập, đơn vị, vai trò; tài khoản khóa/xóa không hiện. 2 test.
+- **Vai trò & quyền › Tra cứu phân công**: mỗi dòng một phân công; chọn phân hệ + thao tác để biết
+  "ai làm được việc này" — tính bằng đúng `tinhQuyen()` mà API dùng để chặn.
+- Còn phác: Đơn thư, Nhiệm vụ, Luồng phê duyệt, Nguồn dữ liệu vào, Tích hợp ra, Quy tắc cảnh báo,
+  Mô hình AI, Theo dõi vận hành; lẻ: SSO, Cây phân hệ, Nhãn theo khách hàng, Trang mặc định theo vai.
+
 ## Mốc 5 — Nối FOXAI Native (ADR-0009)
 
 ### Bước A — kiến trúc + Tóm tắt văn bản chạy với bản giả (30/09/2026)

@@ -227,7 +227,6 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'danh-muc',
     maQuyen: 'DM_TO_CHUC',
     nguon: 'db',
-    phac: true,
     mo: 'Danh bạ đơn vị và cán bộ cho mọi nghiệp vụ tra cứu, chọn — chỉ đọc. Khai báo ở Tầng 2 › Đơn vị, Tài khoản.',
     con: [
       { id: 'dm-don-vi', nhan: 'Đơn vị' },
@@ -309,7 +308,7 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nguon: 'db',
     mo: 'Ba vai cố định và ma trận quyền sinh ra từ đó. Chỉ xem.',
     con: [
-      { id: 'vt-tra-cuu', nhan: 'Tra cứu phân công', phac: true },
+      { id: 'vt-tra-cuu', nhan: 'Tra cứu phân công' },
       { id: 'vt-ma-tran', nhan: 'Ma trận quyền' },
     ],
   },

@@ -237,3 +237,33 @@ describe('quy trình mẫu', () => {
     ).toBe(403)
   })
 })
+
+describe('Danh mục › Tổ chức — danh bạ chỉ đọc', () => {
+  it('cán bộ xã chỉ thấy đơn vị và đồng nghiệp trong phạm vi; không lộ trường bảo mật', async () => {
+    const cvA = await vao('chuyenvien.a')
+    const dv = (await cvA.get('/api/to-chuc/don-vi')).body as { id: string }[]
+    expect(dv.map((d) => d.id)).toEqual([MAU.XA_A])
+    const res = await cvA.get('/api/to-chuc/can-bo')
+    expect(res.status).toBe(200)
+    const cb = res.body as Record<string, unknown>[]
+    const ten = cb.map((c) => c.tenDangNhap)
+    expect(ten).toContain('chutich.a')
+    expect(ten).not.toContain('canbo.b')
+    expect(cb.find((c) => c.tenDangNhap === 'chutich.a')!.vai).toEqual(['LANH_DAO'])
+    expect(Object.keys(cb[0]!).sort()).toEqual(
+      ['donViCap', 'donViId', 'donViTen', 'hoTen', 'id', 'tenDangNhap', 'vai'].sort(),
+    )
+  })
+
+  it('tài khoản đã khóa không nằm trong danh bạ; không ghi được qua đường này', async () => {
+    await db.coSo.update(taiKhoan).set({ trangThai: 'khoa' }).where(eq(taiKhoan.tenDangNhap, 'chutich.a'))
+    const cvA = await vao('chuyenvien.a')
+    const cb = (await cvA.get('/api/to-chuc/can-bo')).body as { tenDangNhap: string }[]
+    expect(cb.map((c) => c.tenDangNhap)).not.toContain('chutich.a')
+    expect((await cvA.post('/api/to-chuc/can-bo').set(GHI).send({})).status).toBe(404)
+    await db.coSo
+      .update(taiKhoan)
+      .set({ trangThai: 'hoat-dong' })
+      .where(eq(taiKhoan.tenDangNhap, 'chutich.a'))
+  })
+})

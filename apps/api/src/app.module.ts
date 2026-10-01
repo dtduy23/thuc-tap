@@ -20,6 +20,7 @@ import { LienKetNativeService } from './native/lien-ket.service.js'
 import { XAC_THUC_NATIVE, XacThucNativeGia, XacThucNativeHttp } from './native/xac-thuc-native.js'
 import { NhatKyController } from './nhat-ky/nhat-ky.controller.js'
 import { NhatKyService } from './nhat-ky/nhat-ky.service.js'
+import { ToChucController } from './danh-muc/to-chuc.controller.js'
 import { DonViController } from './quan-tri/don-vi.controller.js'
 import { DonViService } from './quan-tri/don-vi.service.js'
 import { TaiKhoanController } from './quan-tri/tai-khoan.controller.js'
@@ -39,6 +40,7 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     XacThucController,
     TaiKhoanController,
     DonViController,
+    ToChucController,
     NhatKyController,
     ThietLapController,
     DuAnController,
