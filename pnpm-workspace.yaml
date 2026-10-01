@@ -1,0 +1,9 @@
+packages:
+  - apps/*
+  - packages/*
+
+# pnpm 11 chặn script cài đặt của phụ thuộc cho tới khi được cho phép rõ ràng.
+# Chỉ mở cho công cụ build phổ biến; thêm gói mới vào đây phải có lý do.
+allowBuilds:
+  '@swc/core': true
+  esbuild: true

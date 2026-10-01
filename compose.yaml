@@ -1,0 +1,48 @@
+# ============================================================================
+# Hạ tầng cho máy DEV: Postgres + MinIO. API và web chạy bằng `pnpm dev`.
+# Image production của API/web thuộc Mốc 2 (triển khai), kiểm trên runner build.
+#
+#   cp .env.example .env    # rồi đổi các mật khẩu trong .env
+#   docker compose up -d
+#
+# Cổng dùng số lệch khỏi mặc định (5433, 9100) để KHÔNG đụng Postgres/MinIO
+# khác đang chạy trên máy — máy dev của FOXAI thường có sẵn Postgres của dự án
+# khác ở 5432, trong đó có dữ liệu thật.
+# ============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gdos
+      POSTGRES_USER: gdos
+      # Không có giá trị mặc định: thiếu thì compose dừng, không chạy với mật khẩu đoán được.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Đặt POSTGRES_PASSWORD trong .env}
+    ports:
+      - '127.0.0.1:5433:5432'
+    volumes:
+      - ./.data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U gdos -d gdos']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ':9001'
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Đặt MINIO_ROOT_USER trong .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Đặt MINIO_ROOT_PASSWORD trong .env}
+    ports:
+      - '127.0.0.1:9100:9000'
+      - '127.0.0.1:9101:9001'
+    volumes:
+      - ./.data/minio:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 5s
+      timeout: 3s
+      retries: 10

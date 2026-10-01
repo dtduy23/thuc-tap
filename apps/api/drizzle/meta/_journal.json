@@ -1,0 +1,181 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790725492480,
+      "tag": "0000_mo-rong",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790725493921,
+      "tag": "0001_bang",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790725495452,
+      "tag": "0002_bao-mat",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790726670266,
+      "tag": "0003_phien",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790728549581,
+      "tag": "0004_phai-doi-mat-khau",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790728551881,
+      "tag": "0005_quan-tri",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790730240228,
+      "tag": "0006_cau-hinh",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790730242906,
+      "tag": "0007_cau-hinh-bao-mat",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790735333590,
+      "tag": "0008_du-an",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790735336163,
+      "tag": "0009_du-an-bao-mat",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790735822053,
+      "tag": "0010_du-an-ho-tro",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790738595576,
+      "tag": "0011_ke-hoach",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790738598663,
+      "tag": "0012_ke-hoach-bao-mat",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790739134686,
+      "tag": "0013_ho-so-du-an",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790739136642,
+      "tag": "0014_ho-so-du-an-bao-mat",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1790740049068,
+      "tag": "0015_don-doc",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790740051428,
+      "tag": "0016_don-doc-bao-mat",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790741820520,
+      "tag": "0017_giam-sat-linh-vuc",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790741845955,
+      "tag": "0018_giam-sat-linh-vuc-bao-mat",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790743442288,
+      "tag": "0019_dem-dung-danh-muc",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790751137765,
+      "tag": "0020_van-ban",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790751149627,
+      "tag": "0021_van-ban-bao-mat",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790754625487,
+      "tag": "0022_lien-ket-native",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790754628044,
+      "tag": "0023_lien-ket-native-bao-mat",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790758726913,
+      "tag": "0024_van-ban-tu-native",
+      "breakpoints": true
+    }
+  ]
+}

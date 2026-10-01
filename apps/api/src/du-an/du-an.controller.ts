@@ -1,0 +1,225 @@
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { homNay, LOC_DU_AN, type LocDuAn } from '@gdos/shared'
+import type { Response } from 'express'
+import { maUuid } from '../chung/kiem-than.js'
+import { CanQuyen, NguoiDung, type NguoiDungPhien } from '../xac-thuc/bao-ve.js'
+import { headerTaiExcel, vietExcel } from '../xuyen-suot/bao-cao-chung.js'
+import { checklist } from './bao-cao.js'
+import { DongGopDuAnService } from './dong-gop.service.js'
+import { DuAnService } from './du-an.service.js'
+import type { TepTaiLen } from './ho-so.service.js'
+import { KICH_THUOC_TEP_NHAP, NhapDuAnService } from './nhap.service.js'
+
+/**
+ * Dự án. Guard chặn theo QUYỀN VAI (DU_AN.*); service chặn theo VỊ TRÍ trên
+ * từng dự án (chủ đầu tư sửa, thành viên ngoài đơn vị chỉ gửi); RLS chặn lần cuối.
+ * Mọi thao tác ghi trả về hồ sơ mới — web vẽ lại một lần, không đoán.
+ */
+@Controller('du-an')
+export class DuAnController {
+  constructor(
+    @Inject(DuAnService) private readonly dv: DuAnService,
+    @Inject(DongGopDuAnService) private readonly dongGop: DongGopDuAnService,
+    @Inject(NhapDuAnService) private readonly nhapDv: NhapDuAnService,
+  ) {}
+
+  @Get()
+  @CanQuyen('DU_AN.READ')
+  danhSach(@NguoiDung() nd: NguoiDungPhien, @Query('loc') loc?: string) {
+    const l: LocDuAn = LOC_DU_AN.includes(loc as LocDuAn) ? (loc as LocDuAn) : 'tat-ca'
+    return this.dv.danhSach(nd, l)
+  }
+
+  /** Lịch sử đôn đốc — đợt nào, gửi dự án nào, ai gửi. */
+  @Get('don-doc')
+  @CanQuyen('DU_AN.READ')
+  lichSuDonDoc(@NguoiDung() nd: NguoiDungPhien) {
+    return this.dongGop.lichSuDonDoc(nd)
+  }
+
+  /** Gửi đôn đốc (Điều 36) — cơ quan quản lý: quyền giao việc. */
+  @Post('don-doc')
+  @CanQuyen('DU_AN.ASSIGN')
+  guiDonDoc(@NguoiDung() nd: NguoiDungPhien, @Body() than: unknown) {
+    return this.dongGop.guiDonDoc(nd, than)
+  }
+
+  // ── Nhập từ Excel: tải mẫu → kiểm (không ghi) → nhập (tất cả hoặc không) ──
+
+  @Get('nhap/mau')
+  @CanQuyen('DU_AN.CREATE')
+  async tepMauNhap(@NguoiDung() nd: NguoiDungPhien, @Res() res: Response) {
+    res.set(headerTaiExcel('Mau_nhap_du_an')).send(await this.nhapDv.tepMau(nd))
+  }
+
+  @Post('nhap/kiem-tra')
+  @HttpCode(200)
+  @CanQuyen('DU_AN.CREATE')
+  @UseInterceptors(FileInterceptor('tep', { limits: { fileSize: KICH_THUOC_TEP_NHAP, files: 1 } }))
+  kiemTraNhap(@NguoiDung() nd: NguoiDungPhien, @UploadedFile() tep: TepTaiLen | undefined) {
+    return this.nhapDv.kiemTra(nd, tep)
+  }
+
+  @Post('nhap')
+  @HttpCode(200)
+  @CanQuyen('DU_AN.CREATE')
+  @UseInterceptors(FileInterceptor('tep', { limits: { fileSize: KICH_THUOC_TEP_NHAP, files: 1 } }))
+  nhap(@NguoiDung() nd: NguoiDungPhien, @UploadedFile() tep: TepTaiLen | undefined) {
+    return this.nhapDv.nhap(nd, tep)
+  }
+
+  @Get('chu-dau-tu')
+  @CanQuyen('DU_AN.CREATE')
+  chonChuDauTu(@NguoiDung() nd: NguoiDungPhien) {
+    return this.dv.chonChuDauTu(nd)
+  }
+
+  @Post()
+  @CanQuyen('DU_AN.CREATE')
+  tao(@NguoiDung() nd: NguoiDungPhien, @Body() than: unknown) {
+    return this.dv.tao(nd, than)
+  }
+
+  @Get(':id')
+  @CanQuyen('DU_AN.READ')
+  hoSo(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string) {
+    return this.dv.hoSo(nd, maUuid(id))
+  }
+
+  /** Checklist tiến độ của một dự án ra Excel — ai xem được dự án là tải được. */
+  @Get(':id/checklist/excel')
+  @CanQuyen('DU_AN.READ')
+  async checklistExcel(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string, @Res() res: Response) {
+    const kq = checklist(await this.dv.hoSo(nd, maUuid(id)), homNay())
+    res.set(headerTaiExcel(kq.tenTep)).send(await vietExcel(kq))
+  }
+
+  @Patch(':id')
+  @CanQuyen('DU_AN.UPDATE')
+  sua(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string, @Body() than: unknown) {
+    return this.dv.sua(nd, maUuid(id), than)
+  }
+
+  @Post(':id/buoc/:buocId/hoan-thanh')
+  @CanQuyen('DU_AN.UPDATE')
+  @HttpCode(200)
+  hoanThanh(
+    @NguoiDung() nd: NguoiDungPhien,
+    @Param('id') id: string,
+    @Param('buocId') b: string,
+    @Body() than: unknown,
+  ) {
+    return this.dv.hoanThanh(nd, maUuid(id), maUuid(b, 'buocId'), than)
+  }
+
+  @Post(':id/buoc/:buocId/bo-hoan-thanh')
+  @CanQuyen('DU_AN.UPDATE')
+  @HttpCode(200)
+  boHoanThanh(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string, @Param('buocId') b: string) {
+    return this.dv.boHoanThanh(nd, maUuid(id), maUuid(b, 'buocId'))
+  }
+
+  @Post(':id/buoc/:buocId/bo-qua')
+  @CanQuyen('DU_AN.UPDATE')
+  @HttpCode(200)
+  boQua(
+    @NguoiDung() nd: NguoiDungPhien,
+    @Param('id') id: string,
+    @Param('buocId') b: string,
+    @Body() than: unknown,
+  ) {
+    return this.dv.boQua(nd, maUuid(id), maUuid(b, 'buocId'), than)
+  }
+
+  @Post(':id/buoc/:buocId/khoi-phuc')
+  @CanQuyen('DU_AN.UPDATE')
+  @HttpCode(200)
+  khoiPhuc(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string, @Param('buocId') b: string) {
+    return this.dv.khoiPhuc(nd, maUuid(id), maUuid(b, 'buocId'))
+  }
+
+  @Patch(':id/buoc/:buocId')
+  @CanQuyen('DU_AN.UPDATE')
+  suaBuoc(
+    @NguoiDung() nd: NguoiDungPhien,
+    @Param('id') id: string,
+    @Param('buocId') b: string,
+    @Body() than: unknown,
+  ) {
+    return this.dv.suaBuoc(nd, maUuid(id), maUuid(b, 'buocId'), than)
+  }
+
+  /** Nhà thầu, tư vấn gửi cập nhật. Chỉ cần quyền XEM — quyền gửi do tư cách thành viên quyết định. */
+  @Post(':id/buoc/:buocId/gui')
+  @CanQuyen('DU_AN.READ')
+  @HttpCode(200)
+  gui(
+    @NguoiDung() nd: NguoiDungPhien,
+    @Param('id') id: string,
+    @Param('buocId') b: string,
+    @Body() than: unknown,
+  ) {
+    return this.dv.gui(nd, maUuid(id), maUuid(b, 'buocId'), than)
+  }
+
+  /** Xác nhận: chuyên viên chủ đầu tư (UPDATE) hoặc lãnh đạo đơn vị (APPROVE) — service kiểm một trong hai. */
+  @Post(':id/buoc/:buocId/xac-nhan')
+  @CanQuyen('DU_AN.READ')
+  @HttpCode(200)
+  xacNhan(
+    @NguoiDung() nd: NguoiDungPhien,
+    @Param('id') id: string,
+    @Param('buocId') b: string,
+    @Body() than: unknown,
+  ) {
+    return this.dv.xacNhan(nd, maUuid(id), maUuid(b, 'buocId'), than)
+  }
+
+  @Post(':id/buoc')
+  @CanQuyen('DU_AN.UPDATE')
+  themBuoc(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string, @Body() than: unknown) {
+    return this.dv.themBuoc(nd, maUuid(id), than)
+  }
+
+  @Post(':id/buoc/:buocId/xoa')
+  @CanQuyen('DU_AN.UPDATE')
+  @HttpCode(200)
+  xoaBuoc(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string, @Param('buocId') b: string) {
+    return this.dv.xoaBuoc(nd, maUuid(id), maUuid(b, 'buocId'))
+  }
+
+  @Post(':id/chot-ke-hoach')
+  @CanQuyen('DU_AN.UPDATE')
+  @HttpCode(200)
+  chotKeHoach(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string, @Body() than: unknown) {
+    return this.dv.chotKeHoach(nd, maUuid(id), than)
+  }
+
+  @Post(':id/thanh-vien')
+  @CanQuyen('DU_AN.UPDATE')
+  @HttpCode(200)
+  themThanhVien(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string, @Body() than: unknown) {
+    return this.dv.themThanhVien(nd, maUuid(id), than)
+  }
+
+  @Post(':id/thanh-vien/:tvId/bo')
+  @CanQuyen('DU_AN.UPDATE')
+  @HttpCode(200)
+  boThanhVien(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string, @Param('tvId') tv: string) {
+    return this.dv.boThanhVien(nd, maUuid(id), maUuid(tv, 'tvId'))
+  }
+}

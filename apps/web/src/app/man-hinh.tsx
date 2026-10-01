@@ -1,0 +1,46 @@
+import { lazy, type ComponentType, type LazyExoticComponent } from 'react'
+
+/**
+ * Chức năng cấp 4 → màn hình. Tách bundle theo màn (lazy): người không có quyền
+ * Tầng 2 không bao giờ tải mã màn quản trị.
+ *
+ * Chức năng nào trong registry cũng phải có màn ở đây, TRỪ màn phác (`phac`) —
+ * test man-hinh.test.ts chặn cả hai chiều.
+ */
+export const MAN_HINH: Partial<Record<string, LazyExoticComponent<ComponentType>>> = {
+  'nk-tat-ca': lazy(() => import('@/man/nhat-ky-ds')),
+  'nk-ho-so': lazy(() => import('@/man/nhat-ky-theo').then((m) => ({ default: m.NhatKyTheoHoSo }))),
+  'nk-nguoi': lazy(() => import('@/man/nhat-ky-theo').then((m) => ({ default: m.NhatKyTheoNguoi }))),
+  'da-tat-ca': lazy(() => import('@/man/du-an/danh-sach').then((m) => ({ default: m.TatCaDuAn }))),
+  'da-cua-toi': lazy(() => import('@/man/du-an/danh-sach').then((m) => ({ default: m.DuAnCuaToi }))),
+  'da-cho-xac-nhan': lazy(() => import('@/man/du-an/danh-sach').then((m) => ({ default: m.DuAnChoXacNhan }))),
+  'da-tao': lazy(() => import('@/man/du-an/tao')),
+  'da-nhap': lazy(() => import('@/man/du-an/nhap')),
+  'da-don-doc': lazy(() => import('@/man/du-an/don-doc')),
+  'dm-linh-vuc': lazy(() => import('@/man/danh-muc/gia-tri').then((m) => ({ default: m.LinhVuc }))),
+  'dm-loai-vb': lazy(() => import('@/man/danh-muc/gia-tri').then((m) => ({ default: m.LoaiVanBan }))),
+  'kb-tham-so': lazy(() => import('@/man/danh-muc/gia-tri').then((m) => ({ default: m.NguonVon }))),
+  'dm-quy-trinh': lazy(() => import('@/man/danh-muc/quy-trinh')),
+  'da-bao-cao': lazy(() => import('@/man/bao-cao/danh-sach').then((m) => ({ default: m.BaoCaoDuAn }))),
+  'bc-tat-ca': lazy(() => import('@/man/bao-cao/danh-sach').then((m) => ({ default: m.TatCaBaoCao }))),
+  'bc-dinh-ky': lazy(() => import('@/man/bao-cao/danh-sach').then((m) => ({ default: m.BaoCaoDinhKy }))),
+  'bc-xuat': lazy(() => import('@/man/bao-cao/danh-sach').then((m) => ({ default: m.XuatDuLieu }))),
+  'qh-sla': lazy(() => import('@/man/canh-bao').then((m) => ({ default: m.DaQuaHan }))),
+  'qh-sap': lazy(() => import('@/man/canh-bao').then((m) => ({ default: m.SapDenHan }))),
+  'qh-lau': lazy(() => import('@/man/canh-bao').then((m) => ({ default: m.LauKhongCapNhat }))),
+  'tq-toan': lazy(() => import('@/man/tong-quan').then((m) => ({ default: m.TongQuanToanCanh }))),
+  'tq-don-vi': lazy(() => import('@/man/tong-quan').then((m) => ({ default: m.TongQuanDonVi }))),
+  'tq-lv': lazy(() => import('@/man/tong-quan').then((m) => ({ default: m.TongQuanLinhVuc }))),
+  'bcs-tat-ca': lazy(() => import('@/man/chi-so').then((m) => ({ default: m.TatCaChiSo }))),
+  'bcs-xep-hang': lazy(() => import('@/man/chi-so').then((m) => ({ default: m.XepHangDonVi }))),
+  'vb-tom-tat': lazy(() => import('@/man/van-ban/tom-tat')),
+  'kn-ds': lazy(() => import('@/man/ket-noi').then((m) => ({ default: m.DanhSachKetNoi }))),
+  'kn-kiem-tra': lazy(() => import('@/man/ket-noi').then((m) => ({ default: m.KiemTraKetNoi }))),
+  'tk-ds': lazy(() => import('@/man/tai-khoan-ds')),
+  'tk-khoa': lazy(() => import('@/man/tai-khoan-khoa')),
+  'tk-tao': lazy(() => import('@/man/tai-khoan-tao')),
+  'dv-ds': lazy(() => import('@/man/don-vi-ds')),
+  'vt-ma-tran': lazy(() => import('@/man/vai-tro-ma-tran')),
+  'ch-bao-mat': lazy(() => import('@/man/cau-hinh-bao-mat')),
+  'ch-nhan-dien': lazy(() => import('@/man/cau-hinh-nhan-dien')),
+}

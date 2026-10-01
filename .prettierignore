@@ -1,0 +1,7 @@
+node_modules
+dist
+coverage
+pnpm-lock.yaml
+apps/api/drizzle
+# Bản mẫu HTML là tài liệu đóng băng, giữ nguyên định dạng gốc
+docs/khung-mau.html

@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "sourceMap": true,
+    // Tăng dần: lúc khởi động `tsc --watch` không ghi lại những tệp không đổi —
+    // bớt một chuỗi khởi động lại dây chuyền. Tệp ghi nhớ nằm NGOÀI dist/.
+    "incremental": true,
+    "tsBuildInfoFile": "./.tsbuildinfo"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/test/**"]
+}
