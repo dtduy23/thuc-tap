@@ -89,6 +89,15 @@
   --line: #e2e6ed;
   --line-2: #eef1f6;
   --nav-hover: #f0f4fa;
+  /* Màu chuỗi biểu đồ — bộ đã kiểm phân biệt được với người mù màu; thứ tự cố định, không xoay vòng. */
+  --bd-1: #2a78d6;
+  --bd-2: #eb6834;
+  --bd-3: #1baf7a;
+  --bd-4: #eda100;
+  --bd-5: #e87ba4;
+  --bd-6: #008300;
+  --bd-7: #4a3aa7;
+  --bd-8: #e34948;
   color-scheme: light;
 }
 
@@ -114,6 +123,14 @@
     --line: #26313d;
     --line-2: #1f2831;
     --nav-hover: #1d2833;
+    --bd-1: #3987e5;
+    --bd-2: #d95926;
+    --bd-3: #199e70;
+    --bd-4: #c98500;
+    --bd-5: #d55181;
+    --bd-6: #008300;
+    --bd-7: #9085e9;
+    --bd-8: #e66767;
     color-scheme: dark;
   }
 }
@@ -138,6 +155,14 @@
   --line: #26313d;
   --line-2: #1f2831;
   --nav-hover: #1d2833;
+  --bd-1: #3987e5;
+  --bd-2: #d95926;
+  --bd-3: #199e70;
+  --bd-4: #c98500;
+  --bd-5: #d55181;
+  --bd-6: #008300;
+  --bd-7: #9085e9;
+  --bd-8: #e66767;
   color-scheme: dark;
 }
 

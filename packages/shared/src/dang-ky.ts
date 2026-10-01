@@ -26,6 +26,24 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
 
   // ── Điều hành — đọc tổng hợp nhiều hồ sơ, không sửa gì ─────────────────
   {
+    id: 'chi-tieu',
+    nhan: 'Chỉ tiêu điều hành',
+    nhom: 'dieu-hanh',
+    maQuyen: 'CHI_TIEU',
+    nguon: 'db',
+    mo: 'Bộ chỉ tiêu điều hành cấp xã/phường theo lĩnh vực. Số thật lấy từ các phân hệ đã xây (Nhiệm vụ, Dự án, Văn bản); chỉ tiêu chưa có phân hệ nguồn hiện số MINH HỌA.',
+    con: [
+      { id: 'ct-tong-quan', nhan: 'Tổng quan lĩnh vực' },
+      { id: 'ct-kpi', nhan: 'KPI điều hành' },
+      { id: 'ct-tthc', nhan: 'TTHC – Một cửa' },
+      { id: 'ct-ktxh', nhan: 'Kinh tế – Dân cư – Xã hội' },
+      { id: 'ct-antt', nhan: 'An ninh – Trật tự' },
+      { id: 'ct-ha-tang', nhan: 'Hạ tầng – Đô thị' },
+      { id: 'ct-yt-gd', nhan: 'Y tế – Giáo dục' },
+      { id: 'ct-pakn', nhan: 'Phản ánh – Kiến nghị' },
+    ],
+  },
+  {
     id: 'tong-quan',
     nhan: 'Tổng quan',
     nhom: 'dieu-hanh',

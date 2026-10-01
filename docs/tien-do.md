@@ -68,6 +68,24 @@
 - Nhánh `develop` **chưa tồn tại** trên remote. Pipeline chỉ nổ khi có nhánh đó.
 - CSP trong `nginx.conf` chưa mở trên trình duyệt thật; màn nào trắng thì nới ở đúng chỉ thị đó.
 
+## Điều hành › Chỉ tiêu điều hành (01/10/2026)
+
+Bộ chỉ tiêu điều hành cấp xã/phường đã thông qua (theo "Dashboard GDOS Xã/Phường" của GDOS cũ) —
+tám trang: Tổng quan lĩnh vực, KPI điều hành, TTHC – Một cửa, Kinh tế – Dân cư – Xã hội, An ninh –
+Trật tự, Hạ tầng – Đô thị, Y tế – Giáo dục, Phản ánh – Kiến nghị.
+
+- **Danh mục** `packages/shared/src/chi-tieu.ts` (mã, tên, đơn vị, lĩnh vực, mục tiêu, chiều tốt) — một chỗ duy
+  nhất. API `GET /api/chi-tieu` (quyền `CHI_TIEU.READ`) trả giá trị kèm NGUỒN từng số.
+- **Số thật** (theo quyền + RLS của người xem): KPI-04 nhiệm vụ đúng hạn ← phân hệ Nhiệm vụ (Native);
+  KT-04 giải ngân đầu tư công, HT-06 công trình đang thi công ← phân hệ Dự án; khối "Số thật từ các
+  phân hệ" (Nhiệm vụ, Dự án, Xử lý văn bản) ở trang Tổng quan. Bấm nhãn "Số thật" mở phân hệ nguồn.
+- **Số minh họa** (`apps/api/src/chi-tieu/so-lieu-minh-hoa.ts`): các lĩnh vực chưa có phân hệ nguồn. Xã giả
+  định, số tự dựng cho khớp nhau — KHÔNG chép số hay tên người của đơn vị nào từ bản GDOS cũ. Web
+  luôn gắn nhãn "Minh họa". Xây phân hệ nào thì chuyển chỉ tiêu đó sang tính thật ở chi-tieu.service.ts.
+- Biểu đồ SVG thuần (`man/chi-tieu/bieu-do.tsx`): thẻ số + đường xu hướng, vành khuyên, vòng so mục
+  tiêu, thanh ngang, đường 10 kỳ. Bảng màu `--bd-1…8` cố định thứ tự, có bản tối. 6 test.
+- Chưa làm: bảng "đầu mối liên hệ" (có tên, số điện thoại cán bộ — chờ nguồn chính thức) và nhóm GIS.
+
 ## Dọn màn phác — danh bạ và tra cứu (01/10/2026)
 
 - **Danh mục › Tổ chức** (Đơn vị, Cán bộ): danh bạ CHỈ ĐỌC trong phạm vi RLS của người xem —

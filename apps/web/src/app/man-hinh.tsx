@@ -8,6 +8,14 @@ import { lazy, type ComponentType, type LazyExoticComponent } from 'react'
  * test man-hinh.test.ts chặn cả hai chiều.
  */
 export const MAN_HINH: Partial<Record<string, LazyExoticComponent<ComponentType>>> = {
+  'ct-tong-quan': lazy(() => import('@/man/chi-tieu/trang').then((m) => ({ default: m.TongQuanLinhVuc }))),
+  'ct-kpi': lazy(() => import('@/man/chi-tieu/trang').then((m) => ({ default: m.KpiDieuHanh }))),
+  'ct-tthc': lazy(() => import('@/man/chi-tieu/trang').then((m) => ({ default: m.ChiTieuTthc }))),
+  'ct-ktxh': lazy(() => import('@/man/chi-tieu/trang').then((m) => ({ default: m.ChiTieuKtxh }))),
+  'ct-antt': lazy(() => import('@/man/chi-tieu/trang').then((m) => ({ default: m.ChiTieuAntt }))),
+  'ct-ha-tang': lazy(() => import('@/man/chi-tieu/trang').then((m) => ({ default: m.ChiTieuHaTang }))),
+  'ct-yt-gd': lazy(() => import('@/man/chi-tieu/trang').then((m) => ({ default: m.ChiTieuYtGd }))),
+  'ct-pakn': lazy(() => import('@/man/chi-tieu/trang').then((m) => ({ default: m.ChiTieuPakn }))),
   'nk-tat-ca': lazy(() => import('@/man/nhat-ky-ds')),
   'nk-ho-so': lazy(() => import('@/man/nhat-ky-theo').then((m) => ({ default: m.NhatKyTheoHoSo }))),
   'nk-nguoi': lazy(() => import('@/man/nhat-ky-theo').then((m) => ({ default: m.NhatKyTheoNguoi }))),
