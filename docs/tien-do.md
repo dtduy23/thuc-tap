@@ -68,6 +68,23 @@
 - Nhánh `develop` **chưa tồn tại** trên remote. Pipeline chỉ nổ khi có nhánh đó.
 - CSP trong `nginx.conf` chưa mở trên trình duyệt thật; màn nào trắng thì nới ở đúng chỉ thị đó.
 
+## Sắp lại nhóm Điều hành (01/10/2026)
+
+Bốn module theo bốn câu hỏi của người điều hành, đi từ chung tới riêng — mỗi số chỉ có một chỗ ở:
+
+| Module                 | Trả lời câu hỏi                        | Chức năng                                                                       |
+| ---------------------- | -------------------------------------- | ------------------------------------------------------------------------------- |
+| Tổng quan điều hành    | Tình hình chung, KPI đạt chưa?         | Bức tranh chung · KPI điều hành                                                 |
+| Chỉ tiêu theo lĩnh vực | Từng lĩnh vực quản lý ra sao?          | TTHC · PAKN · KT–DC–XH · ANTT · Hạ tầng · Y tế–GD                               |
+| Tình hình nghiệp vụ    | Hồ sơ, dự án chạy thế nào, ai làm tốt? | Toàn cảnh · Theo đơn vị · Theo lĩnh vực · Chấm điểm thực hiện · Xếp hạng đơn vị |
+| Báo cáo                | Biểu để nộp, tra, xuất                 | Báo cáo định kỳ · Tất cả báo cáo · Xuất dữ liệu                                 |
+
+Trước đó: "Tổng quan" trùng tên với "Tổng quan lĩnh vực", "Bộ chỉ số" lẫn với "KPI điều hành" và
+"Chỉ tiêu". Mã module, mã quyền và mã chức năng GIỮ NGUYÊN (phân công đã lưu không hỏng, đường dẫn
+không đổi) — chỉ đổi nhãn và chuyển chức năng giữa các module; API nhận quyền của cả module cũ lẫn
+mới. Trang Bức tranh chung xếp lại: KPI → chỉ tiêu chính → theo lĩnh vực → số thật từ phân hệ →
+mức sẵn sàng số liệu.
+
 ## Tầng 2 — vận hành, cây phân hệ, ngưỡng cảnh báo, trang mặc định (01/10/2026)
 
 - **Theo dõi vận hành** (`/api/van-hanh/*`, quyền `QT_VAN_HANH.READ`, chỉ đọc): Sức khỏe hệ thống (API,

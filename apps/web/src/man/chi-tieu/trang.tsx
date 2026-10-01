@@ -1,5 +1,6 @@
 /**
- * Điều hành › Chỉ tiêu điều hành — tám trang theo bộ chỉ tiêu cấp xã/phường đã thông qua
+ * Điều hành › Tổng quan điều hành (Bức tranh chung, KPI) và Chỉ tiêu theo lĩnh vực (sáu lĩnh vực)
+ * — tám trang theo bộ chỉ tiêu cấp xã/phường đã thông qua
  * (bố cục theo "Dashboard GDOS Xã/Phường" của GDOS cũ). Danh mục chỉ tiêu ở @gdos/shared;
  * giá trị do API trả, mỗi số mang NGUỒN: "Số thật" (từ phân hệ đã xây, bấm để mở phân hệ),
  * "Minh họa" (chưa có phân hệ nguồn) hoặc "Chưa có".
@@ -195,7 +196,7 @@ const TRANG_LINH_VUC: Record<Exclude<LinhVucChiTieu, 'kpi' | 'dan-cu' | 'kinh-te
   pakn: 'ct-pakn',
 }
 
-/* ── 1. Tổng quan lĩnh vực ────────────────────────────────────────────────── */
+/* ── 1. Bức tranh chung ────────────────────────────────────────────────── */
 
 export function TongQuanLinhVuc() {
   return (
@@ -267,7 +268,60 @@ export function TongQuanLinhVuc() {
         })
         return (
           <>
-            <h2 className="tieu-de-phan mt-0">Số thật từ các phân hệ GDOS</h2>
+            <h2 className="tieu-de-phan mt-0">KPI điều hành cấp trên giao</h2>
+            <Luoi12>
+              <The
+                tieuDe="Kết quả so với mục tiêu"
+                rong={12}
+                phu={
+                  <Link
+                    to="/$chucNang"
+                    params={{ chucNang: 'ct-kpi' }}
+                    className="font-semibold text-brand underline"
+                  >
+                    Xem chi tiết KPI →
+                  </Link>
+                }
+              >
+                <div className="grid grid-cols-2 gap-x-4 gap-y-5 md:grid-cols-3 xl:grid-cols-6">
+                  {kpi.map((c, i) => (
+                    <VongChiTieu key={c.ma} b={b} ma={c.ma} mau={i + 1} />
+                  ))}
+                </div>
+              </The>
+            </Luoi12>
+
+            <h2 className="tieu-de-phan">Chỉ tiêu chính</h2>
+            <Luoi12>
+              <TheChiSo b={b} ma="DC-01" mau={1} />
+              <TheChiSo b={b} ma="TTHC-01" mau={3} day />
+              <TheChiSo b={b} ma="PAKN-01" mau={7} day />
+              <TheChiSo b={b} ma="ANTT-01" mau={2} />
+            </Luoi12>
+
+            <h2 className="tieu-de-phan">Theo lĩnh vực</h2>
+            <Luoi12>
+              {linhVuc.map((l) => (
+                <The
+                  key={l.ten}
+                  tieuDe={l.ten}
+                  rong={4}
+                  phu={
+                    <Link
+                      to="/$chucNang"
+                      params={{ chucNang: l.trang }}
+                      className="font-semibold text-brand underline"
+                    >
+                      Mở bảng lĩnh vực →
+                    </Link>
+                  }
+                >
+                  <BangKv ds={l.kv} />
+                </The>
+              ))}
+            </Luoi12>
+
+            <h2 className="tieu-de-phan">Tình hình nghiệp vụ — số thật từ các phân hệ</h2>
             <Luoi12>
               {b.phanHe.map((p) => (
                 <The
@@ -300,58 +354,6 @@ export function TongQuanLinhVuc() {
                   ) : (
                     <p className="m-0 text-[12.5px] text-faint">{p.lyDo ?? 'Chưa có số liệu.'}</p>
                   )}
-                </The>
-              ))}
-            </Luoi12>
-
-            <h2 className="tieu-de-phan">Chỉ tiêu chính</h2>
-            <Luoi12>
-              <TheChiSo b={b} ma="DC-01" mau={1} />
-              <TheChiSo b={b} ma="TTHC-01" mau={3} day />
-              <TheChiSo b={b} ma="PAKN-01" mau={7} day />
-              <TheChiSo b={b} ma="ANTT-01" mau={2} />
-            </Luoi12>
-
-            <Luoi12>
-              <The
-                tieuDe="KPI điều hành cấp trên giao"
-                rong={12}
-                phu={
-                  <Link
-                    to="/$chucNang"
-                    params={{ chucNang: 'ct-kpi' }}
-                    className="font-semibold text-brand underline"
-                  >
-                    Xem chi tiết KPI →
-                  </Link>
-                }
-              >
-                <div className="grid grid-cols-2 gap-x-4 gap-y-5 md:grid-cols-3 xl:grid-cols-6">
-                  {kpi.map((c, i) => (
-                    <VongChiTieu key={c.ma} b={b} ma={c.ma} mau={i + 1} />
-                  ))}
-                </div>
-              </The>
-            </Luoi12>
-
-            <h2 className="tieu-de-phan">Theo lĩnh vực</h2>
-            <Luoi12>
-              {linhVuc.map((l) => (
-                <The
-                  key={l.ten}
-                  tieuDe={l.ten}
-                  rong={4}
-                  phu={
-                    <Link
-                      to="/$chucNang"
-                      params={{ chucNang: l.trang }}
-                      className="font-semibold text-brand underline"
-                    >
-                      Mở bảng lĩnh vực →
-                    </Link>
-                  }
-                >
-                  <BangKv ds={l.kv} />
                 </The>
               ))}
             </Luoi12>

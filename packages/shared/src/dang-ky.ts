@@ -25,60 +25,67 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
   // ══ TẦNG 1 · NGHIỆP VỤ ═════════════════════════════════════════════════
 
   // ── Điều hành — đọc tổng hợp nhiều hồ sơ, không sửa gì ─────────────────
+  //
+  // Bốn module theo BỐN CÂU HỎI của người điều hành, đi từ chung tới riêng:
+  //   1. Tổng quan điều hành   — "Tình hình chung thế nào, KPI đạt chưa?"
+  //   2. Chỉ tiêu theo lĩnh vực — "Từng lĩnh vực quản lý ra sao?"        (theo bộ chỉ tiêu)
+  //   3. Tình hình nghiệp vụ    — "Hồ sơ, dự án đang chạy thế nào, ai làm tốt?" (theo đóng góp, ADR-0007)
+  //   4. Báo cáo                — "Cho tôi biểu báo cáo để nộp, để tra, để xuất."
+  // Mỗi số chỉ có MỘT chỗ ở: không lặp một bảng ở hai module.
+  {
+    id: 'tong-quan',
+    nhan: 'Tổng quan điều hành',
+    nhom: 'dieu-hanh',
+    maQuyen: 'TONG_QUAN',
+    nguon: 'db',
+    mo: 'Một trang nhìn hết: KPI cấp trên giao, chỉ tiêu chính, tóm tắt từng lĩnh vực và số liệu từ các phân hệ.',
+    con: [
+      { id: 'ct-tong-quan', nhan: 'Bức tranh chung' },
+      { id: 'ct-kpi', nhan: 'KPI điều hành' },
+    ],
+  },
   {
     id: 'chi-tieu',
-    nhan: 'Chỉ tiêu điều hành',
+    nhan: 'Chỉ tiêu theo lĩnh vực',
     nhom: 'dieu-hanh',
     maQuyen: 'CHI_TIEU',
     nguon: 'db',
-    mo: 'Bộ chỉ tiêu điều hành cấp xã/phường theo lĩnh vực. Số thật lấy từ các phân hệ đã xây (Nhiệm vụ, Dự án, Văn bản); chỉ tiêu chưa có phân hệ nguồn hiện số MINH HỌA.',
+    mo: 'Bộ chỉ tiêu cấp xã/phường theo sáu lĩnh vực quản lý. Số thật lấy từ các phân hệ đã xây; chỉ tiêu chưa có phân hệ nguồn hiện số MINH HỌA.',
     con: [
-      { id: 'ct-tong-quan', nhan: 'Tổng quan lĩnh vực' },
-      { id: 'ct-kpi', nhan: 'KPI điều hành' },
       { id: 'ct-tthc', nhan: 'TTHC – Một cửa' },
+      { id: 'ct-pakn', nhan: 'Phản ánh – Kiến nghị' },
       { id: 'ct-ktxh', nhan: 'Kinh tế – Dân cư – Xã hội' },
       { id: 'ct-antt', nhan: 'An ninh – Trật tự' },
       { id: 'ct-ha-tang', nhan: 'Hạ tầng – Đô thị' },
       { id: 'ct-yt-gd', nhan: 'Y tế – Giáo dục' },
-      { id: 'ct-pakn', nhan: 'Phản ánh – Kiến nghị' },
-    ],
-  },
-  {
-    id: 'tong-quan',
-    nhan: 'Tổng quan',
-    nhom: 'dieu-hanh',
-    maQuyen: 'TONG_QUAN',
-    nguon: 'db',
-    mo: 'Bức tranh chung của mọi nghiệp vụ: tiến độ, cảnh báo, giải ngân.',
-    con: [
-      { id: 'tq-toan', nhan: 'Toàn cảnh' },
-      { id: 'tq-don-vi', nhan: 'Theo đơn vị' },
-      { id: 'tq-lv', nhan: 'Theo lĩnh vực' },
-    ],
-  },
-  {
-    id: 'bao-cao',
-    nhan: 'Báo cáo điều hành',
-    nhom: 'dieu-hanh',
-    maQuyen: 'BAO_CAO',
-    nguon: 'db',
-    mo: 'Mọi báo cáo của các nghiệp vụ ở một nơi — cũng mở được ngay trong từng nghiệp vụ.',
-    con: [
-      { id: 'bc-tat-ca', nhan: 'Tất cả báo cáo' },
-      { id: 'bc-dinh-ky', nhan: 'Báo cáo định kỳ' },
-      { id: 'bc-xuat', nhan: 'Xuất dữ liệu', hanhDong: 'EXPORT' },
     ],
   },
   {
     id: 'bo-chi-so',
-    nhan: 'Bộ chỉ số',
+    nhan: 'Tình hình nghiệp vụ',
     nhom: 'dieu-hanh',
     maQuyen: 'BO_CHI_SO',
     nguon: 'db',
-    mo: 'KPI 100 điểm: đúng hạn 40 · độ trễ 25 · điều chỉnh kế hoạch 15 · giải ngân 20 → A/B/C/D.',
+    mo: 'Số liệu do các nghiệp vụ đóng góp (hiện có Dự án): tiến độ, cảnh báo, giải ngân theo từng góc nhìn; chấm điểm 100 (đúng hạn 40 · độ trễ 25 · điều chỉnh kế hoạch 15 · giải ngân 20 → A/B/C/D) và xếp hạng đơn vị.',
     con: [
-      { id: 'bcs-tat-ca', nhan: 'Tất cả chỉ số' },
+      { id: 'tq-toan', nhan: 'Toàn cảnh' },
+      { id: 'tq-don-vi', nhan: 'Theo đơn vị' },
+      { id: 'tq-lv', nhan: 'Theo lĩnh vực' },
+      { id: 'bcs-tat-ca', nhan: 'Chấm điểm thực hiện' },
       { id: 'bcs-xep-hang', nhan: 'Xếp hạng đơn vị' },
+    ],
+  },
+  {
+    id: 'bao-cao',
+    nhan: 'Báo cáo',
+    nhom: 'dieu-hanh',
+    maQuyen: 'BAO_CAO',
+    nguon: 'db',
+    mo: 'Mọi biểu báo cáo của các nghiệp vụ ở một nơi — cũng mở được ngay trong từng nghiệp vụ.',
+    con: [
+      { id: 'bc-dinh-ky', nhan: 'Báo cáo định kỳ' },
+      { id: 'bc-tat-ca', nhan: 'Tất cả báo cáo' },
+      { id: 'bc-xuat', nhan: 'Xuất dữ liệu', hanhDong: 'EXPORT' },
     ],
   },
 

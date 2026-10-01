@@ -57,7 +57,8 @@ export class XuyenSuotController {
 
   /** Điều hành › Tổng quan — mỗi nghiệp vụ góp một khối số liệu. */
   @Get('tong-quan')
-  @CanQuyen('TONG_QUAN.READ')
+  // Các góc nhìn này nằm trong module Tình hình nghiệp vụ (BO_CHI_SO); giữ TONG_QUAN cho phân công cũ.
+  @CanQuyen('BO_CHI_SO.READ', 'TONG_QUAN.READ')
   async tongQuan(@NguoiDung() nd: NguoiDungPhien, @Query('theo') theo?: string): Promise<KhoiSoLieu[]> {
     if (!GOC_NHIN_TONG_QUAN.includes(theo as GocNhinTongQuan))
       throw new BadRequestException(`"theo" phải là một trong: ${GOC_NHIN_TONG_QUAN.join(', ')}`)
