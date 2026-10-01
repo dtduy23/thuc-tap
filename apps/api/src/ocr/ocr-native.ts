@@ -18,8 +18,11 @@ const laVat = (v: unknown): v is Vat => v !== null && typeof v === 'object' && !
 const chu = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null)
 const mang = (v: unknown): unknown[] => (Array.isArray(v) ? v : [])
 
-/** Mã bản ghi của Native (UUID) — kiểm trước khi ghép vào đường dẫn gọi sang Native. */
-export const LA_MA_NATIVE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+/**
+ * Mã bản ghi của OCR Service (CUID, có nơi UUID) — chỉ chữ, số, gạch; kiểm trước khi ghép vào
+ * đường dẫn gọi sang Native để không lọt `..` hay `/`.
+ */
+export const LA_MA_NATIVE = /^[A-Za-z0-9_-]{8,64}$/
 
 const KIEU: Record<string, KieuTruongOcr> = {
   number: 'so',

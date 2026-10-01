@@ -195,7 +195,8 @@ export class OcrService {
   /** Chụp lại danh sách loại + định nghĩa trường từ Native. Loại mới mặc định CHƯA bật. */
   async dongBoLoai(nd: NguoiDungPhien): Promise<KetQuaDongBoLoaiOcr> {
     const donViId = await this.donViCua(nd)
-    const { dong } = await this.moiTrang(nd, '/schemas')
+    // /schemas không phân trang — Native từ chối tham số page / pageSize (400).
+    const dong = dsTuNative(await this.hoi(nd, '/schemas'))
     const tho = dong.map(loaiTuNative).filter((l): l is LoaiTuNative => l !== null)
     // Danh sách không kèm trường thì hỏi chi tiết từng loại.
     const ds = await theoLo(tho, async (l) => {

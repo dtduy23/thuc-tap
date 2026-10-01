@@ -144,7 +144,7 @@ describe('đọc phản hồi Native', () => {
     expect(r.doTinCay).toBeCloseTo(0.87)
     expect(r.duLieu).toEqual({ a: '{"b":1}', c: null })
     expect(r.bang.t).toEqual([{ x: 1 }, {}])
-    expect(ketQuaTuNative({ documentId: 'khong-phai-uuid', schemaCode: 'HOADON' })).toBeNull()
+    expect(ketQuaTuNative({ documentId: 'a/../b-c-d-e-f', schemaCode: 'HOADON' })).toBeNull()
   })
 })
 

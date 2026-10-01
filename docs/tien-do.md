@@ -81,9 +81,9 @@ Quản trị hệ thống › Kết nối có thêm module **Nhận dạng chứ
   `<BangChungTuOcr loai="…" />` (`man/ocr/bang-chung-tu.tsx`) hoặc `truyVanChungTuOcr(loai)`
   (`lib/ocr.ts`) → `GET /api/ocr/chung-tu?loai=`. Nhớ thêm quyền READ của phân hệ vào `QUYEN_DOC_OCR`.
 - Migration 0026 (bảng) + 0027 (RLS, nhật ký). Test: `ocr/ocr.e2e.test.ts` (Native giả), `shared/ocr.test.ts`.
-- **Chưa thử với nativev3 thật**: tài khoản dev chưa liên kết lại Native sau khi đổi địa chỉ. Phản hồi
-  của Native được đọc phòng thủ theo dạng đã thấy hôm 01/10 (cột của bảng chưa thấy tên khóa thật —
-  đang nhận `columnKey` / `fieldKey` / `key`).
+- **Đã thử với nativev3 thật (01/10/2026)**: chụp 44 loại; bật `CHUNGTU`, duyệt 76 chứng từ, lấy về 2
+  (còn lại lỗi / chưa xong / loại chưa bật). Hai điều học được: `/schemas` KHÔNG nhận `page`/`pageSize`
+  (400), và mã bản ghi của OCR Service là CUID chứ không phải UUID.
 - Chưa làm: tự lấy về định kỳ; tải chứng từ lên Native từ GDOS; mở tệp gốc.
 
 ## Sắp lại nhóm Điều hành (01/10/2026)

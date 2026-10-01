@@ -141,7 +141,10 @@ export function thongDiepLoiNative(ma: number, than: string): string {
     if (typeof d === 'string' && d) return d.slice(0, 500)
     if (Array.isArray(d)) {
       const cau = d
-        .map((x: unknown) => (x && typeof x === 'object' && 'msg' in x ? String(x.msg) : ''))
+        // FastAPI: [{msg}] · NestJS (OCR Service): ['câu lỗi', …]
+        .map((x: unknown) =>
+          typeof x === 'string' ? x : x && typeof x === 'object' && 'msg' in x ? String(x.msg) : '',
+        )
         .filter(Boolean)
         .join('; ')
       if (cau) return `Dữ liệu chưa hợp lệ: ${cau.slice(0, 500)}`
