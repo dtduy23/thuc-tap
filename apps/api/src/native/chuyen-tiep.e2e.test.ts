@@ -84,16 +84,28 @@ async function vao(ten: string) {
 
 describe('danh sách cho phép', () => {
   it('mỗi đường dẫn gắn đúng quyền; đường lạ, mã lạ, đi ngược thư mục → không cho', () => {
-    expect(quyenCanCho('GET', '/document-templates')).toBe('VAN_BAN.READ')
-    expect(quyenCanCho('POST', '/compose')).toBe('VAN_BAN.CREATE')
-    expect(quyenCanCho('POST', `/task-assignments/assign/${MA}`)).toBe('VAN_BAN.ASSIGN')
-    expect(quyenCanCho('PATCH', `/task-assignments/${MA}/status`)).toBe('VAN_BAN.ASSIGN')
-    expect(quyenCanCho('DELETE', `/document-templates/${MA}`)).toBe('VAN_BAN.DELETE')
-    expect(quyenCanCho('GET', '/summarize')).toBeNull()
-    expect(quyenCanCho('GET', '/integrations')).toBeNull()
-    expect(quyenCanCho('GET', '/document-templates/../integrations')).toBeNull()
-    expect(quyenCanCho('GET', '/document-templates/abc')).toBeNull()
-    expect(quyenCanCho('PUT', '/document-templates')).toBeNull()
+    expect(quyenCanCho('document', 'GET', '/document-templates')).toEqual(['VAN_BAN.READ'])
+    expect(quyenCanCho('document', 'POST', '/compose')).toEqual(['VAN_BAN.CREATE'])
+    expect(quyenCanCho('document', 'POST', `/task-assignments/assign/${MA}`)).toEqual(['VAN_BAN.ASSIGN'])
+    expect(quyenCanCho('document', 'PATCH', `/task-assignments/${MA}/status`)).toEqual(['VAN_BAN.ASSIGN'])
+    expect(quyenCanCho('document', 'DELETE', `/document-templates/${MA}`)).toEqual(['VAN_BAN.DELETE'])
+    expect(quyenCanCho('document', 'GET', '/summarize')).toBeNull()
+    expect(quyenCanCho('document', 'GET', '/integrations')).toBeNull()
+    expect(quyenCanCho('document', 'GET', '/document-templates/../integrations')).toBeNull()
+    expect(quyenCanCho('document', 'GET', '/document-templates/abc')).toBeNull()
+    expect(quyenCanCho('document', 'PUT', '/document-templates')).toBeNull()
+    // Nhiệm vụ và danh bạ
+    expect(quyenCanCho('document', 'GET', '/tasks/dashboard')).toEqual(['NHIEM_VU.READ'])
+    expect(quyenCanCho('document', 'POST', '/tasks')).toEqual(['NHIEM_VU.ASSIGN', 'NHIEM_VU.CREATE'])
+    expect(quyenCanCho('document', 'PUT', `/tasks/${MA}/participants`)).toEqual([
+      'NHIEM_VU.ASSIGN',
+      'NHIEM_VU.UPDATE',
+    ])
+    expect(quyenCanCho('document', 'DELETE', `/tasks/${MA}`)).toEqual(['NHIEM_VU.ASSIGN', 'NHIEM_VU.DELETE'])
+    expect(quyenCanCho('directory', 'GET', '/users')).toEqual(['NHIEM_VU.READ'])
+    expect(quyenCanCho('directory', 'POST', '/users')).toBeNull()
+    expect(quyenCanCho('directory', 'GET', '/document-templates')).toBeNull()
+    expect(quyenCanCho('document', 'GET', '/users')).toBeNull()
   })
 })
 
@@ -173,6 +185,24 @@ describe('/api/native/document/*', () => {
     const b = await cv.get('/api/native/document/task-assignments/flat')
     expect(b.status).toBe(502)
     expect(JSON.stringify(b.body)).not.toContain('Traceback')
+  })
+
+  it('nhiệm vụ: danh bạ đi sang /api/directory; PUT người tham gia; quyền "một trong hai"', async () => {
+    const cv = await vao('chuyenvien.a')
+    expect((await cv.get('/api/native/directory/users?search=an&pageSize=20&x=1')).status).toBe(200)
+    expect(daGoi[0]!.url).toBe(`${NATIVE}/api/directory/users?search=an&pageSize=20`)
+    // Chuyên viên (CREATE/UPDATE) giao việc và đổi người được; lãnh đạo (ASSIGN) cũng được.
+    const put = await cv
+      .put(`/api/native/document/tasks/${MA}/participants`)
+      .set(GHI)
+      .send({ participants: [] })
+    expect(put.status).toBe(200)
+    expect(daGoi[1]!.method).toBe('PUT')
+    expect(JSON.parse(String(daGoi[1]!.body))).toEqual({ participants: [] })
+    const ct = await vao('chutich.a')
+    expect((await ct.post('/api/native/document/tasks').set(GHI).field('title', 'x')).status).toBe(403)
+    // ↑ chủ tịch chưa liên kết Native → 403 ở bước lấy token, nhưng đã QUA bước quyền (ASSIGN).
+    expect((await ct.get('/api/native/directory/roles')).status).toBe(404)
   })
 
   it('ghi không kèm header chống giả mạo → bị chặn', async () => {

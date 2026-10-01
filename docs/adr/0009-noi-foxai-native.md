@@ -38,7 +38,8 @@ câu trả lời — ADR-0003 cấm tự chọn.
    Người chưa liên kết vẫn xem được văn bản của đơn vị mình.
 7. **Cấu hình kết nối ở biến môi trường máy chủ, không nhập qua màn hình.** Quản trị › Kết nối
    › Dịch vụ nền tảng chỉ XEM chế độ, địa chỉ và KIỂM TRA kết nối.
-8. **Công cụ của Native — mẫu văn bản, soạn thảo, phân công nhiệm vụ, đơn vị nhận việc — đi qua
+8. **Công cụ của Native — mẫu văn bản, soạn thảo, phân công, đơn vị nhận việc, NHIỆM VỤ (`/tasks`)
+   và danh bạ (`/api/directory`, chọn người / đơn vị khi giao việc) — đi qua
    CỔNG CHUYỂN TIẾP `/api/native/document/*`** (`native/chuyen-tiep.ts`). Đây là dữ liệu và
    công cụ CỦA Native, dùng chung với các ứng dụng khác trên Native; GDOS không chép sang bảng riêng
    (khác văn bản — mục 2). Cổng chỉ cho đi đường dẫn trong DANH SÁCH CHO PHÉP (mã bản ghi phải đúng

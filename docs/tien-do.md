@@ -75,7 +75,17 @@
   nhập, đơn vị, vai trò; tài khoản khóa/xóa không hiện. 2 test.
 - **Vai trò & quyền › Tra cứu phân công**: mỗi dòng một phân công; chọn phân hệ + thao tác để biết
   "ai làm được việc này" — tính bằng đúng `tinhQuyen()` mà API dùng để chặn.
-- Còn phác: Đơn thư, Nhiệm vụ, Luồng phê duyệt, Nguồn dữ liệu vào, Tích hợp ra, Quy tắc cảnh báo,
+- **Tác nghiệp › Nhiệm vụ** (01/10, nối FOXAI Native thật — như "Quản lý nhiệm vụ" ở gdos.fox.ai.vn): cây
+  việc nhiều cấp `/tasks` qua cổng chuyển tiếp; ba chức năng là ba phạm vi của một màn (việc được giao
+  cho tôi / việc tôi đã giao / theo dõi chung). Thẻ số liệu bấm để lọc, thống kê theo đơn vị chủ trì,
+  lọc thời gian – trạng thái – đơn vị – từ khóa, ngăn chi tiết gắn `?ma=` (thông tin, người thực
+  hiện theo vai, việc con, tiến độ & trao đổi có tệp), giao việc / việc con / sửa / xóa, đổi trạng thái
+  tại dòng, AI phân rã việc con (gợi ý chưa lưu, soát rồi tạo hàng loạt), chuông thông báo. Chọn
+  người, đơn vị từ danh bạ Native `/api/directory` (cổng chuyển tiếp thêm dịch vụ thứ hai). Quyền
+  `NHIEM_VU.*`: xem / báo tiến độ = READ; giao, sửa, xóa = ASSIGN (lãnh đạo) hoặc CREATE/UPDATE/
+  DELETE (chuyên viên) — Native tự kiểm người đó có tham gia việc không. **Đã đọc dữ liệu thật** (40
+  nhiệm vụ, 6 đơn vị); thao tác GHI chưa bấm thử để không đổi dữ liệu Native đang dùng.
+- Còn phác: Đơn thư, Luồng phê duyệt, Nguồn dữ liệu vào, Tích hợp ra, Quy tắc cảnh báo,
   Mô hình AI, Theo dõi vận hành; lẻ: SSO, Cây phân hệ, Nhãn theo khách hàng, Trang mặc định theo vai.
 
 ## Mốc 5 — Nối FOXAI Native (ADR-0009)

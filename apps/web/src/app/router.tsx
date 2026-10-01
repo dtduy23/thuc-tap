@@ -143,8 +143,13 @@ const chucNang = createRoute({
   getParentRoute: () => portal,
   path: '/$chucNang',
   // "nguon": mở sẵn một văn bản làm nguồn (vd Soạn thảo văn bản từ bản tóm tắt).
-  validateSearch: (s: Record<string, unknown>): { nguon?: string } =>
-    typeof s.nguon === 'string' && /^[0-9a-f-]{36}$/i.test(s.nguon) ? { nguon: s.nguon } : {},
+  // "ma": mở thẳng một bản ghi trong màn (vd ngăn chi tiết nhiệm vụ từ thông báo).
+  validateSearch: (s: Record<string, unknown>): { nguon?: string; ma?: string } => {
+    const uuid = (v: unknown) => (typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v) ? v : undefined)
+    const nguon = uuid(s.nguon)
+    const ma = uuid(s.ma)
+    return { ...(nguon ? { nguon } : {}), ...(ma ? { ma } : {}) }
+  },
   component: function ManChucNang() {
     const { chucNang: id } = chucNang.useParams()
     return <TrangChucNang id={id} />

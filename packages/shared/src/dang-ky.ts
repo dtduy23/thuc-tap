@@ -210,9 +210,8 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhan: 'Nhiệm vụ',
     nhom: 'tac-nghiep',
     maQuyen: 'NHIEM_VU',
-    nguon: 'db',
-    phac: true,
-    mo: 'Việc giao từ văn bản, cuộc họp, chỉ đạo.',
+    nguon: 'native',
+    mo: 'Việc giao từ văn bản, cuộc họp, chỉ đạo — cây việc nhiều cấp của FOXAI Native (ADR-0009).',
     con: [
       { id: 'nv-cua-toi', nhan: 'Việc được giao cho tôi' },
       { id: 'nv-da-giao', nhan: 'Việc tôi đã giao' },

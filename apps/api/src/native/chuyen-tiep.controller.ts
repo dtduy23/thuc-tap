@@ -14,17 +14,18 @@ import { KICH_THUOC_VAN_BAN_TOI_DA } from '@gdos/shared'
 import type { Request, Response } from 'express'
 import { CAU_HINH, type CauHinh } from '../cau-hinh.js'
 import { ChiCanDangNhap, NguoiDung, type NguoiDungPhien } from '../xac-thuc/bao-ve.js'
-import { locThamSo, quyenCanCho, thongDiepLoiNative } from './chuyen-tiep.js'
+import { locThamSo, quyenCanCho, thongDiepLoiNative, type DichVuNative } from './chuyen-tiep.js'
 import { LienKetNativeService } from './lien-ket.service.js'
 
 /** Cho test thay fetch. */
 export const GOI_NATIVE = Symbol('GOI_NATIVE')
 
-/** AI soạn thảo / phân công có thể chạy lâu. */
+/** AI soạn thảo / phân công / phân rã có thể chạy lâu. */
 const HET_GIO_MS = 180_000
 /** Tệp văn bản tối đa 20 MB + phần khung multipart. */
 const THAN_TOI_DA = KICH_THUOC_VAN_BAN_TOI_DA + 1024 * 1024
 const HET_LIEN_KET = 'Liên kết FOXAI Native đã hết hạn hoặc bị thu hồi — vào Cài đặt cá nhân để liên kết lại.'
+const CO_THAN = new Set(['POST', 'PATCH', 'PUT'])
 
 /** Đọc nguyên thân request (multipart) vào bộ nhớ — để gửi lại được khi phải làm mới token. */
 async function docThan(req: Request): Promise<Buffer> {
@@ -39,10 +40,10 @@ async function docThan(req: Request): Promise<Buffer> {
 }
 
 /**
- * `/api/native/document/*` → `{NATIVE_URL}/api/document/*` (ADR-0009). Kiểm: đường dẫn
+ * `/api/native/<dịch vụ>/*` → `{NATIVE_URL}/api/<dịch vụ>/*` (ADR-0009). Kiểm: đường dẫn
  * trong danh sách cho phép, quyền GDOS tương ứng, người dùng đã liên kết Native.
  */
-@Controller('native/document')
+@Controller('native')
 export class ChuyenTiepNativeController {
   constructor(
     @Inject(CAU_HINH) private readonly cauHinh: CauHinh,
@@ -50,14 +51,25 @@ export class ChuyenTiepNativeController {
     @Inject(GOI_NATIVE) private readonly goi: typeof fetch,
   ) {}
 
-  @All('*duongDan')
+  @All('document/*duongDan')
   @ChiCanDangNhap()
-  async chuyen(@NguoiDung() nd: NguoiDungPhien, @Req() req: Request, @Res() res: Response): Promise<void> {
+  taiLieu(@NguoiDung() nd: NguoiDungPhien, @Req() req: Request, @Res() res: Response): Promise<void> {
+    return this.chuyen('document', nd, req, res)
+  }
+
+  @All('directory/*duongDan')
+  @ChiCanDangNhap()
+  danhBa(@NguoiDung() nd: NguoiDungPhien, @Req() req: Request, @Res() res: Response): Promise<void> {
+    return this.chuyen('directory', nd, req, res)
+  }
+
+  private async chuyen(dichVu: DichVuNative, nd: NguoiDungPhien, req: Request, res: Response): Promise<void> {
     const url = new URL(req.originalUrl, 'http://gdos')
-    const duongDan = url.pathname.replace(/^\/api\/native\/document/, '')
-    const quyen = quyenCanCho(req.method, duongDan)
+    const duongDan = url.pathname.slice(`/api/native/${dichVu}`.length)
+    const quyen = quyenCanCho(dichVu, req.method, duongDan)
     if (!quyen) throw new NotFoundException('Không có chức năng này')
-    if (!nd.quyen.has(quyen)) throw new ForbiddenException('Tài khoản không có quyền thao tác này')
+    if (!quyen.some((q) => nd.quyen.has(q)))
+      throw new ForbiddenException('Tài khoản không có quyền thao tác này')
     const goc = this.cauHinh.native.url
     if (!goc || this.cauHinh.native.gia)
       throw new ServiceUnavailableException(
@@ -66,12 +78,12 @@ export class ChuyenTiepNativeController {
 
     const loaiNoiDung = req.headers['content-type'] ?? ''
     const laMultipart = loaiNoiDung.startsWith('multipart/form-data')
-    const coThan = req.method === 'POST' || req.method === 'PATCH'
+    const coThan = CO_THAN.has(req.method)
     // JSON: body-parser đã đọc — gửi lại. Multipart: GDOS không đọc tệp, chuyển nguyên khối.
     const than = !coThan ? undefined : laMultipart ? await docThan(req) : JSON.stringify(req.body ?? {})
 
     const gui = (token: string) =>
-      this.goi(`${goc}/api/document${duongDan}${locThamSo(url.searchParams)}`, {
+      this.goi(`${goc}/api/${dichVu}${duongDan}${locThamSo(url.searchParams)}`, {
         method: req.method,
         headers: {
           Authorization: `Bearer ${token}`,
