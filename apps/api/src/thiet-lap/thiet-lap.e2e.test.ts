@@ -61,6 +61,9 @@ describe('đọc cấu hình', () => {
     expect(res.body).toEqual({
       nhanDien: { ...NHAN_DIEN_MAC_DINH, tenCoQuan: 'Tỉnh Mẫu' },
       matKhauToiThieu: CHINH_SACH_MAC_DINH.matKhauToiThieu,
+      // Ngưỡng cảnh báo và trang mặc định theo vai cũng công khai — web cần trước khi vẽ.
+      nguong: { sapHanNgay: 10, lauCapNhatNgay: 15 },
+      trangDau: { LANH_DAO: '', CHUYEN_VIEN: '', THANH_TRA: '', QUAN_TRI: '' },
     })
   })
 
@@ -152,5 +155,48 @@ describe('sửa tên & nhận diện', () => {
     const { dong } = (await agent.get('/api/nhat-ky?bang=cau_hinh')).body as TrangNhatKy
     expect(dong.map((d) => d.giaTriMoi?.khoa).sort()).toEqual(['bao-mat', 'nhan-dien'])
     expect(dong.every((d) => d.nguoiLam === 'Quản trị cấp tỉnh')).toBe(true)
+  })
+})
+
+describe('ngưỡng cảnh báo và trang mặc định theo vai', () => {
+  it('mặc định 10 / 15 ngày, trang đầu để trống; ai cũng đọc được qua cấu hình công khai', async () => {
+    const ck = await congKhai()
+    expect(ck.nguong).toEqual({ sapHanNgay: 10, lauCapNhatNgay: 15 })
+    expect(ck.trangDau).toEqual({ LANH_DAO: '', CHUYEN_VIEN: '', THANH_TRA: '', QUAN_TRI: '' })
+  })
+
+  it('quản trị gốc đổi ngưỡng → có hiệu lực ngay; ngoài khoảng, tham số lạ → 400', async () => {
+    const { agent } = await dangNhap('quantri.tinh')
+    const ok = await agent.put('/api/cau-hinh/canh-bao').set(GHI).send({ sapHanNgay: 20, lauCapNhatNgay: 30 })
+    expect(ok.status).toBe(200)
+    expect((ok.body as CauHinhHeThong).nguong).toEqual({ sapHanNgay: 20, lauCapNhatNgay: 30 })
+    for (const sai of [
+      { sapHanNgay: 0, lauCapNhatNgay: 30 },
+      { sapHanNgay: 20 },
+      { sapHanNgay: 20, lauCapNhatNgay: 30, la: 1 },
+    ])
+      expect((await agent.put('/api/cau-hinh/canh-bao').set(GHI).send(sai)).status).toBe(400)
+  })
+
+  it('trang đầu chỉ nhận mã chức năng có trong cây; quản trị cấp xã không sửa được', async () => {
+    const { agent } = await dangNhap('quantri.tinh')
+    const td = { LANH_DAO: 'ct-tong-quan', CHUYEN_VIEN: 'da-cua-toi', THANH_TRA: '', QUAN_TRI: 'tk-ds' }
+    const ok = await agent.put('/api/cau-hinh/trang-dau').set(GHI).send(td)
+    expect(ok.status).toBe(200)
+    expect((ok.body as CauHinhHeThong).trangDau).toEqual(td)
+    expect(
+      (
+        await agent
+          .put('/api/cau-hinh/trang-dau')
+          .set(GHI)
+          .send({ ...td, LANH_DAO: 'khong-co-man-nay' })
+      ).status,
+    ).toBe(400)
+    const xa = await dangNhap('quantri')
+    expect((await xa.agent.put('/api/cau-hinh/trang-dau').set(GHI).send(td)).status).toBe(403)
+    expect(
+      (await xa.agent.put('/api/cau-hinh/canh-bao').set(GHI).send({ sapHanNgay: 5, lauCapNhatNgay: 5 }))
+        .status,
+    ).toBe(403)
   })
 })

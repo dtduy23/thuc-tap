@@ -176,6 +176,13 @@
       "when": 1790758726913,
       "tag": "0024_van-ban-tu-native",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790850000000,
+      "tag": "0025_cau-hinh-canh-bao-trang-dau",
+      "breakpoints": true
     }
   ]
 }

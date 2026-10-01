@@ -65,5 +65,7 @@ export const MAN_HINH: Partial<Record<string, LazyExoticComponent<ComponentType>
   'vt-tra-cuu': lazy(() => import('@/man/vai-tro-tra-cuu')),
   'vt-ma-tran': lazy(() => import('@/man/vai-tro-ma-tran')),
   'ch-bao-mat': lazy(() => import('@/man/cau-hinh-bao-mat')),
+  'cb-sla': lazy(() => import('@/man/cau-hinh-canh-bao')),
+  'ht-trang-dau': lazy(() => import('@/man/cau-hinh-trang-dau')),
   'ch-nhan-dien': lazy(() => import('@/man/cau-hinh-nhan-dien')),
 }

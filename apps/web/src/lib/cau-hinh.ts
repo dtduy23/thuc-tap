@@ -1,4 +1,11 @@
-import type { CauHinhCongKhai, CauHinhHeThong, ChinhSachBaoMat, NhanDien } from '@gdos/shared'
+import type {
+  CauHinhCongKhai,
+  CauHinhHeThong,
+  ChinhSachBaoMat,
+  NguongCanhBao,
+  NhanDien,
+  TrangDau,
+} from '@gdos/shared'
 import { queryOptions } from '@tanstack/react-query'
 import { goiApi } from './http'
 
@@ -19,6 +26,12 @@ export const truyVanCauHinh = queryOptions({
 
 export const luuBaoMat = (cs: ChinhSachBaoMat) =>
   goiApi<CauHinhHeThong>('/cau-hinh/bao-mat', { method: 'PUT', body: cs })
+
+export const luuNguong = (ng: NguongCanhBao) =>
+  goiApi<CauHinhHeThong>('/cau-hinh/canh-bao', { method: 'PUT', body: ng })
+
+export const luuTrangDau = (td: TrangDau) =>
+  goiApi<CauHinhHeThong>('/cau-hinh/trang-dau', { method: 'PUT', body: td })
 
 export const luuNhanDien = (nd: NhanDien) =>
   goiApi<CauHinhHeThong>('/cau-hinh/nhan-dien', { method: 'PUT', body: nd })

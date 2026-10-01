@@ -61,6 +61,7 @@ import {
   duAnVuongMac,
   quyTrinhMau,
 } from '../db/schema/index.js'
+import { ThietLapService } from '../thiet-lap/thiet-lap.service.js'
 import type { NguoiDungPhien } from '../xac-thuc/bao-ve.js'
 
 const VAI_TRO = Object.keys(VAI_TRO_THANH_VIEN) as VaiTroThanhVien[]
@@ -182,13 +183,22 @@ type DongBuoc = Awaited<ReturnType<typeof docBuoc>>[number]
  */
 @Injectable()
 export class DuAnService {
-  constructor(@Inject(CoSoDuLieu) private readonly csdl: CoSoDuLieu) {}
+  constructor(
+    @Inject(CoSoDuLieu) private readonly csdl: CoSoDuLieu,
+    @Inject(ThietLapService) private readonly thietLap: ThietLapService,
+  ) {}
 
   private get db() {
     return dbCua(this.csdl)
   }
 
+  /** Ngưỡng "sắp hạn" đang cấu hình. Đọc TRƯỚC khi mở giao dịch — không lồng giao dịch. */
+  private async nguongSapHan(): Promise<number> {
+    return (await this.thietLap.nguong()).sapHanNgay
+  }
+
   async danhSach(nd: NguoiDungPhien, loc: LocDuAn): Promise<DuAnDong[]> {
+    const sapHanNgay = await this.nguongSapHan()
     return trongPhamVi(this.db, nd.nguCanh, async (tx) => {
       const dk: SQL | undefined =
         loc === 'cua-toi'
@@ -208,20 +218,23 @@ export class DuAnService {
           d,
           buoc.filter((b) => b.duAnId === d.id),
           hn,
+          sapHanNgay,
         ),
       )
     })
   }
 
-  hoSo(nd: NguoiDungPhien, id: string): Promise<HoSoDuAn> {
-    return trongPhamVi(this.db, nd.nguCanh, (tx) => docHoSo(tx, nd, id))
+  async hoSo(nd: NguoiDungPhien, id: string): Promise<HoSoDuAn> {
+    const ng = await this.nguongSapHan()
+    return trongPhamVi(this.db, nd.nguCanh, (tx) => docHoSo(tx, nd, id, ng))
   }
 
   async tao(nd: NguoiDungPhien, than: unknown): Promise<HoSoDuAn> {
     const dl = docDuAnMoi(than, nd.taiKhoanId)
+    const ng = await this.nguongSapHan()
     try {
       return await trongPhamVi(this.db, nd.nguCanh, async (tx) =>
-        docHoSo(tx, nd, await this.taoMot(tx, nd, dl)),
+        docHoSo(tx, nd, await this.taoMot(tx, nd, dl), ng),
       )
     } catch (e) {
       if (maLoiPg(e) === TRUNG_KHOA) throw new ConflictException(`Mã dự án "${dl.ma}" đã có`)
@@ -572,12 +585,13 @@ export class DuAnService {
    * Mở dự án (RLS: không thấy → 404), kiểm quyền trên CHÍNH dự án, làm việc, tính lại
    * hạn, trả hồ sơ. Dùng chung cho mọi thao tác ghi của hồ sơ (cả HoSoDuAnService).
    */
-  voiDuAn(
+  async voiDuAn(
     nd: NguoiDungPhien,
     id: string,
     can: keyof HoSoDuAn['quyen'],
     viec: (tx: GiaoDich, da: DongDuAn) => Promise<unknown>,
   ): Promise<HoSoDuAn> {
+    const ng = await this.nguongSapHan()
     return trongPhamVi(this.db, nd.nguCanh, async (tx) => {
       const [da] = await docDuAn(tx, eq(duAn.id, id))
       if (!da) throw new NotFoundException('Không tìm thấy dự án')
@@ -586,7 +600,7 @@ export class DuAnService {
       await viec(tx, da)
       await tinhLaiHan(tx, id)
       if (can !== 'gui') await tx.update(duAn).set({ capNhatNgay: homNay() }).where(eq(duAn.id, id))
-      return docHoSo(tx, nd, id)
+      return docHoSo(tx, nd, id, ng)
     })
   }
 
@@ -664,7 +678,12 @@ function quyenTren(
   }
 }
 
-async function docHoSo(tx: GiaoDich, nd: NguoiDungPhien, id: string): Promise<HoSoDuAn> {
+async function docHoSo(
+  tx: GiaoDich,
+  nd: NguoiDungPhien,
+  id: string,
+  nguongSapHan: number,
+): Promise<HoSoDuAn> {
   const [da] = await docDuAn(tx, eq(duAn.id, id))
   if (!da) throw new NotFoundException('Không tìm thấy dự án')
   const buoc = await docBuoc(tx, [id])
@@ -709,7 +728,7 @@ async function docHoSo(tx: GiaoDich, nd: NguoiDungPhien, id: string): Promise<Ho
   const anh = (pb[0]?.anhChup ?? []) as { id: string; han: string | null }[]
   const phienBan: PhienBanKeHoach[] = pb.map(({ anhChup: _bo, ...p }) => p)
   return {
-    ...chuyenDuAn(da, buoc, homNay()),
+    ...chuyenDuAn(da, buoc, homNay(), nguongSapHan),
     canCu: da.canCu,
     tienDoMoTa: da.tienDoMoTa,
     diaDiem: da.diaDiem,
@@ -733,7 +752,7 @@ function chuyenBuoc(b: DongBuoc, tenNguoi: Record<string, string | null> = {}): 
   }
 }
 
-function chuyenDuAn(d: DongDuAn, buoc: DongBuoc[], hn: string): DuAnDong {
+function chuyenDuAn(d: DongDuAn, buoc: DongBuoc[], hn: string, nguongSapHan: number): DuAnDong {
   return {
     id: d.id,
     ma: d.ma,
@@ -756,6 +775,7 @@ function chuyenDuAn(d: DongDuAn, buoc: DongBuoc[], hn: string): DuAnDong {
     thongKe: thongKeTienDo(
       buoc.map((b) => ({ ...b, giaiDoan: b.giaiDoan as BuocDuAn['giaiDoan'] })),
       hn,
+      nguongSapHan,
     ),
   }
 }

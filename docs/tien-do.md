@@ -68,6 +68,23 @@
 - Nhánh `develop` **chưa tồn tại** trên remote. Pipeline chỉ nổ khi có nhánh đó.
 - CSP trong `nginx.conf` chưa mở trên trình duyệt thật; màn nào trắng thì nới ở đúng chỉ thị đó.
 
+## Tầng 2 — vận hành, cây phân hệ, ngưỡng cảnh báo, trang mặc định (01/10/2026)
+
+- **Theo dõi vận hành** (`/api/van-hanh/*`, quyền `QT_VAN_HANH.READ`, chỉ đọc): Sức khỏe hệ thống (API,
+  cơ sở dữ liệu, kho tệp, FOXAI Native — tự kiểm 30 giây), Hàng đợi xử lý (văn bản đang chờ / đang
+  xử lý / lỗi, báo khi chờ quá 15 phút), Lưu trữ tệp (số tệp, dung lượng theo nghiệp vụ – đơn vị –
+  loại). Nhật ký hệ thống còn phác (chưa có nơi lưu nhật ký máy chủ).
+- **Khai báo module › Cây phân hệ**: bảng tra cả cây 4 cấp từ registry — tình trạng đã xây / đang
+  xây dựng, quyền cần có, nguồn dữ liệu.
+- **Quy tắc cảnh báo › Hạn & ngưỡng cảnh báo**: hai ngưỡng "sắp đến hạn" (mặc định 10 ngày) và "lâu
+  không cập nhật" (15 ngày) thành cấu hình hệ thống (khóa `canh-bao`, migration 0025). Áp dụng cho
+  tình trạng bước dự án, Giám sát › Hồ sơ quá hạn, Việc của tôi, checklist Excel, Gantt, Đôn đốc.
+  Dịch vụ đọc ngưỡng TRƯỚC khi mở giao dịch (không lồng giao dịch). Kênh gửi thông báo còn phác.
+- **Hiển thị › Trang mặc định theo vai** (khóa `trang-dau`): trang mở ra sau khi đăng nhập cho lãnh
+  đạo / chuyên viên / thanh tra / quản trị; chỉ nhận chức năng có trong cây; không có quyền mở thì
+  về trang chủ; đường dẫn cụ thể (`?tiep=`) vẫn được ưu tiên.
+- Cả hai cấu hình chỉ quản trị ở đơn vị gốc sửa được (hàm `cau_hinh_ghi`), có nhật ký. 4 + 3 test.
+
 ## Điều hành › Chỉ tiêu điều hành (01/10/2026)
 
 Bộ chỉ tiêu điều hành cấp xã/phường đã thông qua (theo "Dashboard GDOS Xã/Phường" của GDOS cũ) —

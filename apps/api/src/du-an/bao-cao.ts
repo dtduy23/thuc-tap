@@ -319,7 +319,7 @@ export function danhSach(dl: DuLieuBaoCao, ts: GiaTriThamSo, hn: string): KetQua
 
 // ── Checklist tiến độ của MỘT dự án ─────────────────────────────────────────
 
-export function checklist(hs: HoSoDuAn, hn: string): KetQuaBaoCao {
+export function checklist(hs: HoSoDuAn, hn: string, nguongSapHan?: number): KetQuaBaoCao {
   const cot: CotBaoCao[] = [
     { nhan: 'Nội dung công việc', rong: 56 },
     { nhan: 'STT', rong: 8 },
@@ -335,7 +335,7 @@ export function checklist(hs: HoSoDuAn, hn: string): KetQuaBaoCao {
     .filter((b) => !b.laNhap)
     .map((b): DongBaoCao => {
       if (b.laNhom) return { cap: 1, o: [b.ten, b.stt, b.soNgay || null, null, null, null, null, null, null] }
-      const tt = trangThaiBuoc(b, hn)
+      const tt = trangThaiBuoc(b, hn, nguongSapHan)
       return {
         cap: 0,
         o: [

@@ -166,13 +166,13 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
           id: 'du-an-sap-han',
           ten: 'Bước dự án sắp đến hạn',
           loai: 'sap-han',
-          mo: 'Bước chưa xong đến hạn trong 10 ngày tới.',
+          mo: 'Bước chưa xong sắp đến hạn (mặc định trong 10 ngày tới — đổi ở Quy tắc cảnh báo).',
         },
         {
           id: 'du-an-lau-cap-nhat',
           ten: 'Dự án lâu không cập nhật',
           loai: 'lau-khong-cap-nhat',
-          mo: 'Dự án đang thực hiện mà quá 15 ngày không ai cập nhật.',
+          mo: 'Dự án đang thực hiện mà lâu không ai cập nhật (mặc định quá 15 ngày — đổi ở Quy tắc cảnh báo).',
         },
       ],
       viec: [
@@ -424,7 +424,7 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     mo: 'Tên và nhận diện của hệ thống, trang mặc định. Tông màu thì mỗi người tự chọn ở Cài đặt cá nhân.',
     con: [
       { id: 'ch-nhan-dien', nhan: 'Tên & nhận diện' },
-      { id: 'ht-trang-dau', nhan: 'Trang mặc định theo vai', phac: true },
+      { id: 'ht-trang-dau', nhan: 'Trang mặc định theo vai' },
     ],
   },
   {
@@ -433,11 +433,10 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'qt-cau-hinh',
     maQuyen: 'QT_CANH_BAO',
     nguon: 'db',
-    phac: true,
     mo: 'QUY TẮC cảnh báo. Còn cảnh báo ĐANG MỞ nằm ở Giám sát & Lưu vết.',
     con: [
       { id: 'cb-sla', nhan: 'Hạn & ngưỡng cảnh báo' },
-      { id: 'cb-kenh', nhan: 'Kênh gửi thông báo' },
+      { id: 'cb-kenh', nhan: 'Kênh gửi thông báo', phac: true },
     ],
   },
   {

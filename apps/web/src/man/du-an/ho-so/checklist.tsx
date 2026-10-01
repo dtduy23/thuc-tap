@@ -1,3 +1,5 @@
+import { useSuspenseQuery } from '@tanstack/react-query'
+import { truyVanCongKhai } from '@/lib/cau-hinh'
 import {
   BEN_THUC_HIEN,
   GIAI_DOAN,
@@ -39,6 +41,7 @@ export default function Checklist({ hs }: { hs: HoSoDuAn }) {
   const [mo, datMo] = useState<string>()
   const [loiTai, datLoiTai] = useState<string>()
   const hn = homNay()
+  const { nguong } = useSuspenseQuery(truyVanCongKhai).data
 
   const doSau = useMemo(() => {
     const cha = new Map(hs.buoc.map((b) => [b.id, b.chaId]))
@@ -46,7 +49,7 @@ export default function Checklist({ hs }: { hs: HoSoDuAn }) {
     return new Map(hs.buoc.map((b) => [b.id, tinh(b.id)]))
   }, [hs.buoc])
 
-  const tt = (b: BuocDuAn) => trangThaiBuoc(b, hn)
+  const tt = (b: BuocDuAn) => trangThaiBuoc(b, hn, nguong.sapHanNgay)
   const dem = useMemo(() => {
     const d: Partial<Record<Loc, number>> = {}
     for (const b of hs.buoc.filter(tinhTienDo)) {

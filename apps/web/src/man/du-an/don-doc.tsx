@@ -1,4 +1,5 @@
-import { congNgay, homNay, NGUONG_LAU_CAP_NHAT, type DotDonDoc, type DuAnDong } from '@gdos/shared'
+import { truyVanCongKhai } from '@/lib/cau-hinh'
+import { congNgay, homNay, type DotDonDoc, type DuAnDong } from '@gdos/shared'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useMemo, useState, type FormEvent } from 'react'
@@ -27,7 +28,10 @@ export default function DonDoc() {
   const { data: ds } = useSuspenseQuery(truyVanDanhSachDuAn('tat-ca'))
   const { data: lichSu } = useSuspenseQuery(truyVanLichSuDonDoc)
   // Mốc "lâu không cập nhật" tính một lần khi mở màn — không gọi đồng hồ trong lúc vẽ.
-  const [moc] = useState(() => congNgay(homNay(), -NGUONG_LAU_CAP_NHAT))
+  const {
+    data: { nguong },
+  } = useSuspenseQuery(truyVanCongKhai)
+  const [moc] = useState(() => congNgay(homNay(), -nguong.lauCapNhatNgay))
   const [chon, datChon] = useState<Set<string>>(new Set())
   const [noiDung, datNoiDung] = useState('')
   const [kq, datKq] = useState<{ ok: boolean; cau: string }>()
