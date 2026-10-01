@@ -406,7 +406,7 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nguon: 'db',
     mo: 'Bật/tắt và đổi nhãn module theo từng khách hàng — không tách nhánh mã.',
     con: [
-      { id: 'kb-cay', nhan: 'Cây phân hệ', phac: true },
+      { id: 'kb-cay', nhan: 'Cây phân hệ' },
       { id: 'kb-nhan', nhan: 'Nhãn theo khách hàng', phac: true },
       {
         id: 'kb-tham-so',
@@ -460,13 +460,12 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'qt-cau-hinh',
     maQuyen: 'QT_VAN_HANH',
     nguon: 'db',
-    phac: true,
     mo: 'Sức khỏe hệ thống — người xem là kỹ thuật, không phải thanh tra.',
     con: [
       { id: 'vh-suc-khoe', nhan: 'Sức khỏe hệ thống' },
       { id: 'vh-hang-doi', nhan: 'Hàng đợi xử lý' },
       { id: 'vh-tep', nhan: 'Lưu trữ tệp' },
-      { id: 'vh-nhat-ky', nhan: 'Nhật ký hệ thống' },
+      { id: 'vh-nhat-ky', nhan: 'Nhật ký hệ thống', phac: true },
     ],
   },
 ]

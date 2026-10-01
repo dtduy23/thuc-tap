@@ -267,3 +267,28 @@ describe('Danh mục › Tổ chức — danh bạ chỉ đọc', () => {
       .where(eq(taiKhoan.tenDangNhap, 'chutich.a'))
   })
 })
+
+describe('Theo dõi vận hành — chỉ quản trị, chỉ đọc', () => {
+  it('chuyên viên không vào được; quản trị xem sức khỏe, hàng đợi, lưu trữ', async () => {
+    const cvA = await vao('chuyenvien.a')
+    for (const p of ['suc-khoe', 'hang-doi', 'luu-tru'])
+      expect((await cvA.get(`/api/van-hanh/${p}`)).status, p).toBe(403)
+
+    const qt = await vao('quantri')
+    const sk = (await qt.get('/api/van-hanh/suc-khoe')).body as {
+      thanhPhan: { ma: string; trangThai: string }[]
+      boNhoMb: number
+    }
+    expect(sk.thanhPhan.map((t) => t.ma)).toEqual(['api', 'postgres', 'kho-tep', 'foxai-native'])
+    expect(sk.thanhPhan.find((t) => t.ma === 'postgres')!.trangThai).toBe('ok')
+    expect(sk.boNhoMb).toBeGreaterThan(0)
+    // Không lộ bí mật cấu hình.
+    expect(JSON.stringify(sk)).not.toMatch(/AUTH_SECRET|mat_khau|password/i)
+
+    const hd = (await qt.get('/api/van-hanh/hang-doi')).body as { dem: unknown; muc: unknown[] }
+    expect(hd.dem).toEqual({ cho: 0, dangXuLy: 0, loi: 0 })
+    const lt = await qt.get('/api/van-hanh/luu-tru')
+    expect(lt.status).toBe(200)
+    expect(lt.body).toMatchObject({ tongTep: 0, tongDungLuong: 0, tepONative: 0, dong: [] })
+  })
+})

@@ -21,6 +21,7 @@ import { XAC_THUC_NATIVE, XacThucNativeGia, XacThucNativeHttp } from './native/x
 import { NhatKyController } from './nhat-ky/nhat-ky.controller.js'
 import { NhatKyService } from './nhat-ky/nhat-ky.service.js'
 import { ChiTieuController } from './chi-tieu/chi-tieu.controller.js'
+import { VanHanhController } from './van-hanh/van-hanh.controller.js'
 import { ChiTieuService } from './chi-tieu/chi-tieu.service.js'
 import { ToChucController } from './danh-muc/to-chuc.controller.js'
 import { DonViController } from './quan-tri/don-vi.controller.js'
@@ -44,6 +45,7 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     DonViController,
     ToChucController,
     ChiTieuController,
+    VanHanhController,
     NhatKyController,
     ThietLapController,
     DuAnController,
