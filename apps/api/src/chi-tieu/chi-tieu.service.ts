@@ -1,10 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common'
-import { BO_CHI_TIEU, type BangChiTieu, type GiaTriChiTieu, type SoLieuPhanHe } from '@gdos/shared'
-import { and, isNull, sql } from 'drizzle-orm'
+import {
+  BO_CHI_TIEU,
+  kyHien,
+  timChiTieu,
+  type BangChiTieu,
+  type GiaTriChiTieu,
+  type KenhNap,
+  type SoLieuPhanHe,
+} from '@gdos/shared'
+import { and, asc, eq, isNull, sql } from 'drizzle-orm'
 import { CAU_HINH, type CauHinh } from '../cau-hinh.js'
 import { CoSoDuLieu, dbCua } from '../db/co-so-du-lieu.js'
 import { trongPhamVi } from '../db/pham-vi.js'
-import { vanBan } from '../db/schema/index.js'
+import { chiTieuSoLieu, taiKhoan, vanBan } from '../db/schema/index.js'
 import { DuAnService } from '../du-an/du-an.service.js'
 import { GOI_NATIVE } from '../native/chuyen-tiep.controller.js'
 import { LienKetNativeService } from '../native/lien-ket.service.js'
@@ -19,16 +27,43 @@ export interface SoThat {
   vanBan: { tong: number; den: number; daTomTat: number } | null
 }
 
+/** Số nạp từ ngoài (Tầng 2 › Nguồn dữ liệu vào) của một chỉ tiêu: kỳ mới nhất + chuỗi các kỳ. */
+export interface SoNap {
+  giaTri: number
+  /** 'YYYY-MM' */
+  ky: string
+  /** Tối đa 10 kỳ gần nhất, kỳ cuối = giá trị hiện tại. */
+  chuoi: number[]
+  kenh: KenhNap
+  tenNguon: string
+  luc: string
+}
+
 const tron = (n: number, le = 1) => Number(n.toFixed(le))
 
 /**
- * Ghép bảng chỉ tiêu: số THẬT từ phân hệ đã xây đè lên số minh họa. Hàm thuần — test thẳng.
+ * Ghép bảng chỉ tiêu theo thứ tự ưu tiên: số THẬT từ phân hệ đã xây › số NẠP từ ngoài (API,
+ * Excel) › số minh họa. Hàm thuần — test thẳng.
  * KPI suy ra từ chỉ tiêu lĩnh vực, nên KPI mang nguồn của chỉ tiêu gốc.
  */
-export function ghepBangChiTieu(t: SoThat): BangChiTieu {
+export function ghepBangChiTieu(t: SoThat, nap: ReadonlyMap<string, SoNap> = new Map()): BangChiTieu {
   const giaTri: Record<string, GiaTriChiTieu> = {}
   for (const [ma, [v, dd, xh]] of Object.entries(SO_LIEU_MINH_HOA))
     giaTri[ma] = { giaTri: v, nguon: 'minh-hoa', chuoi: chuoiMinhHoa(ma, v, dd, xh) }
+
+  // ── Số nạp từ ngoài đè lên minh họa (KPI không nạp — tự tính bên dưới) ──
+  for (const [ma, n] of nap) {
+    if (timChiTieu(ma)?.linhVuc === 'kpi' || !timChiTieu(ma)) continue
+    giaTri[ma] = {
+      giaTri: n.giaTri,
+      nguon: 'nap',
+      chuoi: n.chuoi,
+      kenh: n.kenh,
+      tenNguon: n.tenNguon,
+      ky: kyHien(n.ky),
+      capNhatLuc: n.luc,
+    }
+  }
 
   // ── Dự án → giải ngân đầu tư công, công trình đang thi công ──
   if (t.duAn && t.duAn.tong > 0) {
@@ -42,17 +77,22 @@ export function ghepBangChiTieu(t: SoThat): BangChiTieu {
 
   // ── KPI: tính từ chỉ tiêu lĩnh vực ──
   const lay = (ma: string) => giaTri[ma]?.giaTri ?? null
-  const kpi = (ma: string, v: number | null, goc: string) => {
+  // KPI tính từ hai chỉ tiêu (gocPhu) mà chỉ MỘT bên có số nạp thì vẫn là minh họa — không
+  // gắn nhãn số thật cho một phép chia nửa thật nửa mẫu.
+  const kpi = (ma: string, v: number | null, goc: string, gocPhu?: string) => {
     const g = giaTri[goc]!
+    const lech = gocPhu !== undefined && giaTri[gocPhu]!.nguon !== g.nguon
+    const nguon = lech ? 'minh-hoa' : g.nguon
     giaTri[ma] = {
       giaTri: v,
-      nguon: g.nguon,
-      chuoi: g.nguon === 'minh-hoa' && v !== null ? chuoiMinhHoa(ma, v, 0.012, 0.003) : [],
+      nguon,
+      chuoi: nguon === 'minh-hoa' && v !== null ? chuoiMinhHoa(ma, v, 0.012, 0.003) : [],
+      ...(nguon === 'nap' ? { kenh: g.kenh, tenNguon: g.tenNguon, ky: g.ky, capNhatLuc: g.capNhatLuc } : {}),
     }
   }
   const dung = lay('TTHC-03')
   const xong = lay('TTHC-02')
-  kpi('KPI-01', dung !== null && xong ? tron((dung / xong) * 100, 2) : null, 'TTHC-03')
+  kpi('KPI-01', dung !== null && xong ? tron((dung / xong) * 100, 2) : null, 'TTHC-03', 'TTHC-02')
   kpi('KPI-02', lay('TTHC-07'), 'TTHC-07')
   kpi('KPI-03', lay('PAKN-05'), 'PAKN-05')
   kpi('KPI-05', lay('TTHC-08'), 'TTHC-08')
@@ -124,7 +164,8 @@ export function ghepBangChiTieu(t: SoThat): BangChiTieu {
 
 /**
  * Điều hành › Chỉ tiêu điều hành. Đọc số thật của các phân hệ ĐÃ XÂY theo đúng quyền và
- * phạm vi (RLS) của người xem; phần còn lại là số minh họa (so-lieu-minh-hoa.ts).
+ * phạm vi (RLS) của người xem; kế đó là số NẠP từ ngoài của ĐƠN VỊ người xem (Tầng 2 › Nguồn
+ * dữ liệu vào); phần còn lại là số minh họa (so-lieu-minh-hoa.ts).
  */
 @Injectable()
 export class ChiTieuService {
@@ -137,8 +178,45 @@ export class ChiTieuService {
   ) {}
 
   async bang(nd: NguoiDungPhien): Promise<BangChiTieu> {
-    const [nv, da, vb] = await Promise.all([this.nhiemVu(nd), this.soDuAn(nd), this.soVanBan(nd)])
-    return ghepBangChiTieu({ nhiemVu: nv.so, lyDoNhiemVu: nv.lyDo, duAn: da, vanBan: vb })
+    const [nv, da, vb, nap] = await Promise.all([
+      this.nhiemVu(nd),
+      this.soDuAn(nd),
+      this.soVanBan(nd),
+      this.soNap(nd),
+    ])
+    return ghepBangChiTieu({ nhiemVu: nv.so, lyDoNhiemVu: nv.lyDo, duAn: da, vanBan: vb }, nap)
+  }
+
+  /**
+   * Số nạp của đơn vị người xem. Chỉ lấy đúng đơn vị của họ — không cộng số của đơn vị con
+   * (tỷ lệ % không cộng được).
+   */
+  private async soNap(nd: NguoiDungPhien): Promise<Map<string, SoNap>> {
+    const ds = await trongPhamVi(dbCua(this.csdl), nd.nguCanh, async (tx) => {
+      const [t] = await tx
+        .select({ donViId: taiKhoan.donViId })
+        .from(taiKhoan)
+        .where(eq(taiKhoan.id, nd.taiKhoanId))
+      if (!t) return []
+      return tx
+        .select()
+        .from(chiTieuSoLieu)
+        .where(and(eq(chiTieuSoLieu.donViId, t.donViId), isNull(chiTieuSoLieu.deletedAt)))
+        .orderBy(asc(chiTieuSoLieu.ky))
+    })
+    const kq = new Map<string, SoNap>()
+    for (const d of ds) {
+      const chuoi = [...(kq.get(d.maChiTieu)?.chuoi ?? []), d.giaTri].slice(-10)
+      kq.set(d.maChiTieu, {
+        giaTri: d.giaTri,
+        ky: d.ky,
+        chuoi,
+        kenh: d.kenh as KenhNap,
+        tenNguon: d.tenNguon,
+        luc: d.updatedAt.toISOString(),
+      })
+    }
+    return kq
   }
 
   /** Thống kê nhiệm vụ trên FOXAI Native, bằng tài khoản Native của chính người xem. */

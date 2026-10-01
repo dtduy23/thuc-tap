@@ -6,6 +6,8 @@
  * Giá trị mỗi chỉ tiêu có NGUỒN rõ ràng:
  *   - that     : tính từ phân hệ GDOS đã xây (Nhiệm vụ, Dự án…) — số thật của người đang xem;
  *   - minh-hoa : chưa có phân hệ nguồn → số MINH HỌA để xem trước bố cục, không dùng để báo cáo;
+ *   - nap      : nạp từ NGOÀI qua Tầng 2 › Nguồn dữ liệu vào (API của khách hoặc tệp Excel) — số thật
+ *                của đơn vị, kèm kênh, tên nguồn, kỳ và thời điểm nạp;
  *   - chua-co  : đáng lẽ có số thật nhưng chưa lấy được (chưa liên kết Native, chưa có dữ liệu).
  */
 
@@ -179,7 +181,7 @@ export const BO_CHI_TIEU: readonly ChiTieuDef[] = [
   ct('yt-gd', 'YTGD-06', 'Trường đạt chuẩn quốc gia', '%', { mucTieu: 100, soLe: 0 }),
 ]
 
-export type NguonGiaTri = 'that' | 'minh-hoa' | 'chua-co'
+export type NguonGiaTri = 'that' | 'nap' | 'minh-hoa' | 'chua-co'
 
 export interface GiaTriChiTieu {
   giaTri: number | null
@@ -191,6 +193,11 @@ export interface GiaTriChiTieu {
   lienKet?: string
   /** Vì sao chưa có (nguon = chua-co). */
   lyDo?: string
+  /** Số nạp (nguon = nap): kênh, tên nguồn API / tên tệp, kỳ của số ('T9/2026'), lúc nạp. */
+  kenh?: 'api' | 'excel'
+  tenNguon?: string
+  ky?: string
+  capNhatLuc?: string
 }
 
 /** Số liệu THẬT từ các phân hệ đã xây — hiện thành khối riêng ở trang Tổng quan. */

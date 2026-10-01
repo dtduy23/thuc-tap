@@ -68,6 +68,23 @@
 - Nhánh `develop` **chưa tồn tại** trên remote. Pipeline chỉ nổ khi có nhánh đó.
 - CSP trong `nginx.conf` chưa mở trên trình duyệt thật; màn nào trắng thì nới ở đúng chỉ thị đó.
 
+## Nguồn dữ liệu vào — số liệu chỉ tiêu qua API và Excel (01/10/2026)
+
+Quản trị hệ thống › Kết nối › **Nguồn dữ liệu vào** (`QT_NGUON_VAO`, ADR-0010) hết là màn phác:
+
+- **Nguồn API** — khai địa chỉ, xác thực (khóa lưu mã hóa, không trả về trình duyệt), ánh xạ JSON →
+  chỉ tiêu (mảng các dòng, hoặc đối tượng mỗi trường một chỉ tiêu); "Lấy thử" (không ghi) và "Lấy ngay".
+- **Nạp từ Excel** — kênh cho khách không có API: tải mẫu (liệt kê sẵn bộ chỉ tiêu) → kiểm → nạp,
+  tất cả hoặc không.
+- **Kết quả lấy về** — "Số liệu đang dùng" (từng chỉ tiêu + kỳ, từ kênh / nguồn nào; bỏ được số nạp
+  nhầm) và "Lịch sử nạp" (từng lần: ai, lúc nào, bao nhiêu dòng, lỗi gì).
+- **Điều hành** đọc kho theo thứ tự: phân hệ đã xây › số nạp › minh họa; nhãn nguồn mới "API · T9/2026" /
+  "Excel · T9/2026"; chuỗi xu hướng lấy từ các kỳ đã nạp; KPI tính lại từ số nạp.
+- Migration 0028 (4 bảng) + 0029 (RLS, nhật ký; kho khóa không nhật ký). Test: `nguon-vao.e2e.test.ts`.
+- Chưa làm: lịch tự lấy định kỳ; quyền nạp cho cán bộ đầu mối (hiện chỉ quản trị); tổng hợp số của
+  đơn vị con lên cấp trên; nguồn cần POST / phân trang / OAuth.
+- **Chưa thử với API thật của khách nào** — mới chạy với nguồn giả trong test.
+
 ## Kết nối OCR chứng từ với FOXAI Native (01/10/2026)
 
 Quản trị hệ thống › Kết nối có thêm module **Nhận dạng chứng từ (OCR)** (`QT_OCR`, ADR-0009 mục 9):

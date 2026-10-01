@@ -18,6 +18,9 @@ import { ChuyenTiepNativeController, GOI_NATIVE } from './native/chuyen-tiep.con
 import { KET_NOI_NATIVE, taoKetNoiNative } from './native/ket-noi-native.js'
 import { LienKetNativeService } from './native/lien-ket.service.js'
 import { XAC_THUC_NATIVE, XacThucNativeGia, XacThucNativeHttp } from './native/xac-thuc-native.js'
+import { GOI_NGUON_NGOAI, taoGoiNguonNgoai } from './nguon-vao/goi-ngoai.js'
+import { NguonVaoController } from './nguon-vao/nguon-vao.controller.js'
+import { NguonVaoService } from './nguon-vao/nguon-vao.service.js'
 import { OcrController } from './ocr/ocr.controller.js'
 import { OcrService } from './ocr/ocr.service.js'
 import { NhatKyController } from './nhat-ky/nhat-ky.controller.js'
@@ -60,6 +63,7 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     LienKetNativeController,
     ChuyenTiepNativeController,
     OcrController,
+    NguonVaoController,
   ],
   providers: [
     { provide: CAU_HINH, useFactory: () => docCauHinh() },
@@ -78,6 +82,12 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     VanBanService,
     LienKetNativeService,
     OcrService,
+    NguonVaoService,
+    {
+      provide: GOI_NGUON_NGOAI,
+      useFactory: (ch: CauHinh) => taoGoiNguonNgoai(ch.moiTruong === 'production'),
+      inject: [CAU_HINH],
+    },
     // Nguồn đóng góp cho nhóm xuyên suốt (ADR-0007). Module nghiệp vụ mới: thêm vào đây.
     {
       provide: NGUON_DONG_GOP,

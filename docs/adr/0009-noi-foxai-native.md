@@ -37,7 +37,8 @@ câu trả lời — ADR-0003 cấm tự chọn.
 6. **Chỉ tài khoản đã liên kết mới gửi được sang Native** (ADR-0003 mục 2).
    Người chưa liên kết vẫn xem được văn bản của đơn vị mình.
 7. **Cấu hình kết nối ở biến môi trường máy chủ, không nhập qua màn hình.** Quản trị › Kết nối
-   › Dịch vụ nền tảng chỉ XEM chế độ, địa chỉ và KIỂM TRA kết nối.
+   › Dịch vụ nền tảng chỉ XEM chế độ, địa chỉ và KIỂM TRA kết nối. (Riêng nguồn API của khách
+   ở "Nguồn dữ liệu vào" được cấu hình qua màn hình — xem ADR-0010.)
 8. **Công cụ của Native — mẫu văn bản, soạn thảo, phân công, đơn vị nhận việc, NHIỆM VỤ (`/tasks`)
    và danh bạ (`/api/directory`, chọn người / đơn vị khi giao việc) — đi qua
    CỔNG CHUYỂN TIẾP `/api/native/document/*`** (`native/chuyen-tiep.ts`). Đây là dữ liệu và

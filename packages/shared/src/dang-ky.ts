@@ -392,13 +392,12 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhan: 'Nguồn dữ liệu vào',
     nhom: 'qt-ket-noi',
     maQuyen: 'QT_NGUON_VAO',
-    nguon: 'native',
-    phac: true,
-    mo: 'Khai nguồn cho Hỏi đáp AI. Kết nối thật do Context Service làm phía máy chủ.',
+    nguon: 'db',
+    mo: 'Số liệu chỉ tiêu điều hành nạp từ NGOÀI hệ thống qua hai kênh ngang hàng: API của khách và tệp Excel (khi khách không có API). Cả hai đổ vào một kho; Điều hành chỉ đọc kho đó. Đây là kênh nạp của quản trị — không phải màn nhập liệu nghiệp vụ.',
     con: [
-      { id: 'nd-graphql', nhan: 'Nguồn GraphQL / ERP' },
-      { id: 'nd-ban-sao', nhan: 'Bản sao dữ liệu' },
-      { id: 'nd-cong-cu', nhan: 'Công cụ API' },
+      { id: 'nd-api', nhan: 'Nguồn API' },
+      { id: 'nd-excel', nhan: 'Nạp từ Excel' },
+      { id: 'nd-ket-qua', nhan: 'Kết quả lấy về' },
     ],
   },
   {

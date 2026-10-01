@@ -18,6 +18,7 @@ import { queryOptions, useSuspenseQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { goiApi } from '@/lib/http'
+import { ngayGio } from '@/lib/ngay'
 import { ThongBao } from '@/ui/co-ban'
 import {
   BangKv,
@@ -70,6 +71,15 @@ function NhanNguon({ g }: { g: GiaTriChiTieu }) {
     ) : (
       <span className="flex-none rounded bg-tint-ok px-1.5 py-px whitespace-nowrap text-[10.5px] font-bold text-ok">
         Số thật
+      </span>
+    )
+  if (g.nguon === 'nap')
+    return (
+      <span
+        className="flex-none rounded bg-tint-brand px-1.5 py-px whitespace-nowrap text-[10.5px] font-bold text-brand"
+        title={`Số nạp qua ${g.kenh === 'api' ? 'API' : 'tệp Excel'}: ${g.tenNguon ?? ''}${g.capNhatLuc ? ` — nạp lúc ${ngayGio(g.capNhatLuc)}` : ''}`}
+      >
+        {g.kenh === 'api' ? 'API' : 'Excel'} · {g.ky}
       </span>
     )
   if (g.nguon === 'minh-hoa')
@@ -175,12 +185,14 @@ function Khung({ children }: { children: (b: BangChiTieu) => ReactNode }) {
   const { data: b } = useSuspenseQuery(truyVanChiTieu)
   const dem = Object.values(b.giaTri)
   const soThat = dem.filter((g) => g.nguon === 'that').length
+  const soNap = dem.filter((g) => g.nguon === 'nap').length
   return (
     <>
       <ThongBao>
         Kỳ số liệu <b>{b.ky}</b>. Số gắn nhãn <b>Minh họa</b> là dữ liệu mẫu để xem trước bố cục — chưa có
         phân hệ nguồn, không dùng để báo cáo. Hiện có <b>{soThat}</b> chỉ tiêu lấy <b>số thật</b> từ các phân
-        hệ GDOS đã xây; số thật tính theo đúng quyền và phạm vi của tài khoản đang xem.
+        hệ GDOS đã xây (tính theo đúng quyền và phạm vi của tài khoản đang xem) và <b>{soNap}</b> chỉ tiêu lấy
+        số <b>nạp từ ngoài</b> qua API / Excel (nhãn ghi kênh và kỳ của số).
       </ThongBao>
       {children(b)}
     </>
