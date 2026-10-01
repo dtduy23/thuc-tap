@@ -1,4 +1,5 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from 'react'
+import { manCu } from '@/man/dieu-hanh-cu'
 
 /**
  * Chức năng cấp 4 → màn hình. Tách bundle theo màn (lazy): người không có quyền
@@ -8,14 +9,28 @@ import { lazy, type ComponentType, type LazyExoticComponent } from 'react'
  * test man-hinh.test.ts chặn cả hai chiều.
  */
 export const MAN_HINH: Partial<Record<string, LazyExoticComponent<ComponentType>>> = {
-  'ct-tong-quan': lazy(() => import('@/man/chi-tieu/trang').then((m) => ({ default: m.TongQuanLinhVuc }))),
-  'ct-kpi': lazy(() => import('@/man/chi-tieu/trang').then((m) => ({ default: m.KpiDieuHanh }))),
-  'ct-tthc': lazy(() => import('@/man/chi-tieu/trang').then((m) => ({ default: m.ChiTieuTthc }))),
-  'ct-ktxh': lazy(() => import('@/man/chi-tieu/trang').then((m) => ({ default: m.ChiTieuKtxh }))),
-  'ct-antt': lazy(() => import('@/man/chi-tieu/trang').then((m) => ({ default: m.ChiTieuAntt }))),
-  'ct-ha-tang': lazy(() => import('@/man/chi-tieu/trang').then((m) => ({ default: m.ChiTieuHaTang }))),
-  'ct-yt-gd': lazy(() => import('@/man/chi-tieu/trang').then((m) => ({ default: m.ChiTieuYtGd }))),
-  'ct-pakn': lazy(() => import('@/man/chi-tieu/trang').then((m) => ({ default: m.ChiTieuPakn }))),
+  // Các màn Điều hành chép từ GDOS cũ (apps/web/src/dieu-hanh).
+  'dh-tong-quan': manCu(() => import('@/dieu-hanh/modules/tong-quan')),
+  'dh-ho-so-tthc': manCu(() => import('@/dieu-hanh/modules/ho-so-tthc')),
+  'dh-phan-anh': manCu(() => import('@/dieu-hanh/modules/phan-anh')),
+  'dh-dashboard-tong-quan': manCu(() => import('@/dieu-hanh/modules/dashboard-tong-quan'), { mau: false }),
+  'dh-bo-chi-so-kpi': manCu(() => import('@/dieu-hanh/modules/bo-chi-so-kpi'), { mau: false }),
+  'dh-tthc-mot-cua': manCu(() => import('@/dieu-hanh/modules/tthc-mot-cua'), { mau: false }),
+  'dh-kinh-te-dan-cu-xa-hoi': manCu(() => import('@/dieu-hanh/modules/kinh-te-dan-cu-xa-hoi'), {
+    mau: false,
+  }),
+  'dh-an-ninh-trat-tu': manCu(() => import('@/dieu-hanh/modules/an-ninh-trat-tu'), { mau: false }),
+  'dh-ha-tang-do-thi': manCu(() => import('@/dieu-hanh/modules/ha-tang-do-thi'), { mau: false }),
+  'dh-y-te-giao-duc': manCu(() => import('@/dieu-hanh/modules/y-te-giao-duc'), { mau: false }),
+  'dh-phan-anh-kien-nghi': manCu(() => import('@/dieu-hanh/modules/phan-anh-kien-nghi'), { mau: false }),
+  'dh-chi-tieu-ktxh': manCu(() => import('@/dieu-hanh/modules/chi-tieu-ktxh')),
+  'dh-bo-chi-so': manCu(() => import('@/dieu-hanh/modules/bo-chi-so')),
+  'dh-thiet-ke-dashboard': manCu(() => import('@/dieu-hanh/modules/thiet-ke-dashboard')),
+  'dh-dat-dai': manCu(() => import('@/dieu-hanh/modules/dat-dai')),
+  'dh-nong-nghiep': manCu(() => import('@/dieu-hanh/modules/nong-nghiep')),
+  'dh-giao-duc-y-te': manCu(() => import('@/dieu-hanh/modules/giao-duc-y-te')),
+  'dh-di-tich': manCu(() => import('@/dieu-hanh/modules/di-tich')),
+  'dh-khu-pho-thong-minh': manCu(() => import('@/dieu-hanh/modules/khu-pho-thong-minh')),
   'nk-tat-ca': lazy(() => import('@/man/nhat-ky-ds')),
   'nk-ho-so': lazy(() => import('@/man/nhat-ky-theo').then((m) => ({ default: m.NhatKyTheoHoSo }))),
   'nk-nguoi': lazy(() => import('@/man/nhat-ky-theo').then((m) => ({ default: m.NhatKyTheoNguoi }))),

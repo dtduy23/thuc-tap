@@ -68,6 +68,36 @@
 - Nhánh `develop` **chưa tồn tại** trên remote. Pipeline chỉ nổ khi có nhánh đó.
 - CSP trong `nginx.conf` chưa mở trên trình duyệt thật; màn nào trắng thì nới ở đúng chỉ thị đó.
 
+## Điều hành chép nguyên từ GDOS cũ (01/10/2026)
+
+Anh Toàn chốt: báo cáo làm **giống hệt GDOS cũ, không vẽ lại**; chỉ nâng cấp tính năng. Vì vậy 19 màn
+Điều hành được CHÉP mã từ kho GDOS cũ (`foxai-gdos`) sang `apps/web/src/dieu-hanh/`, giữ cấu trúc thư mục cũ
+(`modules/`, `components/`, `mocks/`, `lib/`, `hooks/`):
+
+- **Nguồn chép.** Màn có dữ liệu mẫu đầy đủ (bản anh Toàn đang xem) nằm ở nhánh `dev` / `toannm`: Tổng quan,
+  Hồ sơ TTHC, Phản ánh kiến nghị, Chỉ tiêu KT-XH, Bộ chỉ số điều hành, Thiết kế Dashboard, Quản lý đất đai
+  (bản đồ địa chính + địa giới), Nông nghiệp số, Giáo dục & Y tế, Di tích & Địa chỉ đỏ, Khu phố thông minh.
+  Tám dashboard xã/phường theo bộ chỉ tiêu đã thông qua nằm ở nhánh `main`. Thành phần dùng chung lấy ở
+  `main` (là tập cha của `dev`).
+- **Menu Điều hành** theo đúng menu cũ: Tổng quan điều hành · Dashboard xã/phường · Quản lý địa bàn · Phân hệ
+  mở rộng (mã chức năng `dh-<mã module cũ>`); giữ thêm Tình hình nghiệp vụ và Báo cáo của hệ thống mới.
+  "Nhiệm vụ được giao", "Văn bản đến" của menu cũ dẫn sang phân hệ thật ở Tác nghiệp.
+- **Khác bản cũ ở đâu.** Tiêu đề + đường dẫn do khung hệ thống mới vẽ (`PageHeader` chỉ còn mô tả + nút);
+  màu theo token của hệ thống mới (tông màu, sáng/tối người dùng chọn) — token chỉ bản cũ có giữ giá trị
+  gốc ở `dieu-hanh/kieu.css`; điều hướng đổi mã module cũ → mã chức năng mới (`dieu-hanh/app/modules.ts`).
+- **Nâng cấp.** Tám dashboard xã/phường ghép SỐ THẬT từ `/api/chi-tieu` (phân hệ đã xây + số nạp qua API /
+  Excel, ADR-0010) vào thẻ chỉ số và KPI, chân thẻ ghi nguồn (`dieu-hanh/lib/so-that.ts`). Các màn còn lại
+  chạy bằng dữ liệu mẫu và có dòng nói rõ "dữ liệu mẫu".
+- **Thư viện thêm** (theo ADR-0005, HeroUI là thư viện giao diện đã chọn): `@heroui/react`, `@heroui/styles`,
+  `leaflet`, `react-leaflet`, `motion`.
+- **Dữ liệu mẫu đã làm sạch:** bỏ tên, số điện thoại, email thật của đầu mối trong bảng "Đầu mối cung cấp số
+  liệu"; số định danh 12 chữ số được che. Tên địa danh của bộ dữ liệu mẫu (gắn với tọa độ bản đồ) giữ nguyên.
+- **Bỏ:** tám trang chỉ tiêu tự vẽ trước đó (`man/chi-tieu/trang.tsx`, `bieu-do.tsx`) và các mã `ct-*`.
+- **Chưa chép:** Biển số nhà thông minh (ẩn trong menu cũ); các màn thế hệ "phiếu khảo sát" của nhánh
+  `main` (Dân số & Hộ khẩu, Báo cáo lên Tỉnh, Các HTTT phân hệ, Ấp/Thôn thông minh).
+- **Chưa nối số thật** cho các biểu đồ / bảng trong dashboard (mới nối thẻ chỉ số + KPI) và cho các màn
+  Phân hệ mở rộng — chưa có phân hệ nguồn.
+
 ## Nguồn dữ liệu vào — số liệu chỉ tiêu qua API và Excel (01/10/2026)
 
 Quản trị hệ thống › Kết nối › **Nguồn dữ liệu vào** (`QT_NGUON_VAO`, ADR-0010) hết là màn phác:

@@ -89,7 +89,11 @@ export default function NapExcel() {
         {xong && (
           <ThongBao kieu="ok">
             Đã nạp {xong.soDong} số liệu từ “{xong.tenNguon}”. Số đã lên{' '}
-            <Link to="/$chucNang" params={{ chucNang: 'ct-tong-quan' }} className="font-semibold underline">
+            <Link
+              to="/$chucNang"
+              params={{ chucNang: 'dh-dashboard-tong-quan' }}
+              className="font-semibold underline"
+            >
               Tổng quan điều hành
             </Link>
             ; xem lại ở{' '}

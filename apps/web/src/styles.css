@@ -1,4 +1,7 @@
 @import 'tailwindcss';
+/* HeroUI — thư viện giao diện của các màn Điều hành chép từ GDOS cũ (ADR-0005). */
+@import '@heroui/styles/themes/default';
+@import './dieu-hanh/kieu.css';
 
 /*
  * Design token — khai MỘT lần ở đây, component chỉ dùng class token
