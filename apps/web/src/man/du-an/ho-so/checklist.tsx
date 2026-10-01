@@ -1,45 +1,78 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
-import { truyVanCongKhai } from '@/lib/cau-hinh'
+/**
+ * Checklist & timeline — bố cục theo PMS: bảng phân cấp (giai đoạn → nhóm → bước), lọc theo
+ * giai đoạn và trạng thái, dải báo tình trạng kế hoạch. Bấm một bước mở HỘP CHI TIẾT BƯỚC
+ * (ghi nhận kết quả, xin gia hạn, vướng mắc, sửa bước).
+ *
+ * Cột "Số ngày" và "Lũy kế" là phần cộng dồn ngày của PMS: số ngày chuẩn của bước, cộng dồn
+ * của nhóm, và lũy kế từ ngày bắt đầu dự án (kế hoạch / thực tế, lệch bao nhiêu ngày).
+ */
 import {
   BEN_THUC_HIEN,
   GIAI_DOAN,
+  congDonNhom,
   homNay,
+  luyKeNgay,
   tinhTienDo,
   trangThaiBuoc,
   type BuocDuAn,
   type GiaiDoan,
   type HoSoDuAn,
+  type LuyKeBuoc,
   type TrangThaiBuoc,
 } from '@gdos/shared'
+import { useSuspenseQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { Fragment, useMemo, useState } from 'react'
 import { taiExcelChecklist } from '@/lib/bao-cao'
-import { suaBuoc, thaoTacBuoc, xoaBuoc } from '@/lib/du-an'
+import { truyVanCongKhai } from '@/lib/cau-hinh'
+import { suaBuoc } from '@/lib/du-an'
 import { LoiApi } from '@/lib/http'
-import { ngayGio, ngayVn } from '@/lib/ngay'
+import { ngayVn } from '@/lib/ngay'
 import { Chip, KhungBang, LOP_TD, LOP_TH, Nut, ThongBao } from '@/ui/co-ban'
 import { ChipBuoc } from '../chung'
+import { ChiTietBuoc } from './chi-tiet-buoc'
 import { useGhiHoSo } from './ghi-ho-so'
 
 type Loc = 'tat-ca' | 'chua-xong' | TrangThaiBuoc
 
 const CAC_LOC: [Loc, string][] = [
-  ['tat-ca', 'Tất cả'],
+  ['tat-ca', 'Tất cả trạng thái'],
   ['chua-xong', 'Chưa xong'],
-  ['qua-han', 'Quá hạn'],
+  ['xong', 'Hoàn thành'],
+  ['trong-han', 'Trong hạn'],
   ['sap-han', 'Sắp đến hạn'],
+  ['qua-han', 'Quá hạn'],
   ['cho-xac-nhan', 'Chờ xác nhận'],
-  ['xong', 'Đã xong'],
 ]
 
-/**
- * Checklist & tiến độ — các bước theo 3 giai đoạn, mẹ-con nhiều cấp (như PMS).
- * Bấm "Xử lý" mở ngay dưới dòng: ghi nhận, bỏ qua, sửa hạn (chủ đầu tư); gửi cập
- * nhật (nhà thầu); xác nhận / trả lại (chủ đầu tư, lãnh đạo).
- */
+const LOP_CHON = 'rounded-lg border border-line bg-nen px-2.5 py-1.5 text-[13px] text-ink'
+const SO_COT = 10
+
+/** Ô lũy kế: kế hoạch; bước đã xong thì thêm thực tế và số ngày lệch. */
+export function OLuyKe({ lk }: { lk: LuyKeBuoc | undefined }) {
+  if (!lk || lk.keHoach === null) return null
+  return (
+    <>
+      {lk.keHoach}
+      {lk.thucTe !== null && lk.chenh !== null && (
+        <span
+          className={`block text-[10.5px] ${lk.chenh > 0 ? 'text-danger' : lk.chenh < 0 ? 'text-ok' : 'text-faint'}`}
+          title="Lũy kế thực tế tới ngày hoàn thành"
+        >
+          thực tế {lk.thucTe}
+          {lk.chenh !== 0 && ` (${lk.chenh > 0 ? '+' : ''}${lk.chenh})`}
+        </span>
+      )}
+    </>
+  )
+}
+
 export default function Checklist({ hs }: { hs: HoSoDuAn }) {
+  const [gd, datGd] = useState<'' | GiaiDoan>('')
   const [loc, datLoc] = useState<Loc>('tat-ca')
   const [mo, datMo] = useState<string>()
   const [loiTai, datLoiTai] = useState<string>()
+  const ghi = useGhiHoSo()
   const hn = homNay()
   const { nguong } = useSuspenseQuery(truyVanCongKhai).data
 
@@ -48,44 +81,51 @@ export default function Checklist({ hs }: { hs: HoSoDuAn }) {
     const tinh = (id: string | null, n = 0): number => (id && cha.get(id) ? tinh(cha.get(id)!, n + 1) : n)
     return new Map(hs.buoc.map((b) => [b.id, tinh(b.id)]))
   }, [hs.buoc])
+  const luyKe = useMemo(() => {
+    const lk = luyKeNgay(hs.buoc, hs.ngayBatDau)
+    return new Map(hs.buoc.map((b, i) => [b.id, lk[i]!]))
+  }, [hs.buoc, hs.ngayBatDau])
+  const congDon = useMemo(() => congDonNhom(hs.buoc), [hs.buoc])
 
   const tt = (b: BuocDuAn) => trangThaiBuoc(b, hn, nguong.sapHanNgay)
-  const dem = useMemo(() => {
-    const d: Partial<Record<Loc, number>> = {}
-    for (const b of hs.buoc.filter(tinhTienDo)) {
-      const k = tt(b)
-      d[k] = (d[k] ?? 0) + 1
-      if (k !== 'xong') d['chua-xong'] = (d['chua-xong'] ?? 0) + 1
-    }
-    return d
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `hn` đổi theo ngày, tính lại khi hồ sơ đổi là đủ
-  }, [hs.buoc])
-
   const hien = (b: BuocDuAn) => {
     if (loc === 'tat-ca') return true
     if (b.laNhom || b.laNhap) return false
     const k = tt(b)
     return loc === 'chua-xong' ? k !== 'xong' && k !== 'bo-qua' : k === loc
   }
-  const giaiDoan = Object.keys(GIAI_DOAN) as GiaiDoan[]
+  const giaiDoan = (Object.keys(GIAI_DOAN) as GiaiDoan[]).filter((g) => !gd || g === gd)
+
+  // Tình trạng kế hoạch (như dải báo của PMS).
+  const cuoi = hs.phienBan[0]
+  const soNhap = hs.buoc.filter((b) => b.laNhap).length
+  const soLech = hs.buoc.filter(
+    (b) => !b.laNhom && !b.laNhap && b.id in hs.hanDaChot && hs.hanDaChot[b.id] !== b.han,
+  ).length
+  const coThayDoi = soNhap + soLech > 0
+  const choGiaHan = new Set(hs.giaHan.filter((y) => y.trangThai === 'cho-duyet').map((y) => y.buocId))
+  const soTep = (id: string) => hs.vanBan.filter((v) => v.buocId === id).length
+  const tongNgay = Math.max(0, ...[...luyKe.values()].map((l) => l.keHoach ?? 0))
 
   return (
     <>
-      {loiTai && <ThongBao kieu="loi">{loiTai}</ThongBao>}
-      <div role="group" aria-label="Lọc bước" className="mb-3 flex flex-wrap items-center gap-1">
-        {CAC_LOC.map(([k, n]) => (
-          <button
-            key={k}
-            type="button"
-            aria-pressed={loc === k}
-            onClick={() => datLoc(k)}
-            className={`rounded-full border px-2.5 py-0.5 text-[12px] ${loc === k ? 'border-brand bg-tint-brand font-semibold text-brand' : 'border-line text-body hover:bg-nav-hover'}`}
-          >
-            {n}
-            {k !== 'tat-ca' && <span className="ml-1 text-faint tabular-nums">{dem[k] ?? 0}</span>}
-          </button>
-        ))}
-        <span className="ml-auto">
+      <div className="mb-3 flex flex-wrap items-start gap-3">
+        <p className="m-0 min-w-0 flex-1 text-[12.5px] text-faint">
+          Đổi mốc = sửa <b className="text-body">số ngày</b> từng bước, chuỗi phía sau tự đếm lại (kiểu
+          Excel). Mọi thay đổi là <b className="text-body">nháp</b> cho tới khi bấm{' '}
+          <b className="text-body">Chốt kế hoạch</b> tạo phiên bản mới.
+        </p>
+        <span className="flex flex-wrap gap-2">
+          {hs.quyen.sua && (
+            <Link
+              to="/du-an/$id"
+              params={{ id: hs.id }}
+              search={{ the: 'ke-hoach' }}
+              className="inline-flex items-center rounded-lg border border-brand bg-brand px-3.5 py-[7px] text-[13px] font-semibold text-white hover:bg-brand-dim"
+            >
+              + Thêm bước
+            </Link>
+          )}
           <Nut
             onClick={() => {
               datLoiTai(undefined)
@@ -99,106 +139,194 @@ export default function Checklist({ hs }: { hs: HoSoDuAn }) {
         </span>
       </div>
 
+      {loiTai && <ThongBao kieu="loi">{loiTai}</ThongBao>}
+      {ghi.loi && <ThongBao kieu="loi">{ghi.loi}</ThongBao>}
+      <div
+        className={`mb-3 rounded-lg border px-3.5 py-2 text-[12.8px] ${coThayDoi ? 'border-warn bg-tint-warn text-warn' : 'border-ok bg-tint-ok text-ok'}`}
+      >
+        {coThayDoi ? (
+          <>
+            📝 Đang lưu nháp — <b>{soNhap + soLech}</b> thay đổi chưa chốt ({soLech} bước đổi hạn, {soNhap}{' '}
+            bước thêm).{' '}
+            <Link
+              to="/du-an/$id"
+              params={{ id: hs.id }}
+              search={{ the: 'ke-hoach' }}
+              className="font-bold underline"
+            >
+              Chốt kế hoạch v{(cuoi?.so ?? 1) + 1}
+            </Link>
+          </>
+        ) : (
+          <>
+            ✓ Đang theo <b>kế hoạch đã chốt v{cuoi?.so ?? 1}</b> — chưa có thay đổi nháp.
+          </>
+        )}
+        {choGiaHan.size > 0 && (
+          <span className="ml-2 font-semibold text-warn">· {choGiaHan.size} yêu cầu gia hạn chờ duyệt</span>
+        )}
+      </div>
+
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <select
+          aria-label="Lọc theo giai đoạn"
+          value={gd}
+          onChange={(e) => datGd(e.target.value as '' | GiaiDoan)}
+          className={LOP_CHON}
+        >
+          <option value="">Tất cả giai đoạn</option>
+          {(Object.keys(GIAI_DOAN) as GiaiDoan[]).map((g) => (
+            <option key={g} value={g}>
+              {g} — {GIAI_DOAN[g]}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Lọc theo trạng thái"
+          value={loc}
+          onChange={(e) => datLoc(e.target.value as Loc)}
+          className={LOP_CHON}
+        >
+          {CAC_LOC.map(([k, n]) => (
+            <option key={k} value={k}>
+              {n}
+            </option>
+          ))}
+        </select>
+        <span className="ml-auto text-[12px] text-faint">
+          Tổng thời gian kế hoạch: <b className="text-body tabular-nums">{tongNgay}</b> ngày từ{' '}
+          {ngayVn(hs.ngayBatDau)}
+        </span>
+      </div>
+
       <KhungBang nhan="Checklist các bước">
         <thead>
           <tr>
             <th className={LOP_TH}>STT</th>
-            <th className={LOP_TH}>Công việc</th>
-            <th className={LOP_TH}>Bên</th>
-            <th className={`${LOP_TH} text-right`}>Ngày</th>
-            <th className={LOP_TH}>Hạn</th>
-            <th className={LOP_TH}>Hoàn thành</th>
+            <th className={LOP_TH}>Nội dung công việc</th>
+            <th className={`${LOP_TH} text-right`}>Số ngày</th>
+            <th className={`${LOP_TH} text-right`} title="Số ngày cộng dồn từ ngày bắt đầu dự án">
+              Lũy kế
+            </th>
+            <th className={LOP_TH}>Văn bản</th>
+            <th className={LOP_TH}>Ngày kế hoạch</th>
+            <th className={LOP_TH}>Ngày hoàn thành</th>
+            <th className={LOP_TH}>Đơn vị</th>
             <th className={LOP_TH}>Trạng thái</th>
-            <th className={LOP_TH}>
-              <span className="sr-only">Xử lý</span>
+            <th className={`${LOP_TH} text-center`} title="Bước có hiện ở thẻ Tổng quan không">
+              Hiển thị tổng quan
             </th>
           </tr>
         </thead>
         <tbody>
-          {giaiDoan.map((gd) => {
-            const trongGd = hs.buoc.filter((b) => b.giaiDoan === gd)
+          {giaiDoan.map((g) => {
+            const trongGd = hs.buoc.filter((b) => b.giaiDoan === g)
             const hienGd = trongGd.filter(hien)
             if (!hienGd.length) return null
             const that = trongGd.filter(tinhTienDo)
             return (
-              <Fragment key={gd}>
+              <Fragment key={g}>
                 <tr>
-                  <td colSpan={8} className="be-mat-dam px-3 py-1.5 text-[12px] font-bold text-white">
-                    <span className="mr-2 text-vang">{gd}</span>
-                    {GIAI_DOAN[gd]}
-                    <span className="ml-2 font-normal opacity-80">
-                      {that.filter((b) => b.ngayHoanThanh).length}/{that.length} bước
+                  <td colSpan={SO_COT} className="be-mat-dam px-3 py-2 text-[12.5px] font-bold text-white">
+                    <span className="mr-2 inline-grid size-[22px] place-items-center rounded-full border border-vang text-[11px] text-vang">
+                      {g}
+                    </span>
+                    {GIAI_DOAN[g]}
+                    <span className="float-right font-normal opacity-85">
+                      {that.length} bước · {that.filter((b) => b.ngayHoanThanh).length}/{that.length} hoàn
+                      thành · {that.reduce((t, b) => t + b.soNgay, 0)} ngày
                     </span>
                   </td>
                 </tr>
                 {hienGd.map((b) => {
                   const trangThai = tt(b)
-                  const dangMo = mo === b.id
-                  return (
-                    <Fragment key={b.id}>
-                      <tr className={b.laNhom ? 'bg-nen-2' : dangMo ? 'bg-tint-brand' : undefined}>
-                        <td className={`${LOP_TD} whitespace-nowrap tabular-nums text-faint`}>{b.stt}</td>
+                  const thut = { paddingLeft: `${12 + (doSau.get(b.id) ?? 0) * 18}px` }
+                  if (b.laNhom)
+                    return (
+                      <tr key={b.id} className="bg-nen-2">
+                        <td className={`${LOP_TD} font-semibold whitespace-nowrap tabular-nums`}>{b.stt}</td>
+                        <td className={`${LOP_TD} font-semibold text-ink`} style={thut}>
+                          <span aria-hidden="true">📁 </span>
+                          {b.ten}
+                        </td>
                         <td
-                          className={LOP_TD}
-                          style={{ paddingLeft: `${12 + (doSau.get(b.id) ?? 0) * 16}px` }}
+                          className={`${LOP_TD} text-right text-faint italic tabular-nums`}
+                          title="Cộng dồn số ngày các bước con"
                         >
-                          <span
-                            className={
-                              b.laNhom
-                                ? 'font-semibold text-ink'
-                                : b.boQua
-                                  ? 'text-faint line-through'
-                                  : b.laNhap
-                                    ? 'italic'
-                                    : ''
-                            }
-                          >
-                            {b.ten}
-                          </span>
-                          {b.soVanBan && <span className="block text-[11.5px] text-faint">{b.soVanBan}</span>}
+                          {congDon.get(b.id) ?? 0}
                         </td>
-                        <td className={`${LOP_TD} whitespace-nowrap text-[12px]`}>
-                          {b.laNhom ? '' : BEN_THUC_HIEN[b.benThucHien]}
-                        </td>
-                        <td className={`${LOP_TD} text-right tabular-nums`}>{b.laNhom ? '' : b.soNgay}</td>
-                        <td className={`${LOP_TD} whitespace-nowrap tabular-nums`}>
-                          {b.laNhom ? '' : ngayVn(b.han)}
-                          {b.hanGhiDe && <span className="block text-[10.5px] text-faint">đã ghi đè</span>}
-                        </td>
-                        <td className={`${LOP_TD} whitespace-nowrap tabular-nums`}>
-                          {b.ngayHoanThanh ? ngayVn(b.ngayHoanThanh) : ''}
-                        </td>
-                        <td className={LOP_TD}>
-                          {b.laNhap ? <Chip mau="tim">Nháp</Chip> : !b.laNhom && <ChipBuoc tt={trangThai} />}
-                        </td>
-                        <td className={`${LOP_TD} text-right`}>
-                          {!b.laNhom && (
-                            <Nut
-                              onClick={() => datMo(dangMo ? undefined : b.id)}
-                              aria-expanded={dangMo}
-                              className="!py-0.5"
-                            >
-                              {dangMo ? 'Đóng' : 'Xử lý'}
-                            </Nut>
-                          )}
-                        </td>
+                        <td colSpan={SO_COT - 3} className={LOP_TD} />
                       </tr>
-                      {dangMo && (
-                        <tr>
-                          <td colSpan={8} className={`${LOP_TD} bg-nen-2`}>
-                            <XuLyBuoc hs={hs} b={b} tt={trangThai} />
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
+                    )
+                  const tep = soTep(b.id)
+                  return (
+                    <tr key={b.id} className={b.laNhap ? 'opacity-70' : undefined}>
+                      <td className={`${LOP_TD} whitespace-nowrap text-faint tabular-nums`}>{b.stt}</td>
+                      <td className={`${LOP_TD} min-w-[260px]`} style={thut}>
+                        <button
+                          type="button"
+                          onClick={() => datMo(b.id)}
+                          className={`text-left hover:underline ${b.boQua ? 'text-faint line-through' : trangThai === 'xong' ? 'text-ok' : 'text-ink'} ${b.laNhap ? 'italic' : ''}`}
+                        >
+                          {b.ten}
+                        </button>
+                        {b.ghiChu && (
+                          <span className="line-clamp-2 block text-[11.5px] text-faint">{b.ghiChu}</span>
+                        )}
+                        {choGiaHan.has(b.id) && (
+                          <span className="mt-0.5 inline-block rounded bg-tint-warn px-1.5 py-px text-[10.5px] font-bold text-warn">
+                            Chờ duyệt gia hạn
+                          </span>
+                        )}
+                      </td>
+                      <td className={`${LOP_TD} text-right tabular-nums`}>{b.soNgay}</td>
+                      <td className={`${LOP_TD} text-right tabular-nums`}>
+                        <OLuyKe lk={luyKe.get(b.id)} />
+                      </td>
+                      <td className={`${LOP_TD} max-w-[170px] text-[12px]`}>
+                        {b.soVanBan && (
+                          <span className="inline-block rounded border-l-2 border-vang bg-nen-2 px-1.5 py-0.5 font-serif">
+                            {b.soVanBan}
+                          </span>
+                        )}
+                        {tep > 0 && <span className="ml-1 text-faint">📎 {tep}</span>}
+                      </td>
+                      <td className={`${LOP_TD} font-semibold whitespace-nowrap tabular-nums`}>
+                        {ngayVn(b.han)}
+                        {b.hanGhiDe && (
+                          <span className="block text-[10.5px] font-normal text-faint">đặt ngày cụ thể</span>
+                        )}
+                      </td>
+                      <td className={`${LOP_TD} whitespace-nowrap tabular-nums`}>
+                        {b.ngayHoanThanh ? ngayVn(b.ngayHoanThanh) : ''}
+                      </td>
+                      <td className={`${LOP_TD} text-[12px]`}>
+                        {b.donViThucHien ?? BEN_THUC_HIEN[b.benThucHien]}
+                      </td>
+                      <td className={LOP_TD}>
+                        {b.laNhap ? <Chip mau="tim">Nháp</Chip> : <ChipBuoc tt={trangThai} />}
+                      </td>
+                      <td className={`${LOP_TD} text-center`}>
+                        <input
+                          type="checkbox"
+                          aria-label={`Hiện bước ${b.stt} ở Tổng quan`}
+                          checked={!b.anTongQuan}
+                          disabled={!hs.quyen.sua || ghi.dangChay}
+                          onChange={(e) =>
+                            ghi.chay(() => suaBuoc(hs.id, b.id, { anTongQuan: !e.target.checked }))
+                          }
+                          className="size-4 accent-brand"
+                        />
+                      </td>
+                    </tr>
                   )
                 })}
               </Fragment>
             )
           })}
-          {!hs.buoc.some(hien) && (
+          {!hs.buoc.some((b) => (!gd || b.giaiDoan === gd) && hien(b)) && (
             <tr>
-              <td colSpan={8} className={`${LOP_TD} text-center text-faint`}>
+              <td colSpan={SO_COT} className={`${LOP_TD} text-center text-faint`}>
                 {hs.buoc.length
                   ? 'Không có bước nào khớp bộ lọc.'
                   : 'Dự án chưa có bước nào (quy trình trắng).'}
@@ -207,244 +335,8 @@ export default function Checklist({ hs }: { hs: HoSoDuAn }) {
           )}
         </tbody>
       </KhungBang>
+
+      {mo && <ChiTietBuoc hs={hs} buocId={mo} dong={() => datMo(undefined)} />}
     </>
-  )
-}
-
-const LOP_O = 'rounded-md border border-line bg-nen px-2 py-1 text-[13px] text-ink'
-
-function XuLyBuoc({ hs, b, tt }: { hs: HoSoDuAn; b: BuocDuAn; tt: TrangThaiBuoc }) {
-  const ghi = useGhiHoSo()
-  const hn = homNay()
-  const [ngay, datNgay] = useState(b.choXacNhan?.ngay ?? hn)
-  const [soVanBan, datSoVanBan] = useState(b.soVanBan ?? '')
-  const [ghiChu, datGhiChu] = useState('')
-  const [lyDo, datLyDo] = useState('')
-  const [soNgay, datSoNgay] = useState(String(b.soNgay))
-  const [hanGhiDe, datHanGhiDe] = useState(b.hanGhiDe ?? '')
-  const [ten, datTen] = useState(b.ten)
-  const q = hs.quyen
-  const tac = (loai: Parameters<typeof thaoTacBuoc>[2], body?: Record<string, unknown>) =>
-    ghi.chay(() => thaoTacBuoc(hs.id, b.id, loai, body))
-
-  return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <dl className="m-0 grid grid-cols-[130px_1fr] gap-x-3 gap-y-1 text-[12.5px]">
-        <dt className="text-faint">Đơn vị thực hiện</dt>
-        <dd className="m-0">{b.donViThucHien ?? '—'}</dd>
-        <dt className="text-faint">Ghi chú</dt>
-        <dd className="m-0 whitespace-pre-line">{b.ghiChu ?? '—'}</dd>
-        {b.sanPham && (
-          <>
-            <dt className="text-faint">Sản phẩm</dt>
-            <dd className="m-0">{b.sanPham}</dd>
-          </>
-        )}
-        {b.boQua && (
-          <>
-            <dt className="text-faint">Lý do bỏ qua</dt>
-            <dd className="m-0">{b.lyDoBoQua}</dd>
-          </>
-        )}
-        {b.choXacNhan && (
-          <>
-            <dt className="text-faint">Chờ xác nhận</dt>
-            <dd className="m-0">
-              <b>{b.choXacNhan.nguoiGuiTen ?? 'Nhà thầu'}</b> báo xong ngày {ngayVn(b.choXacNhan.ngay)}
-              {b.choXacNhan.ghiChu && ` — “${b.choXacNhan.ghiChu}”`}
-              <span className="block text-faint">gửi lúc {ngayGio(b.choXacNhan.luc)}</span>
-            </dd>
-          </>
-        )}
-      </dl>
-
-      <div className="space-y-3">
-        {ghi.loi && <ThongBao kieu="loi">{ghi.loi}</ThongBao>}
-        {b.laNhap && (
-          <ThongBao>
-            Bước nháp — chưa tính hạn, chưa vào tiến độ. Chốt ở thẻ “Kế hoạch & điều chỉnh” để bước thành
-            chính thức.
-          </ThongBao>
-        )}
-
-        {q.sua && !b.batBuoc && (
-          <div className="flex flex-wrap items-end gap-2">
-            <label className="min-w-[220px] flex-1 text-[12px] text-faint">
-              Tên bước (bước tự thêm)
-              <input
-                value={ten}
-                maxLength={500}
-                onChange={(e) => datTen(e.target.value)}
-                className={`${LOP_O} block w-full`}
-              />
-            </label>
-            <Nut
-              disabled={ghi.dangChay || !ten.trim() || ten === b.ten}
-              onClick={() => ghi.chay(() => suaBuoc(hs.id, b.id, { ten: ten.trim() }))}
-            >
-              Lưu tên
-            </Nut>
-            <Nut
-              kieu="nguy-hiem"
-              disabled={ghi.dangChay}
-              onClick={() => {
-                if (confirm(`Xóa bước “${b.ten}”?`)) ghi.chay(() => xoaBuoc(hs.id, b.id))
-              }}
-            >
-              Xóa bước
-            </Nut>
-          </div>
-        )}
-
-        {q.xacNhan && b.choXacNhan && (
-          <div className="flex flex-wrap gap-2">
-            <Nut kieu="chinh" disabled={ghi.dangChay} onClick={() => tac('xac-nhan', { dongY: true })}>
-              Xác nhận hoàn thành
-            </Nut>
-            <Nut disabled={ghi.dangChay} onClick={() => tac('xac-nhan', { dongY: false })}>
-              Trả lại
-            </Nut>
-          </div>
-        )}
-
-        {q.sua && !b.boQua && !b.laNhap && tt !== 'xong' && (
-          <div className="flex flex-wrap items-end gap-2">
-            <label className="text-[12px] text-faint">
-              Ngày hoàn thành
-              <input
-                type="date"
-                value={ngay}
-                onChange={(e) => datNgay(e.target.value)}
-                className={`${LOP_O} block`}
-              />
-            </label>
-            <label className="min-w-[180px] flex-1 text-[12px] text-faint">
-              Số văn bản
-              <input
-                value={soVanBan}
-                maxLength={300}
-                placeholder="VD: Quyết định số …"
-                onChange={(e) => datSoVanBan(e.target.value)}
-                className={`${LOP_O} block w-full`}
-              />
-            </label>
-            <Nut
-              kieu="chinh"
-              disabled={ghi.dangChay || !ngay}
-              onClick={() => tac('hoan-thanh', { ngay, soVanBan: soVanBan.trim() || null })}
-            >
-              Ghi nhận hoàn thành
-            </Nut>
-          </div>
-        )}
-
-        {q.sua && tt === 'xong' && (
-          <Nut disabled={ghi.dangChay} onClick={() => tac('bo-hoan-thanh')}>
-            Bỏ hoàn thành (ghi nhận nhầm)
-          </Nut>
-        )}
-
-        {q.gui && !b.boQua && !b.laNhap && tt !== 'xong' && (
-          <div className="flex flex-wrap items-end gap-2">
-            <label className="text-[12px] text-faint">
-              Ngày hoàn thành
-              <input
-                type="date"
-                value={ngay}
-                onChange={(e) => datNgay(e.target.value)}
-                className={`${LOP_O} block`}
-              />
-            </label>
-            <label className="min-w-[180px] flex-1 text-[12px] text-faint">
-              Ghi chú cho chủ đầu tư
-              <input
-                value={ghiChu}
-                maxLength={2000}
-                onChange={(e) => datGhiChu(e.target.value)}
-                className={`${LOP_O} block w-full`}
-              />
-            </label>
-            <Nut kieu="chinh" disabled={ghi.dangChay || !ngay} onClick={() => tac('gui', { ngay, ghiChu })}>
-              {b.choXacNhan ? 'Gửi lại cập nhật' : 'Gửi cập nhật'}
-            </Nut>
-          </div>
-        )}
-
-        {q.sua && (
-          <details className="text-[12.5px]">
-            <summary className="cursor-pointer text-faint hover:text-body">
-              Sửa số ngày, hạn · bỏ qua bước
-            </summary>
-            <div className="mt-2 flex flex-wrap items-end gap-2">
-              <label className="text-[12px] text-faint">
-                Số ngày chuẩn
-                <input
-                  type="number"
-                  min={0}
-                  value={soNgay}
-                  onChange={(e) => datSoNgay(e.target.value)}
-                  className={`${LOP_O} block w-20`}
-                />
-              </label>
-              <label className="text-[12px] text-faint">
-                Hạn ghi đè
-                <input
-                  type="date"
-                  value={hanGhiDe}
-                  onChange={(e) => datHanGhiDe(e.target.value)}
-                  className={`${LOP_O} block`}
-                />
-              </label>
-              <Nut
-                disabled={ghi.dangChay}
-                onClick={() =>
-                  ghi.chay(() =>
-                    suaBuoc(hs.id, b.id, {
-                      soNgay: Math.max(0, Math.round(Number(soNgay) || 0)),
-                      hanGhiDe: hanGhiDe || null,
-                    }),
-                  )
-                }
-              >
-                Lưu hạn
-              </Nut>
-            </div>
-            <p className="mt-1 mb-0 text-[11.5px] text-faint">
-              Đổi số ngày hay hạn thì hạn các bước sau dời theo. Hạn ghi đè để trống = tính theo số ngày.
-            </p>
-            <div className="mt-3 flex flex-wrap items-end gap-2">
-              {b.boQua ? (
-                <Nut disabled={ghi.dangChay} onClick={() => tac('khoi-phuc')}>
-                  Khôi phục bước
-                </Nut>
-              ) : (
-                <>
-                  <label className="min-w-[220px] flex-1 text-[12px] text-faint">
-                    Lý do / căn cứ bỏ qua
-                    <input
-                      value={lyDo}
-                      maxLength={1000}
-                      onChange={(e) => datLyDo(e.target.value)}
-                      className={`${LOP_O} block w-full`}
-                    />
-                  </label>
-                  <Nut
-                    kieu="nguy-hiem"
-                    disabled={ghi.dangChay || !lyDo.trim()}
-                    onClick={() => tac('bo-qua', { lyDo })}
-                  >
-                    Bỏ qua bước
-                  </Nut>
-                </>
-              )}
-            </div>
-          </details>
-        )}
-
-        {!q.sua && !q.gui && !(q.xacNhan && b.choXacNhan) && (
-          <p className="m-0 text-[12.5px] text-faint">Bạn chỉ xem bước này.</p>
-        )}
-      </div>
-    </div>
   )
 }

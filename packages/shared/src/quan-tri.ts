@@ -100,6 +100,7 @@ export const TEN_BANG: Record<string, string> = {
   du_an_von: 'Kế hoạch vốn',
   du_an_giai_ngan: 'Giải ngân',
   du_an_vuong_mac: 'Vướng mắc',
+  du_an_gia_han: 'Yêu cầu gia hạn bước',
   du_an_don_doc: 'Đôn đốc',
   giam_sat_linh_vuc: 'Giám sát lĩnh vực',
   van_ban: 'Văn bản',

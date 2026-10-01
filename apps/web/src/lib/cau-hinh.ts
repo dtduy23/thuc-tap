@@ -1,4 +1,6 @@
 import type {
+  LuongDuyet,
+  MaLuongDuyet,
   CauHinhCongKhai,
   CauHinhHeThong,
   ChinhSachBaoMat,
@@ -32,6 +34,9 @@ export const luuNguong = (ng: NguongCanhBao) =>
 
 export const luuTrangDau = (td: TrangDau) =>
   goiApi<CauHinhHeThong>('/cau-hinh/trang-dau', { method: 'PUT', body: td })
+
+export const luuLuongDuyet = (ma: MaLuongDuyet, luong: LuongDuyet) =>
+  goiApi<CauHinhHeThong>(`/cau-hinh/luong-duyet/${ma}`, { method: 'PUT', body: luong })
 
 export const luuNhanDien = (nd: NhanDien) =>
   goiApi<CauHinhHeThong>('/cau-hinh/nhan-dien', { method: 'PUT', body: nd })

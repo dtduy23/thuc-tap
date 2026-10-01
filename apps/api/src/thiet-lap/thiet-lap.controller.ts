@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Inject, Put } from '@nestjs/common'
-import { CanQuyen, CongKhai, NguoiDung, type NguoiDungPhien } from '../xac-thuc/bao-ve.js'
+import { Body, Controller, Get, Inject, Param, Put } from '@nestjs/common'
+import { CanMotTrongQuyen, CanQuyen, CongKhai, NguoiDung, type NguoiDungPhien } from '../xac-thuc/bao-ve.js'
 import { ThietLapService } from './thiet-lap.service.js'
 
 @Controller('cau-hinh')
@@ -14,7 +14,7 @@ export class ThietLapController {
   }
 
   @Get()
-  @CanQuyen('QT_DANG_NHAP.READ', 'QT_HIEN_THI.READ', 'QT_CANH_BAO.READ')
+  @CanMotTrongQuyen('QT_DANG_NHAP.READ', 'QT_HIEN_THI.READ', 'QT_CANH_BAO.READ', 'QT_PHE_DUYET.READ')
   xem(@NguoiDung() nd: NguoiDungPhien) {
     return this.dv.xem(nd)
   }
@@ -35,6 +35,12 @@ export class ThietLapController {
   @CanQuyen('QT_HIEN_THI.UPDATE')
   ghiTrangDau(@NguoiDung() nd: NguoiDungPhien, @Body() than: unknown) {
     return this.dv.ghiTrangDau(nd, than)
+  }
+
+  @Put('luong-duyet/:ma')
+  @CanQuyen('QT_PHE_DUYET.UPDATE')
+  ghiLuongDuyet(@NguoiDung() nd: NguoiDungPhien, @Param('ma') ma: string, @Body() than: unknown) {
+    return this.dv.ghiLuongDuyet(nd, ma, than)
   }
 
   @Put('nhan-dien')

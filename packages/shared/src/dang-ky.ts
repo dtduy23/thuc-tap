@@ -386,11 +386,10 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'qt-nguoi-dung',
     maQuyen: 'QT_PHE_DUYET',
     nguon: 'db',
-    phac: true,
-    mo: 'Định nghĩa luồng (quy tắc) — còn việc CHỜ DUYỆT (thể hiện) nằm ở "Việc của tôi".',
+    mo: 'Định nghĩa luồng (quy tắc): việc gì, qua mấy cấp, ai duyệt. Việc đang CHỜ DUYỆT (thể hiện) nằm ở chính hồ sơ nghiệp vụ. Hiện có: xin gia hạn bước dự án.',
     con: [
       { id: 'pd-ds', nhan: 'Luồng theo nghiệp vụ' },
-      { id: 'pd-them', nhan: 'Thêm luồng mới', hanhDong: 'CREATE' },
+      { id: 'pd-them', nhan: 'Thêm luồng mới', hanhDong: 'CREATE', phac: true },
     ],
   },
 

@@ -477,9 +477,62 @@ export const duAnVuongMac = pgTable(
     ngayGiaiQuyet: date('ngay_giai_quyet', { mode: 'string' }),
     ketQua: text('ket_qua'),
     nguoiNeu: uuid('nguoi_neu'),
+    // Phân tích nguyên nhân và giải pháp.
+    nhomNguyenNhan: text('nhom_nguyen_nhan'),
+    nguyenNhan: text('nguyen_nhan'),
+    giaiPhap: text('giai_phap'),
+    donViXuLy: text('don_vi_xu_ly'),
+    hanXuLy: date('han_xu_ly', { mode: 'string' }),
+    mucDo: text('muc_do').notNull().default('trung-binh'),
     ...thoiDiem,
   },
-  (t) => [index('du_an_vuong_mac_du_an_idx').on(t.duAnId)],
+  (t) => [
+    index('du_an_vuong_mac_du_an_idx').on(t.duAnId),
+    check('du_an_vuong_mac_muc_do_ck', sql`${t.mucDo} in ('thap', 'trung-binh', 'cao')`),
+  ],
+)
+
+/**
+ * Yêu cầu XIN GIA HẠN một bước, đi qua luồng phê duyệt (Tầng 2 › Luồng phê duyệt). Các cấp
+ * duyệt được chụp lại lúc gửi; mỗi quyết định ghi thêm vào `da_qua`. Duyệt xong cấp cuối
+ * thì hạn bước đổi theo và kế hoạch chốt thành phiên bản mới.
+ */
+export const duAnGiaHan = pgTable(
+  'du_an_gia_han',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    duAnId: uuid('du_an_id')
+      .notNull()
+      .references(() => duAn.id),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    buocId: uuid('buoc_id')
+      .notNull()
+      .references(() => duAnBuoc.id),
+    hanCu: date('han_cu', { mode: 'string' }),
+    hanMoi: date('han_moi', { mode: 'string' }).notNull(),
+    lyDo: text('ly_do').notNull(),
+    canCu: text('can_cu'),
+    /** cho-duyet · da-duyet · tu-choi · da-rut */
+    trangThai: text('trang_thai').notNull().default('cho-duyet'),
+    nguoiXin: uuid('nguoi_xin').notNull(),
+    ngayXin: date('ngay_xin', { mode: 'string' }).notNull(),
+    /** [{ ten, vai }] — luồng lúc gửi. */
+    cacCap: jsonb('cac_cap').notNull(),
+    /** Cấp đang chờ (từ 1). */
+    capHienTai: integer('cap_hien_tai').notNull().default(1),
+    /** [{ cap, tenCap, nguoiId, dongY, yKien, luc }] */
+    daQua: jsonb('da_qua').notNull(),
+    ...thoiDiem,
+  },
+  (t) => [
+    index('du_an_gia_han_du_an_idx').on(t.duAnId, t.createdAt),
+    check(
+      'du_an_gia_han_trang_thai_ck',
+      sql`${t.trangThai} in ('cho-duyet', 'da-duyet', 'tu-choi', 'da-rut')`,
+    ),
+  ],
 )
 
 /** Một lần đôn đốc (Điều 36 NĐ 45) gửi tới một dự án. Vết — không sửa; hiện ở "Việc của tôi" của cán bộ phụ trách. */

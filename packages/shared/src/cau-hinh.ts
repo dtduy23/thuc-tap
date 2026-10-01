@@ -3,6 +3,7 @@
  * hành). API kiểm bằng đúng khai báo ở đây, web dựng form từ đúng khai báo ở
  * đây — thêm một tham số là thêm một dòng.
  */
+import type { CauHinhLuongDuyet } from './phe-duyet.js'
 
 /** Chính sách đăng nhập & mật khẩu. Mọi giá trị là số nguyên trong [min, max]. */
 export const CHINH_SACH = {
@@ -214,6 +215,8 @@ export interface CauHinhHeThong {
   nhanDien: NhanDien
   nguong: NguongCanhBao
   trangDau: TrangDau
+  /** Luồng phê duyệt theo nghiệp vụ (Tầng 2 › Luồng phê duyệt). */
+  luongDuyet: CauHinhLuongDuyet
   /** Chỉ quản trị ở đơn vị GỐC sửa được cấu hình chung của cả hệ thống. */
   coTheSua: boolean
   tenDonViGoc: string | null

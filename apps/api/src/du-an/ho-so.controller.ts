@@ -142,6 +142,17 @@ export class HoSoDuAnController {
     return this.dv.neuVuongMac(nd, maUuid(id), than)
   }
 
+  @Patch(':id/vuong-mac/:vmId')
+  @CanQuyen('DU_AN.UPDATE')
+  phanTich(
+    @NguoiDung() nd: NguoiDungPhien,
+    @Param('id') id: string,
+    @Param('vmId') v: string,
+    @Body() than: unknown,
+  ) {
+    return this.dv.phanTichVuongMac(nd, maUuid(id), maUuid(v, 'vmId'), than)
+  }
+
   @Post(':id/vuong-mac/:vmId/giai-quyet')
   @CanQuyen('DU_AN.UPDATE')
   @HttpCode(200)

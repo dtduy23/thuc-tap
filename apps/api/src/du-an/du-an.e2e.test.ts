@@ -116,7 +116,7 @@ describe('tạo dự án', () => {
     // Hạn không bao giờ lùi theo thứ tự bước (chuỗi cộng dồn, chưa có ghi đè).
     const han = hs.buoc.map((b) => b.han!)
     expect([...han].sort()).toEqual(han)
-    expect(hs.quyen).toEqual({ sua: true, xacNhan: true, thanhVien: true, gui: false })
+    expect(hs.quyen).toEqual({ sua: true, xacNhan: true, thanhVien: true, gui: false, xinGiaHan: true })
   })
 
   it('chặn: chủ đầu tư ngoài phạm vi, doanh nghiệp làm chủ đầu tư, quy trình lạ, mã trùng', async () => {
@@ -256,7 +256,7 @@ describe('nhà thầu gửi → chủ đầu tư xác nhận', () => {
     expect(ds.map((d) => d.id)).toEqual([hs.id])
     const h = (await nt.get(`/api/du-an/${hs.id}`)).body as HoSoDuAn
     expect(h.donViTen).toBe('Xã An Hòa')
-    expect(h.quyen).toEqual({ sua: false, xacNhan: false, thanhVien: false, gui: true })
+    expect(h.quyen).toEqual({ sua: false, xacNhan: false, thanhVien: false, gui: true, xinGiaHan: true })
     const b = hs.buoc.filter((x) => !x.laNhom)[2]!
     // Có quyền vai DU_AN.UPDATE (Chuyên viên) nhưng KHÔNG phải đơn vị chủ đầu tư → 403.
     expect(

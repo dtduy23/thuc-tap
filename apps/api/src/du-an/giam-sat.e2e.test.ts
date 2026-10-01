@@ -88,7 +88,7 @@ describe('giám sát theo lĩnh vực', () => {
     expect(await tenDuAn(b)).toEqual(['Dự án có lĩnh vực'])
     const hs = (await b.get(`/api/du-an/${coLinhVuc.id}`)).body as HoSoDuAn
     expect(hs.buoc.length).toBeGreaterThan(0)
-    expect(hs.quyen).toEqual({ sua: false, xacNhan: false, gui: false, thanhVien: false })
+    expect(hs.quyen).toEqual({ sua: false, xacNhan: false, gui: false, thanhVien: false, xinGiaHan: false })
     expect((await b.get(`/api/du-an/${khongLinhVuc.id}`)).status).toBe(404)
     // Không sửa được — service chặn, RLS cũng chặn.
     expect((await b.patch(`/api/du-an/${coLinhVuc.id}`).set(GHI).send({ ten: 'Đổi tên' })).status).toBe(403)

@@ -19,6 +19,7 @@ import {
   UnauthorizedException,
   type CanActivate,
   type ExecutionContext,
+  applyDecorators,
 } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { DANH_SACH_MODULE, tinhQuyen, type PhanCong } from '@gdos/shared'
@@ -30,10 +31,15 @@ import { docVe, phanCongTuVe } from './ve.js'
 
 const CONG_KHAI = 'gdos:cong-khai'
 const CAN_QUYEN = 'gdos:can-quyen'
+const CAN_MOT_QUYEN = 'gdos:can-mot-quyen'
 
 export const CongKhai = () => SetMetadata(CONG_KHAI, true)
 export const ChiCanDangNhap = () => SetMetadata(CAN_QUYEN, [])
+/** Cần ĐỦ mọi quyền liệt kê. */
 export const CanQuyen = (...quyen: [string, ...string[]]) => SetMetadata(CAN_QUYEN, quyen)
+/** Có MỘT trong các quyền liệt kê là đủ — cho route phục vụ nhiều module hoặc nhiều vai. */
+export const CanMotTrongQuyen = (...quyen: [string, ...string[]]) =>
+  applyDecorators(SetMetadata(CAN_QUYEN, []), SetMetadata(CAN_MOT_QUYEN, quyen))
 
 export interface NguoiDungPhien {
   taiKhoanId: string
@@ -109,6 +115,13 @@ export class BaoVeGuard implements CanActivate {
 
     const thieu = canQuyen.filter((q) => !quyen.has(q))
     if (thieu.length) throw new ForbiddenException(`Tài khoản không có quyền: ${thieu.join(', ')}`)
+
+    const motQuyen = this.reflector.getAllAndOverride<string[] | undefined>(CAN_MOT_QUYEN, dich)
+    if (motQuyen) {
+      if (nd.dmk) throw new ForbiddenException('Cần đổi mật khẩu được cấp trước khi làm việc')
+      if (!motQuyen.some((q) => quyen.has(q)))
+        throw new ForbiddenException(`Tài khoản cần một trong các quyền: ${motQuyen.join(', ')}`)
+    }
     return true
   }
 }

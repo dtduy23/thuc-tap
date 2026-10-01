@@ -69,6 +69,7 @@ export const MAN_HINH: Partial<Record<string, LazyExoticComponent<ComponentType>
   'vb-don-vi': lazy(() => import('@/man/van-ban/don-vi-nhan-viec')),
   'kn-ds': lazy(() => import('@/man/ket-noi').then((m) => ({ default: m.DanhSachKetNoi }))),
   'kn-kiem-tra': lazy(() => import('@/man/ket-noi').then((m) => ({ default: m.KiemTraKetNoi }))),
+  'pd-ds': lazy(() => import('@/man/luong-duyet')),
   'nd-api': lazy(() => import('@/man/nguon-vao/api')),
   'nd-excel': lazy(() => import('@/man/nguon-vao/excel')),
   'nd-ket-qua': lazy(() => import('@/man/nguon-vao/ket-qua')),

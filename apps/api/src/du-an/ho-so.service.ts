@@ -1,9 +1,27 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
-import { DUOI_TEP_CHO_PHEP, homNay, KICH_THUOC_TEP_TOI_DA, type HoSoDuAn } from '@gdos/shared'
+import {
+  DUOI_TEP_CHO_PHEP,
+  homNay,
+  KICH_THUOC_TEP_TOI_DA,
+  MUC_DO_VUONG_MAC,
+  NHOM_NGUYEN_NHAN,
+  type HoSoDuAn,
+  type MucDoVuongMac,
+  type NhomNguyenNhan,
+} from '@gdos/shared'
 import { and, eq, isNull } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import type { Readable } from 'node:stream'
-import { chuoi, chuoiHoacRong, maUuid, ngay, ngayHoacRong, soNguyen } from '../chung/kiem-than.js'
+import {
+  chuoi,
+  chuoiHoacRong,
+  chuoiTuyChon,
+  maUuid,
+  motTrong,
+  ngay,
+  ngayHoacRong,
+  soNguyen,
+} from '../chung/kiem-than.js'
 import { CoSoDuLieu, dbCua } from '../db/co-so-du-lieu.js'
 import { trongPhamVi, type GiaoDich } from '../db/pham-vi.js'
 import {
@@ -193,11 +211,25 @@ export class HoSoDuAnService {
     const ngayNeu = ngayHoacRong(than, 'ngayNeu') ?? homNay()
     const buocId = chuoiHoacRong(than, 'buocId', 40) ?? null
     if (buocId) maUuid(buocId, 'buocId')
+    const pt = docPhanTich(than)
     return this.duAn.voiDuAn(nd, id, 'sua', async (tx, da) => {
       if (buocId) await phaiThuocDuAn(tx, duAnBuoc, buocId, id, 'bước')
       await tx
         .insert(duAnVuongMac)
-        .values({ duAnId: id, donViId: da.donViId, buocId, noiDung, ngayNeu, nguoiNeu: nd.taiKhoanId })
+        .values({ duAnId: id, donViId: da.donViId, buocId, noiDung, ngayNeu, nguoiNeu: nd.taiKhoanId, ...pt })
+    })
+  }
+
+  /** Phân tích nguyên nhân và giải pháp của một vướng mắc (ghi lại được nhiều lần). */
+  phanTichVuongMac(nd: NguoiDungPhien, id: string, vmId: string, than: unknown) {
+    const pt = docPhanTich(than)
+    const noiDung = chuoiTuyChon(than, 'noiDung', 4000)
+    return this.duAn.voiDuAn(nd, id, 'sua', async (tx) => {
+      await phaiThuocDuAn(tx, duAnVuongMac, vmId, id, 'vướng mắc')
+      await tx
+        .update(duAnVuongMac)
+        .set({ ...pt, ...(noiDung ? { noiDung } : {}) })
+        .where(eq(duAnVuongMac.id, vmId))
     })
   }
 
@@ -230,6 +262,24 @@ export class HoSoDuAnService {
 function batBuoc<T>(v: T | undefined, ten: string): T {
   if (v === undefined) throw new BadRequestException(`Thiếu "${ten}"`)
   return v
+}
+
+const NHOM = Object.keys(NHOM_NGUYEN_NHAN) as NhomNguyenNhan[]
+const MUC_DO = Object.keys(MUC_DO_VUONG_MAC) as MucDoVuongMac[]
+
+/** Các trường phân tích — vắng thì không đụng tới (undefined), rỗng thì xóa (null). */
+function docPhanTich(than: unknown) {
+  return {
+    nhomNguyenNhan:
+      (than as { nhomNguyenNhan?: unknown } | null)?.nhomNguyenNhan === null
+        ? null
+        : motTrong(than, 'nhomNguyenNhan', NHOM),
+    nguyenNhan: chuoiHoacRong(than, 'nguyenNhan', 4000),
+    giaiPhap: chuoiHoacRong(than, 'giaiPhap', 4000),
+    donViXuLy: chuoiHoacRong(than, 'donViXuLy', 300),
+    hanXuLy: ngayHoacRong(than, 'hanXuLy'),
+    mucDo: motTrong(than, 'mucDo', MUC_DO),
+  }
 }
 
 function docThongTinVanBan(than: unknown) {

@@ -2,6 +2,9 @@ import { BadRequestException, ForbiddenException, Inject, Injectable } from '@ne
 import {
   CHINH_SACH,
   CHINH_SACH_MAC_DINH,
+  hopNhatLuongDuyet,
+  kiemLuongDuyet,
+  MA_LUONG_DUYET,
   DANH_SACH_MODULE,
   KHOA_CHINH_SACH,
   KHOA_NGUONG,
@@ -17,6 +20,8 @@ import {
   TRANG_DAU_MAC_DINH,
   type CauHinhCongKhai,
   type CauHinhHeThong,
+  type CauHinhLuongDuyet,
+  type MaLuongDuyet,
   type ChinhSachBaoMat,
   type NguongCanhBao,
   type NhanDien,
@@ -31,7 +36,7 @@ import type { NguoiDungPhien } from '../xac-thuc/bao-ve.js'
 /** Đăng nhập nào cũng cần chính sách — đọc lại tối đa mỗi bấy nhiêu, không hỏi DB mỗi lần. */
 const GIU_MS = 10_000
 
-type KhoaThietLap = 'bao-mat' | 'nhan-dien' | 'canh-bao' | 'trang-dau'
+type KhoaThietLap = 'bao-mat' | 'nhan-dien' | 'canh-bao' | 'trang-dau' | 'luong-duyet'
 
 /** Mọi mã chức năng cấp 4 trong cây — trang đầu chỉ được trỏ tới một trong số này. */
 const CHUC_NANG_HOP_LE = new Set(DANH_SACH_MODULE.flatMap((m) => m.con.map((c) => c.id)))
@@ -93,6 +98,7 @@ export class ThietLapService {
     nhanDien: NhanDien
     nguong: NguongCanhBao
     trangDau: TrangDau
+    luongDuyet: CauHinhLuongDuyet
     tenGoc: string | null
   }
 
@@ -111,6 +117,7 @@ export class ThietLapService {
       nhanDien: hopNhatNhanDien(lay('nhan-dien')),
       nguong: hopNhatNguong(lay('canh-bao')),
       trangDau: hopNhatTrangDau(lay('trang-dau')),
+      luongDuyet: hopNhatLuongDuyet(lay('luong-duyet')),
       tenGoc: goc[0]?.ten ?? null,
     }
     return this.boNho
@@ -125,6 +132,11 @@ export class ThietLapService {
     return (await this.doc()).nguong
   }
 
+  /** Luồng phê duyệt đang áp dụng — nghiệp vụ đọc ở đây trước khi mở giao dịch. */
+  async luongDuyet(): Promise<CauHinhLuongDuyet> {
+    return (await this.doc()).luongDuyet
+  }
+
   async congKhai(): Promise<CauHinhCongKhai> {
     const { nhanDien, baoMat, nguong, trangDau, tenGoc } = await this.doc()
     return {
@@ -136,7 +148,7 @@ export class ThietLapService {
   }
 
   async xem(nd: NguoiDungPhien): Promise<CauHinhHeThong> {
-    const { baoMat, nhanDien, nguong, trangDau, tenGoc } = await this.doc()
+    const { baoMat, nhanDien, nguong, trangDau, luongDuyet, tenGoc } = await this.doc()
     const [toi] = await trongPhamVi(dbCua(this.csdl), nd.nguCanh, (tx) =>
       tx
         .select({ chaId: donVi.chaId })
@@ -149,6 +161,7 @@ export class ThietLapService {
       nhanDien,
       nguong,
       trangDau,
+      luongDuyet,
       coTheSua: nd.laQuanTri && !!toi && toi.chaId === null,
       tenDonViGoc: tenGoc,
     }
@@ -178,6 +191,16 @@ export class ThietLapService {
     const loi = kiemTrangDau(than, CHUC_NANG_HOP_LE)
     if (loi.length) throw new BadRequestException(loi.join('; '))
     return this.ghi(nd, 'trang-dau', than)
+  }
+
+  /** Sửa MỘT luồng; các luồng khác giữ nguyên. */
+  async ghiLuongDuyet(nd: NguoiDungPhien, ma: string, than: unknown): Promise<CauHinhHeThong> {
+    if (!MA_LUONG_DUYET.includes(ma as MaLuongDuyet))
+      throw new BadRequestException('Không có luồng phê duyệt này')
+    const loi = kiemLuongDuyet(than)
+    if (loi.length) throw new BadRequestException(loi.join('; '))
+    const moi = hopNhatLuongDuyet({ ...(await this.luongDuyet()), [ma]: than })
+    return this.ghi(nd, 'luong-duyet', moi)
   }
 
   private async ghi(nd: NguoiDungPhien, khoa: KhoaThietLap, giaTri: unknown): Promise<CauHinhHeThong> {

@@ -68,6 +68,43 @@
 - Nhánh `develop` **chưa tồn tại** trên remote. Pipeline chỉ nổ khi có nhánh đó.
 - CSP trong `nginx.conf` chưa mở trên trình duyệt thật; màn nào trắng thì nới ở đúng chỉ thị đó.
 
+## Dự án: bố cục theo PMS · lũy kế ngày · phân tích vướng mắc · xin gia hạn (01/10/2026)
+
+Anh Toàn chốt: màn dự án tổ chức như PMS (PMS "tương đối chuẩn"), mở lại phần thời gian mà PMS đang ẩn,
+thêm phân tích vướng mắc và xin gia hạn có luồng duyệt.
+
+- **Bố cục như PMS.** Vào một dự án thì cột trái đổi thành **Không gian dự án** (Quay lại danh mục · Tổng quan
+  dự án · Checklist & timeline · Biểu đồ Gantt · Kế hoạch & điều chỉnh · Văn bản dự án · Kinh phí & giải ngân ·
+  Vướng mắc & giải pháp · Thành viên · Nhật ký) — `khung/khong-gian-du-an.tsx`; màn hẹp hiện thành dải thẻ.
+  Đầu hồ sơ là dải thông tin (tên, mã, trạng thái, chủ đầu tư, cán bộ phụ trách; bên phải: điểm KPI, số ngày
+  chậm, % tiến độ). **Tổng quan** theo mẫu báo cáo tiến độ: I. Tiến độ đã thực hiện (dòng thời gian) · ba thẻ
+  giai đoạn · II. Các bước tiếp theo theo tháng · Kinh phí · Lịch sử điều chỉnh · Vướng mắc; "Sửa thông tin"
+  thành hộp thoại. **Checklist**: lọc giai đoạn + trạng thái, dải báo kế hoạch đã chốt / đang nháp, cột Văn
+  bản, Đơn vị, **Hiển thị tổng quan**; bấm bước mở **hộp chi tiết bước** (Ghi nhận kết quả · Xin gia hạn ·
+  Vướng mắc · Sửa bước) thay cho khối mở ngay dưới dòng.
+- **Cộng dồn / lũy kế ngày** (PMS có, đang ẩn bằng cờ `HIDE_TIME`): cột **Số ngày** (nhóm hiện cộng dồn số
+  ngày các bước con), cột **Lũy kế** = số ngày từ ngày bắt đầu dự án tới hạn; bước đã xong thêm lũy kế thực tế
+  và số ngày lệch (sớm / chậm). Tổng thời gian kế hoạch ở đầu bảng. Hàm thuần `luyKeNgay`, `congDonNhom`
+  (@gdos/shared). Điểm KPI và số ngày chậm (PMS ẩn bằng `HIDE_KPI`) hiện ở dải đầu hồ sơ.
+- **Phân tích vướng mắc**: mỗi vướng mắc có nhóm nguyên nhân (10 nhóm), nguyên nhân cụ thể, giải pháp, đơn vị
+  xử lý, hạn xử lý, mức độ. Thẻ Vướng mắc tổng hợp: đang mở, quá hạn xử lý, chưa có nguyên nhân / giải pháp,
+  thời gian xử lý bình quân, biểu đồ theo nhóm nguyên nhân (`phanTichVuongMac`).
+- **Xin gia hạn bước + luồng phê duyệt**: cán bộ chủ đầu tư hoặc nhà thầu / tư vấn gửi yêu cầu lùi hạn một
+  bước (hạn mới, lý do, căn cứ) → qua các cấp duyệt → cấp cuối đồng ý thì hạn bước đổi, các bước sau dời theo
+  và kế hoạch chốt phiên bản mới. Luồng cấu hình ở **Quản trị › Luồng phê duyệt › Luồng theo nghiệp vụ**
+  (`cau_hinh` khóa `luong-duyet`): bật / tắt, 1–4 cấp, mỗi cấp do _cán bộ_ (DU_AN.UPDATE) hoặc _lãnh đạo_
+  (DU_AN.APPROVE) đơn vị chủ đầu tư duyệt, có cho người gửi tự duyệt hay không. Mặc định một cấp lãnh đạo.
+  Yêu cầu chụp lại các cấp lúc gửi — sửa luồng không đổi yêu cầu đang chạy.
+- Migration 0030 (bảng `du_an_gia_han`, cột phân tích của `du_an_vuong_mac`), 0032 (RLS: nhà thầu chỉ gửi
+  và rút yêu cầu của mình — trigger chặn tự sửa; mở khóa cấu hình `luong-duyet`). 0031 để trống có chủ ý.
+- Guard API thêm `@CanMotTrongQuyen` (có MỘT trong các quyền là đủ). Sửa luôn bốn route trước đây viết
+  `@CanQuyen(a, b)` với ý "một trong hai" nhưng guard hiểu là "cần cả hai".
+- Test: `du-an/gia-han.e2e.test.ts` (9), `shared/du-an-luy-ke.test.ts` (7).
+- **Chưa làm**: yêu cầu chờ duyệt chưa lên "Việc của tôi" và chưa có thông báo; chưa có báo cáo tổng hợp vướng
+  mắc theo nguyên nhân trên NHIỀU dự án (mới trong từng dự án); luồng duyệt mới có cho gia hạn.
+- **Chưa thử trên trình duyệt** các thao tác GHI (gửi / duyệt gia hạn, lưu phân tích) để khỏi làm bẩn dự án
+  thử trên máy dev — mới thử qua test đầu cuối; các màn đã mở xem được.
+
 ## Điều hành chép nguyên từ GDOS cũ (01/10/2026)
 
 Anh Toàn chốt: báo cáo làm **giống hệt GDOS cũ, không vẽ lại**; chỉ nâng cấp tính năng. Vì vậy 19 màn
