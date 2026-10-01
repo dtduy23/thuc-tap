@@ -376,6 +376,18 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     ],
   },
   {
+    id: 'qt-ocr',
+    nhan: 'Nhận dạng chứng từ (OCR)',
+    nhom: 'qt-ket-noi',
+    maQuyen: 'QT_OCR',
+    nguon: 'native',
+    mo: 'Nối OCR Service của FOXAI Native: chọn loại chứng từ và LẤY KẾT QUẢ nhận dạng về GDOS. Kết quả giữ dạng động theo từng loại; trực quan hóa và dùng thế nào là việc của phân hệ tác nghiệp.',
+    con: [
+      { id: 'ocr-loai', nhan: 'Loại chứng từ' },
+      { id: 'ocr-ket-qua', nhan: 'Kết quả đã lấy về' },
+    ],
+  },
+  {
     id: 'qt-nguon-vao',
     nhan: 'Nguồn dữ liệu vào',
     nhom: 'qt-ket-noi',

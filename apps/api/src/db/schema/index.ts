@@ -596,3 +596,67 @@ export const lienKetNative = pgTable('lien_ket_native', {
   lienKetLuc: timestamp('lien_ket_luc', { withTimezone: true }).notNull().defaultNow(),
   lamMoiLuc: timestamp('lam_moi_luc', { withTimezone: true }).notNull().defaultNow(),
 })
+
+/**
+ * LOẠI CHỨNG TỪ của OCR Service (FOXAI Native) — bản chụp ĐỊNH NGHĨA trường và bảng của
+ * từng loại. GDOS không khai cứng trường nào: màn hình và nghiệp vụ dựng theo `dinh_nghia`.
+ * `bat` = loại này được lấy kết quả về GDOS (Native dùng chung nhiều khách — không lấy hết).
+ */
+export const ocrLoai = pgTable(
+  'ocr_loai',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    /** Mã loại phía Native (schema code), vd CHUNGTU. */
+    ma: text('ma').notNull(),
+    ten: text('ten').notNull(),
+    moTa: text('mo_ta'),
+    nativeId: text('native_id').notNull(),
+    /** Native còn bật loại này không. */
+    hoatDong: boolean('hoat_dong').notNull().default(true),
+    /** { truong: [{khoa, nhan, kieu, batBuoc}], bang: [{khoa, ten, cot: [{khoa, nhan, kieu}]}] } */
+    dinhNghia: jsonb('dinh_nghia').notNull(),
+    bat: boolean('bat').notNull().default(false),
+    dongBoLuc: timestamp('dong_bo_luc', { withTimezone: true }).notNull().defaultNow(),
+    ...thoiDiem,
+  },
+  (t) => [uniqueIndex('ocr_loai_ma_uq').on(t.donViId, t.ma)],
+)
+
+/**
+ * KẾT QUẢ NHẬN DẠNG lấy về từ OCR Service của FOXAI Native — một dòng một chứng từ.
+ * `du_lieu` (trường → giá trị) và `bang` (bảng → các dòng) giữ NGUYÊN như Native trả;
+ * dùng thế nào là việc của phân hệ tác nghiệp.
+ */
+export const ocrChungTu = pgTable(
+  'ocr_chung_tu',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    nativeId: text('native_id').notNull(),
+    maLoai: text('ma_loai').notNull(),
+    tenLoai: text('ten_loai').notNull(),
+    tenTep: text('ten_tep').notNull(),
+    loaiTep: text('loai_tep'),
+    /** da-xu-ly (Native nhận dạng xong) · da-xac-nhan (người dùng Native đã soát). */
+    trangThai: text('trang_thai').notNull(),
+    /** Độ tin cậy 0–1 do Native chấm. */
+    doTinCay: doublePrecision('do_tin_cay'),
+    duLieu: jsonb('du_lieu').notNull(),
+    bang: jsonb('bang').notNull(),
+    nativeTaoLuc: timestamp('native_tao_luc', { withTimezone: true }),
+    nativeCapNhatLuc: timestamp('native_cap_nhat_luc', { withTimezone: true }),
+    layVeLuc: timestamp('lay_ve_luc', { withTimezone: true }).notNull().defaultNow(),
+    layBoi: uuid('lay_boi'),
+    ...thoiDiem,
+  },
+  (t) => [
+    uniqueIndex('ocr_chung_tu_native_uq').on(t.donViId, t.nativeId),
+    index('ocr_chung_tu_loai_idx').on(t.donViId, t.maLoai, t.nativeCapNhatLuc),
+    check('ocr_chung_tu_trang_thai_ck', sql`${t.trangThai} in ('da-xu-ly', 'da-xac-nhan')`),
+  ],
+)

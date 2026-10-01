@@ -54,6 +54,8 @@ export const MAN_HINH: Partial<Record<string, LazyExoticComponent<ComponentType>
   'vb-don-vi': lazy(() => import('@/man/van-ban/don-vi-nhan-viec')),
   'kn-ds': lazy(() => import('@/man/ket-noi').then((m) => ({ default: m.DanhSachKetNoi }))),
   'kn-kiem-tra': lazy(() => import('@/man/ket-noi').then((m) => ({ default: m.KiemTraKetNoi }))),
+  'ocr-loai': lazy(() => import('@/man/ocr/quan-tri').then((m) => ({ default: m.LoaiOcr }))),
+  'ocr-ket-qua': lazy(() => import('@/man/ocr/quan-tri').then((m) => ({ default: m.KetQuaOcr }))),
   'tk-ds': lazy(() => import('@/man/tai-khoan-ds')),
   'tk-khoa': lazy(() => import('@/man/tai-khoan-khoa')),
   'tk-tao': lazy(() => import('@/man/tai-khoan-tao')),

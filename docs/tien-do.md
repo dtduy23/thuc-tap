@@ -68,6 +68,24 @@
 - Nhánh `develop` **chưa tồn tại** trên remote. Pipeline chỉ nổ khi có nhánh đó.
 - CSP trong `nginx.conf` chưa mở trên trình duyệt thật; màn nào trắng thì nới ở đúng chỉ thị đó.
 
+## Kết nối OCR chứng từ với FOXAI Native (01/10/2026)
+
+Quản trị hệ thống › Kết nối có thêm module **Nhận dạng chứng từ (OCR)** (`QT_OCR`, ADR-0009 mục 9):
+
+- **Loại chứng từ** — "Cập nhật từ Native" chụp danh sách loại + định nghĩa trường, bảng; bật / tắt
+  loại nào được lấy về (mặc định tắt — Native dùng chung nhiều khách).
+- **Kết quả đã lấy về** — "Lấy về ngay" kéo chứng từ đã nhận dạng của các loại đang bật về bảng
+  `ocr_chung_tu`; xem theo từng loại, mở một dòng thấy trường, bảng dòng hàng và chuỗi JSON gốc.
+- Dịch vụ nền tảng có thêm dòng "FOXAI Native — OCR Service" (xem + kiểm tra).
+- **Động, dùng lại được:** cột dựng theo định nghĩa của loại, không khai cứng. Trang tác nghiệp gọi
+  `<BangChungTuOcr loai="…" />` (`man/ocr/bang-chung-tu.tsx`) hoặc `truyVanChungTuOcr(loai)`
+  (`lib/ocr.ts`) → `GET /api/ocr/chung-tu?loai=`. Nhớ thêm quyền READ của phân hệ vào `QUYEN_DOC_OCR`.
+- Migration 0026 (bảng) + 0027 (RLS, nhật ký). Test: `ocr/ocr.e2e.test.ts` (Native giả), `shared/ocr.test.ts`.
+- **Chưa thử với nativev3 thật**: tài khoản dev chưa liên kết lại Native sau khi đổi địa chỉ. Phản hồi
+  của Native được đọc phòng thủ theo dạng đã thấy hôm 01/10 (cột của bảng chưa thấy tên khóa thật —
+  đang nhận `columnKey` / `fieldKey` / `key`).
+- Chưa làm: tự lấy về định kỳ; tải chứng từ lên Native từ GDOS; mở tệp gốc.
+
 ## Sắp lại nhóm Điều hành (01/10/2026)
 
 Bốn module theo bốn câu hỏi của người điều hành, đi từ chung tới riêng — mỗi số chỉ có một chỗ ở:

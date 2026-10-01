@@ -103,6 +103,8 @@ export const TEN_BANG: Record<string, string> = {
   du_an_don_doc: 'Đôn đốc',
   giam_sat_linh_vuc: 'Giám sát lĩnh vực',
   van_ban: 'Văn bản',
+  ocr_loai: 'Loại chứng từ OCR',
+  ocr_chung_tu: 'Chứng từ OCR',
   danh_muc_gia_tri: 'Danh mục',
   quy_trinh_mau: 'Quy trình mẫu',
 }

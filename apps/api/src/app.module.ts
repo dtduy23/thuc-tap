@@ -18,6 +18,8 @@ import { ChuyenTiepNativeController, GOI_NATIVE } from './native/chuyen-tiep.con
 import { KET_NOI_NATIVE, taoKetNoiNative } from './native/ket-noi-native.js'
 import { LienKetNativeService } from './native/lien-ket.service.js'
 import { XAC_THUC_NATIVE, XacThucNativeGia, XacThucNativeHttp } from './native/xac-thuc-native.js'
+import { OcrController } from './ocr/ocr.controller.js'
+import { OcrService } from './ocr/ocr.service.js'
 import { NhatKyController } from './nhat-ky/nhat-ky.controller.js'
 import { NhatKyService } from './nhat-ky/nhat-ky.service.js'
 import { ChiTieuController } from './chi-tieu/chi-tieu.controller.js'
@@ -57,6 +59,7 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     KetNoiController,
     LienKetNativeController,
     ChuyenTiepNativeController,
+    OcrController,
   ],
   providers: [
     { provide: CAU_HINH, useFactory: () => docCauHinh() },
@@ -74,6 +77,7 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     QuanLyDanhMucService,
     VanBanService,
     LienKetNativeService,
+    OcrService,
     // Nguồn đóng góp cho nhóm xuyên suốt (ADR-0007). Module nghiệp vụ mới: thêm vào đây.
     {
       provide: NGUON_DONG_GOP,

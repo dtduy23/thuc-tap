@@ -50,6 +50,18 @@ câu trả lời — ADR-0003 cấm tự chọn.
    tiếng Việt; lỗi 5xx không để lộ chi tiết. Chỉ chạy với Native thật (bản giả chỉ có tóm tắt).
    Lưu ý khi soạn thảo: thể thức nhập ở màn Soạn thảo được Native **ghi đè và lưu** vào
    `default_meta` của mẫu — đó là hành vi của Native, như GDOS cũ.
+9. **Kết quả nhận dạng chứng từ (OCR Service, `/api/ocr`) được LẤY VỀ kho của GDOS, giữ dạng ĐỘNG.**
+   Khác mục 8: kết quả OCR là đầu vào cho nghiệp vụ của GDOS nên chép về (`ocr_chung_tu`, RLS theo
+   đơn vị), không đọc trực tiếp mỗi lần xem. GDOS không khai cứng trường nào: mỗi loại chứng từ có
+   bản chụp ĐỊNH NGHĨA trường + bảng từ Native (`ocr_loai.dinh_nghia`), mỗi chứng từ giữ nguyên
+   `du_lieu` (trường → giá trị) và `bang` (bảng → các dòng). Native dùng chung nhiều khách nên chỉ
+   lấy loại quản trị đã BẬT. GDOS chỉ ĐỌC Native (`/schemas`, `/documents`, `/documents/{id}/result`)
+   — không tải lên, không xác nhận, không sửa bên đó; chỉ lấy chứng từ đã nhận dạng xong hoặc đã
+   xác nhận; lấy lại thì cập nhật đúng dòng cũ (khóa: đơn vị + mã Native). Việc lấy về do quản trị
+   bấm (Tầng 2 › Kết nối › Nhận dạng chứng từ), bằng token của chính người bấm. **Tầng 2 chỉ đưa dữ
+   liệu về; trực quan hóa và dùng là việc của phân hệ tác nghiệp** — gọi `GET /api/ocr/chung-tu?loai=`
+   hoặc thành phần `<BangChungTuOcr loai="…" />`; phân hệ nào dùng thì thêm quyền READ của mình vào
+   `QUYEN_DOC_OCR` (@gdos/shared).
 
 ## Bật bản thật
 
