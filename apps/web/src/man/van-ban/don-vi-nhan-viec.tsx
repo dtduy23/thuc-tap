@@ -1,7 +1,7 @@
 /**
  * Xử lý văn bản › Đơn vị nhận việc — cơ quan, phòng ban, cá nhân mà AI của FOXAI Native
  * chọn khi phân công nhiệm vụ từ văn bản (`/processing-units`, màn "Vai trò các cấp xử lý"
- * cũ ở gdos.fox.ai.vn). Mô tả chức năng càng rõ, AI giao việc càng trúng.
+ * cũ ở GDOS cũ). Mô tả chức năng càng rõ, AI giao việc càng trúng.
  */
 import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'

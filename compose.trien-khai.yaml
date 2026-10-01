@@ -9,7 +9,7 @@
 #                AUTH_SECRET=<ngẫu nhiên ≥32 ký tự: node -e "console.log(crypto.randomBytes(32).toString('base64url'))">
 #                MINIO_ROOT_USER=gdos
 #                MINIO_ROOT_PASSWORD=<ngẫu nhiên>
-#                NATIVE_URL=https://…            # địa chỉ FOXAI Native thật
+#                NATIVE_URL=https://nativev3.foxai.com.vn   # FOXAI Native — chỉ dùng địa chỉ này
 #                TIN_PROXY=172.31.0.0/16         # khớp `networks.gdos.ipam` dưới
 #   .the-anh   do CI ghi mỗi lần triển khai (ANH_API, ANH_WEB, THE)
 #

@@ -1,5 +1,5 @@
 /**
- * Thành phần dùng chung của nhóm Xử lý văn bản — bố cục theo màn cũ ở gdos.fox.ai.vn:
+ * Thành phần dùng chung của nhóm Xử lý văn bản — bố cục theo màn của GDOS cũ:
  * thẻ số liệu có biểu tượng tròn, nút biểu tượng từng dòng, hộp thoại, trang giấy A4.
  */
 import { TRANG_THAI_VAN_BAN, type TrangThaiVanBan } from '@gdos/shared'

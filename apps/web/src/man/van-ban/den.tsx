@@ -2,7 +2,7 @@
  * Xử lý văn bản › Văn bản đến — văn bản từ hệ thống bên ngoài (QLVB&ĐH, Cổng dịch vụ công,
  * Email công vụ) đổ vào FOXAI Native qua cổng tích hợp, GDOS kéo về hồ sơ `van_ban` của
  * mình (ADR-0009). Văn bản tự tải lên nằm ở "Tóm tắt văn bản". Từ đây: xem, tóm tắt, soạn
- * văn bản trả lời, giao việc — bố cục theo màn cũ ở gdos.fox.ai.vn.
+ * văn bản trả lời, giao việc — bố cục theo màn của GDOS cũ.
  */
 import {
   LOAI_VAN_BAN,

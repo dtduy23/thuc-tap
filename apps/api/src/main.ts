@@ -8,7 +8,7 @@ async function khoiDong() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule)
   const cauHinh = app.get<CauHinh>(CAU_HINH)
   // Mọi route nằm dưới /api: web gọi đường dẫn tương đối, nginx chuyển tiếp
-  // đúng một tiền tố — cùng cách GDOS cũ đã chạy ổn trên gdos.fox.ai.vn.
+  // đúng một tiền tố — cùng cách GDOS cũ đã chạy ổn ở GDOS cũ.
   app.setGlobalPrefix('api')
   app.enableShutdownHooks()
   // Chỉ tin header X-Forwarded-For từ proxy đã khai — IP ghi vào phiên đăng

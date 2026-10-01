@@ -1,6 +1,6 @@
 /**
  * Tác nghiệp › Nhiệm vụ — cây việc nhiều cấp của FOXAI Native (`/tasks`), như màn "Quản lý
- * nhiệm vụ" ở gdos.fox.ai.vn: lọc theo phạm vi / vai / thời gian, thẻ số liệu bấm để lọc,
+ * nhiệm vụ" ở GDOS cũ: lọc theo phạm vi / vai / thời gian, thẻ số liệu bấm để lọc,
  * ngăn chi tiết có dòng thời gian, giao việc, AI phân rã việc con, chuông thông báo.
  *
  * Ba chức năng trên cây là BA PHẠM VI của cùng một màn: việc được giao cho tôi, việc tôi đã

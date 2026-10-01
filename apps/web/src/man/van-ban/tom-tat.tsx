@@ -24,7 +24,7 @@ import { Luoi, type CotLuoi } from '@/ui/luoi/luoi'
 import { BieuTuong, ChipVanBan, LuoiKpi, NutIcon, TheKpi } from './chung'
 
 /**
- * Xử lý văn bản › Tóm tắt văn bản — bố cục theo màn cũ ở gdos.fox.ai.vn: thẻ số liệu,
+ * Xử lý văn bản › Tóm tắt văn bản — bố cục theo màn của GDOS cũ: thẻ số liệu,
  * "Thêm văn bản", bảng có thao tác từng dòng; lọc theo chuẩn lưới (ô lọc dưới mỗi cột).
  * Văn bản trong tài khoản FOXAI Native của người dùng được kéo về đây (ADR-0009).
  */

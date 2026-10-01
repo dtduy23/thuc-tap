@@ -2,7 +2,7 @@
  * Xử lý văn bản › Mẫu văn bản — mẫu hành chính theo thể thức NĐ 30/2020/NĐ-CP, dùng cho
  * Soạn thảo văn bản. Dữ liệu là của FOXAI Native (`/document-templates`), GDOS gọi qua
  * cổng chuyển tiếp bằng tài khoản Native của chính người dùng (ADR-0009). Bố cục theo màn
- * cũ ở gdos.fox.ai.vn; lọc theo chuẩn lưới.
+ * cũ ở GDOS cũ; lọc theo chuẩn lưới.
  */
 import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { useMemo, useState, type FormEvent } from 'react'

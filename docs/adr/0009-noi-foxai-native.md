@@ -22,7 +22,7 @@ câu trả lời — ADR-0003 cấm tự chọn.
    vào văn bản để gửi lại, không làm mất văn bản.
 3. **Gọi Native ngoài giao dịch database** — Native chậm không giữ khóa bảng. Văn bản đang chạy
    được đọc lại trạng thái khi có người xem (tối đa 20 văn bản mỗi lần), thay mặt người tạo.
-4. **Gọi Native bằng danh tính CỦA CHÍNH người dùng — như GDOS cũ ở gdos.fox.ai.vn.** Mỗi người
+4. **Gọi Native bằng danh tính CỦA CHÍNH người dùng — như GDOS cũ.** Mỗi người
    liên kết tài khoản FOXAI Native của mình một lần (Cài đặt cá nhân): gõ tên đăng nhập + mật
    khẩu Native, máy chủ GDOS gọi `POST {NATIVE_URL}/api/auth/login` (cổng v3 nhận `/api/auth/*`,
    không phải `/api/v2`). **Không lưu mật khẩu**; refresh token lưu **mã hóa AES-256-GCM** (khóa
@@ -53,8 +53,9 @@ câu trả lời — ADR-0003 cấm tự chọn.
 
 ## Bật bản thật
 
-`.env` máy chủ: bỏ `NATIVE_GIA`, đặt `NATIVE_URL=https://gdos.fox.ai.vn` (hoặc
-`https://nativev3.foxai.com.vn` — cùng cổng API) rồi khởi động lại API. Mỗi người vào Cài đặt cá
+`.env` máy chủ: bỏ `NATIVE_GIA`, đặt `NATIVE_URL=https://nativev3.foxai.com.vn` rồi khởi động lại API.
+**Chỉ một địa chỉ Native: nativev3** (anh Toàn chốt 01/10/2026) — tên miền gdos.fox.ai.vn của GDOS cũ
+sẽ bỏ; GDOS mới và GDOS cũ là hai hệ thống độc lập, không trỏ sang nhau. Mỗi người vào Cài đặt cá
 nhân › Liên kết FOXAI Native. Máy chủ gọi máy chủ nên chạy được cả trên localhost.
 
 Còn để sau: Văn bản đến qua tích hợp đối tác của Native (`POST /inbound` + webhook, khóa API cấp

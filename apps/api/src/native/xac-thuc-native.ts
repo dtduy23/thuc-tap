@@ -1,6 +1,6 @@
 /**
- * ĐĂNG NHẬP FOXAI NATIVE thay mặt một người (ADR-0009) — đúng cách GDOS cũ ở
- * gdos.fox.ai.vn: mỗi người dùng tài khoản Native của chính mình. Cổng v3 nhận
+ * ĐĂNG NHẬP FOXAI NATIVE thay mặt một người (ADR-0009) — đúng cách GDOS cũ
+ * đã làm: mỗi người dùng tài khoản Native của chính mình. Cổng v3 nhận
  * `/api/auth/*` (không phải `/api/v2`). Mật khẩu chỉ đi qua đúng một lần, không lưu.
  */
 import { BadRequestException, ServiceUnavailableException } from '@nestjs/common'

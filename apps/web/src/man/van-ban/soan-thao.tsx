@@ -2,7 +2,7 @@
  * Xử lý văn bản › Soạn thảo văn bản — soạn văn bản hành chính theo mẫu NĐ30 bằng AI của
  * FOXAI Native (`/compose`). Nguồn: văn bản đã tóm tắt trong GDOS, hoặc tệp tải lên (Native
  * trích chữ). Mẫu "điền trường" xem trước ngay khi gõ; mẫu "AI viết thân" bấm nút để soạn.
- * Vào từ màn Tóm tắt qua `?nguon=<mã văn bản>`. Bố cục theo màn cũ ở gdos.fox.ai.vn.
+ * Vào từ màn Tóm tắt qua `?nguon=<mã văn bản>`. Bố cục theo màn của GDOS cũ.
  */
 import { useQuery } from '@tanstack/react-query'
 import { useSearch } from '@tanstack/react-router'

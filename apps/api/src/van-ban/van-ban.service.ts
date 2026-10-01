@@ -113,7 +113,7 @@ const laMaGia = (nativeId: string) => nativeId.startsWith('gia-')
 /**
  * Xử lý văn bản (ADR-0009): hồ sơ ở GDOS (RLS theo đơn vị), FOXAI Native xử lý. Văn
  * bản đã có trong tài khoản Native của người dùng được KÉO VỀ hồ sơ GDOS khi họ xem
- * danh sách (như màn cũ ở gdos.fox.ai.vn). Gọi Native NGOÀI giao dịch database.
+ * danh sách (như màn của GDOS cũ). Gọi Native NGOÀI giao dịch database.
  */
 @Injectable()
 export class VanBanService {

@@ -1,7 +1,7 @@
 /**
  * Xử lý văn bản › Phân công từ văn bản — nhiệm vụ AI của FOXAI Native tách từ văn bản và
- * giao cho đơn vị nhận việc (`/task-assignments`). Ba đường tạo nhiệm vụ như màn cũ ở
- * gdos.fox.ai.vn: AI đọc văn bản đã tóm tắt, AI đọc tệp (chạy nền), hoặc tự thêm tay.
+ * giao cho đơn vị nhận việc (`/task-assignments`). Ba đường tạo nhiệm vụ như màn của
+ * GDOS cũ: AI đọc văn bản đã tóm tắt, AI đọc tệp (chạy nền), hoặc tự thêm tay.
  */
 import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState, type FormEvent } from 'react'

@@ -127,7 +127,7 @@ Trật tự, Hạ tầng – Đô thị, Y tế – Giáo dục, Phản ánh –
   nhập, đơn vị, vai trò; tài khoản khóa/xóa không hiện. 2 test.
 - **Vai trò & quyền › Tra cứu phân công**: mỗi dòng một phân công; chọn phân hệ + thao tác để biết
   "ai làm được việc này" — tính bằng đúng `tinhQuyen()` mà API dùng để chặn.
-- **Tác nghiệp › Nhiệm vụ** (01/10, nối FOXAI Native thật — như "Quản lý nhiệm vụ" ở gdos.fox.ai.vn): cây
+- **Tác nghiệp › Nhiệm vụ** (01/10, nối FOXAI Native thật — như "Quản lý nhiệm vụ" ở GDOS cũ): cây
   việc nhiều cấp `/tasks` qua cổng chuyển tiếp; ba chức năng là ba phạm vi của một màn (việc được giao
   cho tôi / việc tôi đã giao / theo dõi chung). Thẻ số liệu bấm để lọc, thống kê theo đơn vị chủ trì,
   lọc thời gian – trạng thái – đơn vị – từ khóa, ngăn chi tiết gắn `?ma=` (thông tin, người thực
@@ -154,16 +154,16 @@ Trật tự, Hạ tầng – Đô thị, Y tế – Giáo dục, Phản ánh –
   song, tự cập nhật khi đang chạy); Quản trị › Dịch vụ nền tảng (danh sách, kiểm tra).
 - Máy dev: `.env` có `NATIVE_GIA=1`; tài khoản dev "Quản trị hệ thống" đã điền mã Native
   `thu-nghiem-dev` để thử.
-- **Bước B (30/09): liên kết tài khoản Native theo từng người** — như GDOS cũ ở gdos.fox.ai.vn
+- **Bước B (30/09): liên kết tài khoản Native theo từng người** — như GDOS cũ
   (anh Toàn chốt). `native/xac-thuc-native.ts` (đăng nhập `/api/auth/*`, mã hóa AES-GCM),
   `native/lien-ket.service.ts` (token theo người, làm mới một lần), bảng `lien_ket_native` (0022/0023),
   Cài đặt cá nhân › Liên kết FOXAI Native. Bật thật: `.env` đặt `NATIVE_URL`, bỏ `NATIVE_GIA`.
-- **Bước C (30/09): màn Tóm tắt văn bản như gdos.fox.ai.vn** — thẻ số liệu, "Thêm văn bản" (hộp thoại), bảng
+- **Bước C (30/09): màn Tóm tắt văn bản như GDOS cũ** — thẻ số liệu, "Thêm văn bản" (hộp thoại), bảng
   STT + thao tác (xem, sửa, tải tóm tắt .doc, xóa) + lọc chuẩn lưới. Văn bản đã có trong tài khoản Native
   được KÉO VỀ hồ sơ GDOS khi người liên kết xem danh sách (mỗi phút một lần, tối đa 200; đã xóa thì
   không kéo lại); mở ra thì lấy nội dung gốc + tóm tắt; tệp gốc tải từ Native (0024: cột tệp được rỗng).
   Gửi lại văn bản mang mã bản giả / Native báo 404-422 → gửi lại từ tệp gốc. **Đã chạy với Native thật.**
-- **Bước D (30/09): các công cụ văn bản còn lại, như gdos.fox.ai.vn** — cổng chuyển tiếp
+- **Bước D (30/09): các công cụ văn bản còn lại, như GDOS cũ** — cổng chuyển tiếp
   `/api/native/document/*` (`native/chuyen-tiep.ts`: danh sách cho phép + quyền `VAN_BAN.*` + token
   theo người; 10 test). Màn: **Mẫu văn bản** (thẻ số liệu, lưới, xem — bố cục + bản minh họa AI,
   thêm/sửa với trình soạn thân mẫu kiểu Word: chip trường bấm/kéo chèn, thể thức NĐ30), **Soạn thảo
