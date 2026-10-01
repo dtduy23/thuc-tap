@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import type { DiTich } from '@/dieu-hanh/mocks/types'
 import { NEN_BAN_DO } from './lop-nen'
 
-/** Tâm bản đồ của bản gốc: Phường Bình Minh — chân núi Bà Đen. */
+/** Tâm bản đồ của bản gốc. */
 const CTR: [number, number] = [11.336, 106.128]
 
 /** Ghim hình giọt nước xoay 45° — port từ .dt-pin. */

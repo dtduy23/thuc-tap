@@ -68,6 +68,32 @@
 - Nhánh `develop` **chưa tồn tại** trên remote. Pipeline chỉ nổ khi có nhánh đó.
 - CSP trong `nginx.conf` chưa mở trên trình duyệt thật; màn nào trắng thì nới ở đúng chỉ thị đó.
 
+## Sắp lại cây Điều hành: mỗi chủ đề một chỗ (02/10/2026)
+
+Sau khi chép nguyên menu GDOS cũ, Điều hành có 6 module / 27 màn và trùng nhiều (3 màn tổng quan, 3 màn KPI,
+2 màn TTHC, 2 màn phản ánh, 2 màn kinh tế – xã hội, 2 màn y tế – giáo dục). Anh Toàn chốt cây mới:
+
+- **Nguyên tắc.** Điều hành là nơi NẮM TÌNH HÌNH, sắp theo bốn câu hỏi, đi từ chung tới riêng; mỗi chủ đề một
+  mục trên menu; các góc nhìn của cùng chủ đề là **thẻ trong trang** (`man/gop-man.tsx`), không lên menu.
+  Việc có hồ sơ, có hạn xử lý nằm ở Tác nghiệp; công cụ nằm ở Quản trị.
+- **Điều hành còn 4 module / 18 màn:**
+  1. _Tổng quan_ — Bảng điều hành (thẻ: Tổng quan · Bộ chỉ tiêu xã/phường · Tình hình dự án), KPI điều hành
+     (thẻ: KPI cấp trên giao · Bộ chỉ số điều hành · Chấm điểm dự án).
+  2. _Theo lĩnh vực_ — TTHC – Một cửa · Phản ánh – Kiến nghị · Kinh tế – Dân cư – Xã hội (thẻ: Dashboard · Chỉ
+     tiêu kế hoạch năm) · Nông nghiệp số · An ninh – Trật tự · Hạ tầng – Đô thị · Đất đai · Y tế – Giáo dục
+     (thẻ: Chỉ tiêu · Trường học & cơ sở y tế) · Di tích & Địa chỉ đỏ · Khu phố thông minh. "Quản lý địa bàn"
+     và "Phân hệ mở rộng" gộp vào đây — cùng trả lời "lĩnh vực này đang thế nào".
+  3. _Theo dõi thực hiện_ — Theo đơn vị · Theo lĩnh vực · Xếp hạng đơn vị.
+  4. _Báo cáo_ — như cũ.
+- **Chuyển khỏi Điều hành:** Hồ sơ TTHC → Tác nghiệp (module mới `ho-so-tthc`); Phản ánh kiến nghị → Tác
+  nghiệp, chung module với Đơn thư ("Phản ánh – Kiến nghị – Đơn thư"; bốn mục đơn thư vẫn là màn phác);
+  Thiết kế Dashboard → Quản trị › Hiển thị.
+- Mã chức năng bỏ: `dh-tong-quan`, `dh-dashboard-tong-quan`, `dh-bo-chi-so-kpi`, `dh-bo-chi-so`,
+  `dh-chi-tieu-ktxh`, `dh-giao-duc-y-te`, `tq-toan`, `bcs-tat-ca` (thành thẻ trong trang). Mã mới:
+  `dh-bang-dieu-hanh`, `dh-kpi`. Trang mặc định theo vai đang trỏ mã đã bỏ thì tự về trang chủ.
+- **Bỏ nội dung gắn với một địa phương** khỏi dữ liệu mẫu của các màn Điều hành (tên tỉnh, phường, di tích,
+  đặc sản, số văn bản dẫn tên tỉnh; ảnh / video / tra cứu Wikipedia của di tích thật). Tọa độ bản đồ giữ nguyên.
+
 ## Dự án: bố cục theo PMS · lũy kế ngày · phân tích vướng mắc · xin gia hạn (01/10/2026)
 
 Anh Toàn chốt: màn dự án tổ chức như PMS (PMS "tương đối chuẩn"), mở lại phần thời gian mà PMS đang ẩn,

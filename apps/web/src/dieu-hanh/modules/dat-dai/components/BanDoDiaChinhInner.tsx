@@ -121,7 +121,7 @@ export default function BanDoDiaChinhInner({
         {/* Khung tờ bản đồ số 32 */}
         <Polygon positions={to.khung} pathOptions={{ color: '#B34700', weight: 3.5, fill: false }}>
           <Tooltip permanent direction="top" className="ptip">
-            Tờ bản đồ số 32 — Khu phố 1, phường Bình Minh
+            Tờ bản đồ số 32 — Khu phố 1, phường Mẫu
           </Tooltip>
         </Polygon>
 
@@ -151,7 +151,7 @@ export default function BanDoDiaChinhInner({
             eventHandlers={{ click: () => chonThua(i) }}
           >
             <Tooltip direction="center" className="ptip" permanent={t.nhanCoDinh}>
-              {t.cid + (t.loai === 'cln' ? ' · mãng cầu' : '')}
+              {t.cid + (t.loai === 'cln' ? ' · cây ăn quả' : '')}
             </Tooltip>
           </Polygon>
         ))}

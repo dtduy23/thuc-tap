@@ -40,7 +40,7 @@ export default function KhuPhoThongMinh() {
     <>
       <PageHeader
         crumb="Trang chủ · Khu phố thông minh"
-        tieuDe="Khu phố thông minh phường Bình Minh — 5 tiêu chí UBND tỉnh"
+        tieuDe="Khu phố thông minh phường Mẫu — 5 tiêu chí UBND tỉnh"
         moTa="Bấm từng thôn/ấp trong bảng để xem chi tiết chấm điểm, minh chứng và việc cần hoàn thiện"
         gocKey="apthongminh"
         mau="#0E9488"

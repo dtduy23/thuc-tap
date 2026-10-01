@@ -30,7 +30,7 @@ export default function HaTangDoThi() {
           <TheDashboard
             nhip={12}
             tieuDe="Hiện trạng dữ liệu bản đồ số (GIS)"
-            phu="GIS-01 → GIS-05 · đầu mối: Phòng Kinh tế (Nguyễn Văn Kết) · đánh giá chung: Trung bình – có nhưng rời rạc, thủ công"
+            phu="GIS-01 → GIS-05 · đầu mối: Phòng Kinh tế · đánh giá chung: Trung bình – có nhưng rời rạc, thủ công"
           >
             <div className="overflow-x-auto">
               <table className={LOP_BANG}>

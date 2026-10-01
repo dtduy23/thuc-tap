@@ -33,7 +33,7 @@ export const D: DuLieuGdos = {
       id: 'TTHC-2026-1425',
       cd: 'Phạm Văn Đạt',
       cccd: '024189••••12',
-      loai: 'Xác nhận cư trú thời vụ — lao động thu hoạch mãng cầu',
+      loai: 'Xác nhận cư trú thời vụ — lao động thu hoạch nông sản',
       nhom: 'Hộ tịch',
       nhan: '06/04/2026',
       han: '08/04/2026',
@@ -168,13 +168,13 @@ export const D: DuLieuGdos = {
   phananh: [
     {
       id: 'PA-2026-024',
-      ten: 'Đèn đường khu phố 3 hỏng đoạn vào vùng trồng mãng cầu',
+      ten: 'Đèn đường khu phố 3 hỏng đoạn vào vùng trồng cây ăn quả',
       linhvuc: 'Hạ tầng đô thị',
       st: ['Quá hạn', 'red'],
       ngay: '04/04',
       kw: 'street',
       nguoi: 'Anh N.V.Th — Tổ 9',
-      nd: 'Đoạn đường 400m từ ngã ba chợ vào khu sơ chế mãng cầu có 6 cột đèn thì 4 cột hỏng hơn 2 tuần, công nhân tan ca đêm rất nguy hiểm, đã xảy ra 1 vụ va quẹt.',
+      nd: 'Đoạn đường 400m từ ngã ba chợ vào khu sơ chế nông sản có 6 cột đèn thì 4 cột hỏng hơn 2 tuần, công nhân tan ca đêm rất nguy hiểm, đã xảy ra 1 vụ va quẹt.',
     },
     {
       id: 'PA-2026-027',
@@ -226,9 +226,9 @@ export const D: DuLieuGdos = {
       ],
     },
     {
-      nhom: 'Nông nghiệp - Mãng cầu Bà Đen',
+      nhom: 'Nông nghiệp - Cây ăn quả',
       items: [
-        ['Diện tích mãng cầu', 150, 'ha · KH 165 ha', 91, 'nongnghiep', 'Kinh tế - Nông nghiệp'],
+        ['Diện tích cây ăn quả', 150, 'ha · KH 165 ha', 91, 'nongnghiep', 'Kinh tế - Nông nghiệp'],
         ['Sản lượng vụ chính', 1240, 'tấn · KH 1.300', 95, 'nongnghiep', 'Kinh tế - Nông nghiệp'],
         ['Mã vùng trồng được cấp', 8, 'mã · KH 10', 80, 'nongnghiep', 'Kinh tế - Nông nghiệp'],
       ],
@@ -285,9 +285,9 @@ export const D: DuLieuGdos = {
       cs: 'Hộ ông Phạm Văn Cảnh',
       cccd: '024189••••88',
       dt: '1.240 m²',
-      md: 'CLN — Đất trồng mãng cầu (cây lâu năm)',
+      md: 'CLN — Đất trồng cây ăn quả (cây lâu năm)',
       gcn: 'CS 03412 · Đã cấp',
-      qh: 'Vùng chuyên canh mãng cầu ổn định',
+      qh: 'Vùng chuyên canh cây ăn quả ổn định',
       bd: 'Không có',
       ls: [
         ['2015', 'Cấp GCN theo đo đạc VLAP'],
@@ -311,7 +311,7 @@ export const D: DuLieuGdos = {
   ],
   vt: {
     'VT-001': {
-      sp: 'Mãng cầu Bà Đen — Giồng Cà',
+      sp: 'Cây ăn quả — Vùng Tây',
       dt: '86 ha',
       ho: 'Tổ 4 — 12 hộ',
       quet: '1.284',
@@ -326,7 +326,7 @@ export const D: DuLieuGdos = {
       ],
     },
     'VT-002': {
-      sp: 'Mãng cầu VietGAP — Bình Phong',
+      sp: 'Cây ăn quả VietGAP — Vùng Nam',
       dt: '34 ha',
       ho: 'Tổ 7 — 9 hộ',
       quet: '862',
@@ -381,8 +381,8 @@ export const D: DuLieuGdos = {
   },
   truong: [
     {
-      ten: 'MN Bình Minh',
-      to: 'Khu phố 1 (Bình Trung)',
+      ten: 'MN Hoa Sen',
+      to: 'Khu phố 1',
       cap: 'MN',
       hs: '1.240',
       ss: 26,
@@ -393,8 +393,8 @@ export const D: DuLieuGdos = {
       note: 'CSVC khang trang sau đầu tư 2024; đủ giáo viên theo định mức.',
     },
     {
-      ten: 'TH Bình Minh',
-      to: 'Khu phố 2 (Bình Phong)',
+      ten: 'TH Số 1',
+      to: 'Khu phố 2',
       cap: 'TH',
       hs: '2.980',
       ss: 31,
@@ -405,8 +405,8 @@ export const D: DuLieuGdos = {
       note: 'Đề nghị bổ sung vạch sang đường trước cổng — đã hoàn thành 02/04.',
     },
     {
-      ten: 'THCS Bình Minh',
-      to: 'Khu phố 3 (Giồng Cà)',
+      ten: 'THCS Số 1',
+      to: 'Khu phố 3',
       cap: 'THCS',
       hs: '2.140',
       ss: 34,
@@ -419,8 +419,8 @@ export const D: DuLieuGdos = {
   ],
   dt: [
     {
-      ten: 'Tòa Thánh Cao Đài Tây Ninh',
-      sub: 'Hòa Thành · cách phường ~8km',
+      ten: 'Chùa cổ khu phố 2',
+      sub: 'Khu phố 2 · cách trung tâm ~8km',
       xh: ['Quốc gia', 'pur'],
       bt: ['Tốt', 'green'],
       so: ['QR·360°', 'blue'],
@@ -430,24 +430,17 @@ export const D: DuLieuGdos = {
       quet: '12.480',
       tour: true,
       kw: 'temple',
-      yt: 'gZ6xzAFHwk8',
-      wikis: ['vi|Tòa Thánh Tây Ninh', 'en|Great Divine Temple'],
-      imgs: [
-        'https://hnm.1cdn.vn/2023/08/03/a873.jpg',
-        'https://hnm.1cdn.vn/2023/08/03/a874.jpg',
-        'https://hnm.1cdn.vn/2023/08/03/a877.jpg',
-        'https://hnm.1cdn.vn/2023/08/03/a878.jpg',
-        'https://hnm.1cdn.vn/2023/08/03/a121.jpg',
-      ],
-      pl: 'Kiến trúc nghệ thuật tôn giáo tiêu biểu Nam Bộ',
-      qd: 'Khánh thành 1955 · điểm du lịch tiêu biểu của tỉnh',
-      bts: 'Tốt · Hội Thánh quản lý, trùng tu thường xuyên',
+      yt: null,
+      noimg: true,
+      pl: 'Kiến trúc nghệ thuật tôn giáo tiêu biểu',
+      qd: 'Xếp hạng Quốc gia · điểm du lịch tiêu biểu của tỉnh',
+      bts: 'Tốt · Ban quản lý di tích trùng tu thường xuyên',
       tl: '324 ảnh · video flycam 4K · thuyết minh Việt/Anh',
-      sk: 'Đại lễ Đức Chí Tôn (mùng 9 tháng Giêng) · Hội Yến Diêu Trì Cung (rằm tháng 8)',
+      sk: 'Lễ hội đầu xuân (mùng 9 tháng Giêng) · Lễ hội mùa thu (rằm tháng 8)',
     },
     {
-      ten: 'Căn cứ Trung ương Cục miền Nam',
-      sub: 'Tân Biên · cách phường ~45km',
+      ten: 'Di tích căn cứ kháng chiến',
+      sub: 'Ngoài địa bàn · cách phường ~45km',
       xh: ['QG đặc biệt', 'pur'],
       bt: ['Tốt', 'green'],
       so: ['QR·360°', 'blue'],
@@ -458,23 +451,16 @@ export const D: DuLieuGdos = {
       tour: true,
       kw: 'forest',
       yt: null,
-      wikis: ['vi|Căn cứ Trung ương Cục miền Nam', 'en|Central Office for South Vietnam'],
-      imgs: [
-        'https://luhanhvietnam.com.vn/du-lich/vnt_upload/news/12_2020/can-cu-trung-uong-cuc-mien-nam-noi-song-lai-mot-thoi-hao-hung-o-tay-ninh.jpg',
-        'https://luhanhvietnam.com.vn/du-lich/vnt_upload/news/12_2020/nha-la-tai-can-cu-trung-uong-cuc-mien-nam.jpg',
-        'https://luhanhvietnam.com.vn/du-lich/vnt_upload/news/12_2020/ham-tru-an-tai-can-cu-trung-uong-cuc-mien-nam.jpg',
-        'https://luhanhvietnam.com.vn/du-lich/vnt_upload/news/12_2020/sa-ban-o-can-cu-trung-uong-cuc-mien-nam.jpg',
-        'https://luhanhvietnam.com.vn/du-lich/vnt_upload/news/12_2020/hien-vat-tai-can-cu-trung-uong-cuc-mien-nam.jpg',
-      ],
-      pl: 'Di tích lịch sử cách mạng — "Thủ đô kháng chiến miền Nam"',
-      qd: 'Quốc gia đặc biệt · QĐ 548/QĐ-TTg (2012)',
+      noimg: true,
+      pl: 'Di tích lịch sử cách mạng — căn cứ kháng chiến',
+      qd: 'Quốc gia đặc biệt · QĐ 123/QĐ-TTg',
       bts: 'Tốt · phục dựng nhà làm việc, hầm, giao thông hào',
       tl: '186 ảnh · 12 video tư liệu nhân chứng · sa bàn số',
       sk: 'Hành trình về nguồn 30/4 · lễ kết nạp Đảng, Đoàn tại căn cứ',
     },
     {
-      ten: 'Núi Bà Đen — Linh Sơn Tiên Thạch',
-      sub: 'Liền kề phía Bắc xã · cao 986m',
+      ten: 'Khu danh thắng núi Mẫu',
+      sub: 'Liền kề phía Bắc xã · khu danh thắng',
       xh: ['Quốc gia', 'pur'],
       bt: ['Tốt', 'green'],
       so: ['QR', 'blue'],
@@ -484,20 +470,17 @@ export const D: DuLieuGdos = {
       quet: '9.640',
       tour: false,
       kw: 'mountain',
-      yt: 'wFzRH4UOtiQ',
-      wikis: ['vi|Núi Bà Đen', 'en|Black Virgin Mountain'],
-      imgs: [
-        'https://cdn.nhandan.vn/images/IvCZyovHroGqKo00FqhL-BYlSiiHdbKqX-_KTwd5ocHzw6HHHsgkfipjFhgQtEF3oIV2cMEy3pB4VT6UmQhNU-Zn03a_hplwuDvSqeoS4Oo/dji-0858-4737.jpg.webp',
-      ],
-      pl: 'Di tích lịch sử - văn hóa và danh thắng, quần thể chùa Điện Bà',
+      yt: null,
+      noimg: true,
+      pl: 'Di tích lịch sử - văn hóa và danh thắng, quần thể chùa cổ',
       qd: 'Xếp hạng Quốc gia · 1989',
-      bts: 'Tốt · khu du lịch quốc gia đang khai thác',
+      bts: 'Tốt · khu du lịch đang khai thác',
       tl: '212 ảnh · video flycam 4K đỉnh núi',
-      sk: 'Hội xuân núi Bà (tháng Giêng) · Vía Bà Linh Sơn Thánh Mẫu (5-6/5 ÂL)',
+      sk: 'Hội xuân (tháng Giêng) · lễ hội truyền thống (5-6/5 ÂL)',
     },
     {
-      ten: 'Tháp cổ Bình Thạnh',
-      sub: 'Trảng Bàng · cách phường ~40km',
+      ten: 'Tháp cổ ven sông',
+      sub: 'Ngoài địa bàn · cách phường ~40km',
       xh: ['Quốc gia', 'pur'],
       bt: ['Trung bình', 'yel'],
       so: ['QR', 'blue'],
@@ -508,16 +491,16 @@ export const D: DuLieuGdos = {
       tour: false,
       kw: 'temple',
       yt: null,
-      wikis: ['vi|Tháp Bình Thạnh', 'vi|Tháp cổ Bình Thạnh'],
-      pl: 'Kiến trúc cổ văn hóa Óc Eo hơn 1.200 năm bên sông Vàm Cỏ Đông',
+      noimg: true,
+      pl: 'Kiến trúc cổ hơn 1.200 năm bên sông',
       qd: 'Xếp hạng Quốc gia · 1993',
       bts: 'Trung bình · đã trùng tu, cần chống thấm thân tháp',
       tl: '96 ảnh · hồ sơ khảo cổ số hóa',
-      sk: 'Đề xuất tour kết nối tuyến sông Vàm Cỏ Đông',
+      sk: 'Đề xuất tour kết nối tuyến đường sông',
     },
     {
-      ten: 'Đình Hiệp Ninh',
-      sub: 'TP Tây Ninh · cách phường ~5km',
+      ten: 'Đình làng Mẫu',
+      sub: 'Phường lân cận · cách phường ~5km',
       xh: ['Quốc gia', 'pur'],
       bt: ['Tốt', 'green'],
       so: ['QR', 'blue'],
@@ -528,15 +511,15 @@ export const D: DuLieuGdos = {
       tour: false,
       kw: 'temple',
       yt: null,
-      wikis: ['vi|Đình Hiệp Ninh'],
-      pl: 'Kiến trúc nghệ thuật đình làng Nam Bộ',
+      noimg: true,
+      pl: 'Kiến trúc nghệ thuật đình làng',
       qd: 'Di tích cấp Quốc gia',
       bts: 'Tốt · trùng tu 2019',
       tl: '84 ảnh · sắc phong số hóa',
       sk: 'Lễ Kỳ yên (16-18/3 âm lịch)',
     },
     {
-      ten: 'Đình Bình Minh',
+      ten: 'Đình khu phố 1',
       sub: 'Khu phố 1 · trong phường',
       xh: ['Kiểm kê phường', 'blue'],
       bt: ['Khá', 'blue'],
@@ -569,7 +552,7 @@ export const D: DuLieuGdos = {
       kw: 'shrine',
       yt: null,
       noimg: true,
-      pl: 'Tín ngưỡng dân gian gắn với vùng trồng mãng cầu',
+      pl: 'Tín ngưỡng dân gian gắn với vùng trồng cây ăn quả',
       qd: 'Danh mục kiểm kê di tích cấp phường',
       bts: 'Trung bình · vận động xã hội hóa tu sửa',
       tl: 'Hồ sơ kiểm kê sơ bộ',
@@ -599,13 +582,13 @@ export const D: DuLieuGdos = {
   sonha: {
     tuyen: [
       [
-        'ĐT.784 (qua khu phố 1)',
+        'ĐT.01 (qua khu phố 1)',
         'Đường tỉnh',
         486,
         486,
         'Hoàn thành',
         'green',
-        'Số chẵn/lẻ 2 bên, gốc từ giáp P. Ninh Sơn',
+        'Số chẵn/lẻ 2 bên, gốc từ giáp phường lân cận',
       ],
       [
         'Đường khu phố 1',
@@ -618,7 +601,7 @@ export const D: DuLieuGdos = {
       ],
       ['Đường khu phố 2', 'Đường khu phố', 328, 246, 'Đang gắn', 'yel', 'Thiếu biển đoạn cuối giáp kênh'],
       [
-        'Đường Giồng Cà — vùng mãng cầu',
+        'Đường khu phố 3 — vùng cây ăn quả',
         'Đường khu phố',
         364,
         164,
@@ -681,7 +664,7 @@ export const D: DuLieuGdos = {
         ngay: '28/01/2026',
         qr: 1,
         gcn: 'CS 07731',
-        ghi: 'Kèm hộ kinh doanh sơ chế mãng cầu',
+        ghi: 'Kèm hộ kinh doanh sơ chế nông sản',
       },
       {
         sn: '09',
@@ -696,7 +679,7 @@ export const D: DuLieuGdos = {
       },
       {
         sn: '41',
-        tuyen: 'Đường Giồng Cà — vùng mãng cầu',
+        tuyen: 'Đường khu phố 3 — vùng cây ăn quả',
         cs: 'Nguyễn Thị Hoa',
         nk: 4,
         st: ['Đã gắn biển', 'green'],
@@ -707,7 +690,7 @@ export const D: DuLieuGdos = {
       },
       {
         sn: '43',
-        tuyen: 'Đường Giồng Cà — vùng mãng cầu',
+        tuyen: 'Đường khu phố 3 — vùng cây ăn quả',
         cs: 'Trần Văn Hùng',
         nk: 5,
         st: ['Chưa cấp số', 'red'],
@@ -730,12 +713,12 @@ export const D: DuLieuGdos = {
     ],
   },
   apscore: [
-    ['Khu phố 1 (Bình Trung)', '2.940 hộ', 95, 92, 90, 94, 96, '93,4', ['Đạt chuẩn', 'green']],
-    ['Khu phố 2 (Bình Phong)', '2.660 hộ', 92, 94, 88, 90, 92, '91,2', ['Đạt chuẩn', 'green']],
-    ['Khu phố 3 (Giồng Cà)', '2.520 hộ', 90, 92, 84, 88, 89, '88,6', ['Sắp đạt', 'yel']],
-    ['Khu phố 4 (Bình Lợi)', '2.240 hộ', 86, 88, 78, 84, 85, '84,2', ['Sắp đạt', 'yel']],
-    ['Khu phố 5 (Bình Hòa)', '2.100 hộ', 80, 84, 70, 78, 80, '78,4', ['Đang XD', 'blue']],
-    ['Khu phố 6 (Bình An)', '1.960 hộ', 74, 78, 62, 70, 71, '71,0', ['Đang XD', 'blue']],
+    ['Khu phố 1', '2.940 hộ', 95, 92, 90, 94, 96, '93,4', ['Đạt chuẩn', 'green']],
+    ['Khu phố 2', '2.660 hộ', 92, 94, 88, 90, 92, '91,2', ['Đạt chuẩn', 'green']],
+    ['Khu phố 3', '2.520 hộ', 90, 92, 84, 88, 89, '88,6', ['Sắp đạt', 'yel']],
+    ['Khu phố 4', '2.240 hộ', 86, 88, 78, 84, 85, '84,2', ['Sắp đạt', 'yel']],
+    ['Khu phố 5', '2.100 hộ', 80, 84, 70, 78, 80, '78,4', ['Đang XD', 'blue']],
+    ['Khu phố 6', '1.960 hộ', 74, 78, 62, 70, 71, '71,0', ['Đang XD', 'blue']],
   ],
 }
 
@@ -749,15 +732,15 @@ export const demSidebar = {
 
 /**
  * Thông tin đơn vị trên thanh trên cùng.
- * Chủ dự án yêu cầu đổi tên đơn vị thành "UBND xã phường" (bản gốc ghi
- * "UBND Phường Bình Minh") — đây là chỗ lệch có chủ ý, không phải sai sót port.
+ * Chủ dự án yêu cầu đổi tên đơn vị thành "UBND xã phường" (bản gốc ghi tên một
+ * phường cụ thể) — đây là chỗ lệch có chủ ý, không phải sai sót port.
  */
 export const DON_VI = {
   ten: 'UBND xã phường',
   nenTang: 'Nền tảng GDOS',
-  tenDayDu: 'UBND xã phường — Tỉnh Tây Ninh',
+  tenDayDu: 'UBND xã phường',
   /** Dải hero màn Tổng quan — cùng nguồn tên đơn vị để không lệch nhau. */
-  heroTieuDe: 'ĐIỀU HÀNH THÔNG MINH XÃ PHƯỜNG · TỈNH TÂY NINH',
+  heroTieuDe: 'ĐIỀU HÀNH THÔNG MINH XÃ PHƯỜNG',
   /** Tên cơ quan viết hoa — dùng cho thể thức văn bản NĐ 30 và biển số nhà. */
   tenVietHoa: 'XÃ PHƯỜNG',
   moTa: 'Chính quyền 2 cấp · 6 khu phố · Dân số 55.010',

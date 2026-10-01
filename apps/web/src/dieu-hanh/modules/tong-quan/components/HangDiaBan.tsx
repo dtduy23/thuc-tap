@@ -36,7 +36,7 @@ export function HangDiaBan({ di }: { di: (moduleId: string) => void }) {
           className="mt-[7px] text-left text-[0.7rem] text-chu-phu"
         >
           Lũy kế thu <b className="text-ink">43,5 tỷ</b> (74% KH) · Hộ KD mới <b className="text-ink">748</b>{' '}
-          <Trend d={5} /> · Mãng cầu <b className="text-ink">150 ha</b> <Trend d={2} /> — mở chi tiết →
+          <Trend d={5} /> · Cây ăn quả <b className="text-ink">150 ha</b> <Trend d={2} /> — mở chi tiết →
         </button>
       </SectionCard>
 
@@ -56,7 +56,7 @@ export function HangDiaBan({ di }: { di: (moduleId: string) => void }) {
       </SectionCard>
 
       <SectionCard
-        tieuDe="Bản đồ số phường Bình Minh"
+        tieuDe="Bản đồ số phường Mẫu"
         phu={
           <button
             type="button"

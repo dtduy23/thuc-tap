@@ -180,7 +180,7 @@ describe('ngưỡng cảnh báo và trang mặc định theo vai', () => {
 
   it('trang đầu chỉ nhận mã chức năng có trong cây; quản trị cấp xã không sửa được', async () => {
     const { agent } = await dangNhap('quantri.tinh')
-    const td = { LANH_DAO: 'dh-tong-quan', CHUYEN_VIEN: 'da-cua-toi', THANH_TRA: '', QUAN_TRI: 'tk-ds' }
+    const td = { LANH_DAO: 'dh-bang-dieu-hanh', CHUYEN_VIEN: 'da-cua-toi', THANH_TRA: '', QUAN_TRI: 'tk-ds' }
     const ok = await agent.put('/api/cau-hinh/trang-dau').set(GHI).send(td)
     expect(ok.status).toBe(200)
     expect((ok.body as CauHinhHeThong).trangDau).toEqual(td)

@@ -15,7 +15,7 @@ export const THE_DI_TICH: TheSo[] = [
   {
     nhan: 'DI TÍCH & ĐIỂM DTLS',
     giaTri: '8',
-    phu: 'quanh phường · kết nối tour núi Bà',
+    phu: 'quanh phường · kết nối tour danh thắng',
     mau: 'var(--brand)',
     drill: {
       ten: 'Di tích & điểm DTLS',
@@ -29,7 +29,7 @@ export const THE_DI_TICH: TheSo[] = [
   {
     nhan: 'XẾP HẠNG QUỐC GIA',
     giaTri: '5',
-    phu: '1 Quốc gia đặc biệt (TW Cục)',
+    phu: '1 Quốc gia đặc biệt (căn cứ KC)',
     mau: 'var(--gdos-accent)',
     drill: {
       ten: 'Di tích xếp hạng Quốc gia',
@@ -66,10 +66,10 @@ export const TONG_DIEM = '8'
 
 /** Bar "Lượt quét QR thuyết minh theo điểm · 30 ngày". */
 export const QUET_THEO_DIEM: MucChart[] = [
-  ['Núi Bà Đen', 3240, '#1B66E0'],
-  ['Tòa Thánh', 2410, '#7C3AED'],
-  ['TW Cục MN', 1180, '#E5484D'],
-  ['Đình H.Ninh', 620, '#0E9488'],
+  ['Danh thắng', 3240, '#1B66E0'],
+  ['Chùa cổ', 2410, '#7C3AED'],
+  ['Căn cứ KC', 1180, '#E5484D'],
+  ['Đình làng', 620, '#0E9488'],
 ]
 
 export const DRILL_SO_HOA: ChiTieuDrill = {

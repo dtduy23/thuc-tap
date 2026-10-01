@@ -23,7 +23,7 @@ export interface Thua {
   cid: string
   /** Chỉ số vào `D.parcels` — bản gốc: num % 4. */
   pIdx: number
-  /** 'cln' = đất trồng cây lâu năm (mãng cầu), 'ont' = đất ở. */
+  /** 'cln' = đất trồng cây lâu năm (cây ăn quả), 'ont' = đất ở. */
   loai: 'ont' | 'cln'
   pts: Diem[]
   /** Bản gốc hiện tooltip thường trực khi R() > 0.74. */
@@ -108,7 +108,7 @@ export function sinhToBanDo(): ToBanDo {
     },
     {
       ll: [latDuong(LNG0 + 0.0015) + 0.00125, LNG0 + 0.0015],
-      chu: 'CLN — MÃNG CẦU',
+      chu: 'CLN — CÂY ĂN QUẢ',
       co: 20,
       mau: 'rgba(20,90,40,.55)',
       xoay: 0,
@@ -122,7 +122,7 @@ export function sinhToBanDo(): ToBanDo {
     },
     {
       ll: [latDuong(LNG0 + 0.0012) + 0.00001, LNG0 + 0.0012],
-      chu: 'ĐG. ẤP BÌNH TRUNG',
+      chu: 'ĐG. KHU PHỐ 1',
       co: 13,
       mau: 'rgba(122,80,10,.9)',
       xoay: -3,
@@ -183,7 +183,7 @@ export function sinhToBanDo(): ToBanDo {
     l += w
   }
 
-  // Dải vườn mãng cầu phía bắc
+  // Dải vườn cây ăn quả phía bắc
   l = LNG0 - 0.0004
   while (l < LNG0 + 0.003) {
     const w = 0.0008 + R() * 0.0007

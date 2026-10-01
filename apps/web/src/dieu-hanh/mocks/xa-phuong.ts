@@ -844,7 +844,7 @@ export const KTXH_CHU_THE: CotBieuDo[] = [
   { label: 'Hợp tác xã', value: 2, color: 'var(--bd-7)' },
 ]
 
-export const KTXH_SAN_PHAM = ['Ếch sấy khô 1 nắng', 'Ngó lục bình chua ngọt']
+export const KTXH_SAN_PHAM = ['Sản phẩm OCOP A', 'Sản phẩm OCOP B']
 
 export const KTXH_MA_VUNG: DongKv[] = [{ k: 'Mã vùng trồng (KT-10)', v: 'Chưa có', nhan: 'na' }]
 
@@ -901,7 +901,7 @@ export const ANTT_MAT_DO: DongKv[] = [
 
 export const ANTT_NGUON: DongKv[] = [
   { k: 'Đầu mối', v: 'Công an xã', nhe: true },
-  { k: 'Cán bộ', v: 'Huỳnh Quốc Nhanh', nhe: true },
+  { k: 'Cán bộ', v: '—', nhe: true },
   { k: 'Cập nhật', v: 'Theo tháng', nhe: true },
   { k: 'Dữ liệu', v: 'Có – đầy đủ', nhan: 'ok' },
 ]
@@ -1013,5 +1013,5 @@ export const PAKN_QUY_TRINH: [string, string][] = [
   ['Nguồn dữ liệu', 'Sổ tiếp công dân'],
   ['Tần suất cập nhật', 'Theo ngày'],
   ['Phòng ban đầu mối', 'Văn phòng HĐND-UBND'],
-  ['Cán bộ phụ trách', 'Lê Thị Trung Thu – Chuyên viên'],
+  ['Cán bộ phụ trách', 'Chuyên viên Văn phòng'],
 ]

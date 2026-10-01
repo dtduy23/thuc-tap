@@ -59,7 +59,7 @@ export default function DiTich() {
             </NutPhu>
             <NutChinh
               onPress={() =>
-                toast('AI đã soạn dự thảo tờ trình chống thấm Tháp cổ Bình Thạnh — chuyển Văn phòng rà soát')
+                toast('AI đã soạn dự thảo tờ trình chống thấm Tháp cổ ven sông — chuyển Văn phòng rà soát')
               }
             >
               ✦ AI soạn tờ trình tu bổ

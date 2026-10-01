@@ -24,86 +24,57 @@ const NHOM_BAO_CAO_DU_AN = [
 export const DANH_SACH_MODULE: readonly ModuleDef[] = [
   // ══ TẦNG 1 · NGHIỆP VỤ ═════════════════════════════════════════════════
 
-  // ── Điều hành — đọc tổng hợp nhiều hồ sơ, không sửa gì ─────────────────
+  // ── Điều hành — nắm tình hình; việc có hồ sơ, có hạn xử lý nằm ở Tác nghiệp ──
   //
-  // Bốn module đầu GIỮ ĐÚNG MENU của GDOS cũ (màn chép nguyên sang, apps/web/src/dieu-hanh):
-  //   Tổng quan điều hành  = nhóm "ĐIỀU HÀNH"
-  //   Dashboard xã/phường  = bộ 8 dashboard theo bộ chỉ tiêu đã thông qua
-  //   Quản lý địa bàn      = nhóm "QUẢN LÝ ĐỊA BÀN"
-  //   Phân hệ mở rộng      = nhóm "PHÂN HỆ MỞ RỘNG"
-  // "Nhiệm vụ được giao" và "Văn bản đến" của menu cũ đã là phân hệ thật ở Tác nghiệp.
-  // Hai module sau là của hệ thống mới: số do các nghiệp vụ đóng góp (ADR-0007) và biểu báo cáo.
+  // Bốn module theo BỐN CÂU HỎI của người điều hành, đi từ chung tới riêng:
+  //   1. Tổng quan          — "Hôm nay tình hình chung thế nào?"
+  //   2. Theo lĩnh vực      — "Từng lĩnh vực ra sao?"
+  //   3. Theo dõi thực hiện — "Việc đang chạy thế nào, ai làm tốt?"
+  //   4. Báo cáo            — "Cho tôi biểu để nộp, để xuất."
+  // MỖI CHỦ ĐỀ MỘT CHỖ trên menu. Các góc nhìn của cùng chủ đề (chỉ tiêu · chi tiết · chấm
+  // điểm) là thẻ TRONG trang (web: man/gop-man.tsx), không lên menu.
   {
     id: 'tong-quan',
-    nhan: 'Tổng quan điều hành',
+    nhan: 'Tổng quan',
     nhom: 'dieu-hanh',
     maQuyen: 'TONG_QUAN',
     nguon: 'db',
-    mo: 'Màn tổng quan điều hành, hồ sơ thủ tục hành chính và phản ánh kiến nghị — như GDOS trước đây.',
+    mo: 'Một chỗ nhìn hết: bảng điều hành chung và bộ KPI. Trong trang có các thẻ góc nhìn.',
     con: [
-      { id: 'dh-tong-quan', nhan: 'Tổng quan' },
-      { id: 'dh-ho-so-tthc', nhan: 'Hồ sơ TTHC' },
-      { id: 'dh-phan-anh', nhan: 'Phản ánh kiến nghị' },
+      { id: 'dh-bang-dieu-hanh', nhan: 'Bảng điều hành' },
+      { id: 'dh-kpi', nhan: 'KPI điều hành' },
     ],
   },
   {
     id: 'chi-tieu',
-    nhan: 'Dashboard xã/phường',
+    nhan: 'Theo lĩnh vực',
     nhom: 'dieu-hanh',
     maQuyen: 'CHI_TIEU',
     nguon: 'db',
-    mo: 'Tám dashboard theo bộ chỉ tiêu cấp xã/phường đã thông qua. Chỉ tiêu nào có số thật (phân hệ đã xây, hoặc nạp qua API / Excel ở Nguồn dữ liệu vào) thì hiện số thật kèm nguồn; còn lại là số mẫu.',
+    mo: 'Mỗi lĩnh vực quản lý một mục: chỉ tiêu theo bộ đã thông qua, kèm bản đồ / danh sách chi tiết nếu lĩnh vực đó có. Chỉ tiêu nào có số thật (phân hệ đã xây, hoặc nạp qua API / Excel) thì hiện số thật kèm nguồn; còn lại là số mẫu.',
     con: [
-      { id: 'dh-dashboard-tong-quan', nhan: 'Dashboard tổng quan' },
-      { id: 'dh-bo-chi-so-kpi', nhan: 'Bộ chỉ số KPI' },
       { id: 'dh-tthc-mot-cua', nhan: 'TTHC – Một cửa' },
+      { id: 'dh-phan-anh-kien-nghi', nhan: 'Phản ánh – Kiến nghị' },
       { id: 'dh-kinh-te-dan-cu-xa-hoi', nhan: 'Kinh tế – Dân cư – Xã hội' },
+      { id: 'dh-nong-nghiep', nhan: 'Nông nghiệp số' },
       { id: 'dh-an-ninh-trat-tu', nhan: 'An ninh – Trật tự' },
       { id: 'dh-ha-tang-do-thi', nhan: 'Hạ tầng – Đô thị' },
+      { id: 'dh-dat-dai', nhan: 'Đất đai' },
       { id: 'dh-y-te-giao-duc', nhan: 'Y tế – Giáo dục' },
-      { id: 'dh-phan-anh-kien-nghi', nhan: 'Phản ánh – Kiến nghị' },
-    ],
-  },
-  {
-    id: 'quan-ly-dia-ban',
-    nhan: 'Quản lý địa bàn',
-    nhom: 'dieu-hanh',
-    maQuyen: 'DIA_BAN',
-    nguon: 'db',
-    mo: 'Chỉ tiêu kinh tế – xã hội, bộ chỉ số điều hành và trình thiết kế dashboard — như GDOS trước đây.',
-    con: [
-      { id: 'dh-chi-tieu-ktxh', nhan: 'Chỉ tiêu Kinh tế - Xã hội' },
-      { id: 'dh-bo-chi-so', nhan: 'Bộ chỉ số điều hành' },
-      { id: 'dh-thiet-ke-dashboard', nhan: 'Thiết kế Dashboard' },
-    ],
-  },
-  {
-    id: 'phan-he-mo-rong',
-    nhan: 'Phân hệ mở rộng',
-    nhom: 'dieu-hanh',
-    maQuyen: 'MO_RONG',
-    nguon: 'db',
-    mo: 'Đất đai, nông nghiệp số, giáo dục & y tế, di tích, khu phố thông minh — như GDOS trước đây.',
-    con: [
-      { id: 'dh-dat-dai', nhan: 'Quản lý đất đai' },
-      { id: 'dh-nong-nghiep', nhan: 'Nông nghiệp số' },
-      { id: 'dh-giao-duc-y-te', nhan: 'Giáo dục & Y tế' },
       { id: 'dh-di-tich', nhan: 'Di tích & Địa chỉ đỏ' },
       { id: 'dh-khu-pho-thong-minh', nhan: 'Khu phố thông minh' },
     ],
   },
   {
     id: 'bo-chi-so',
-    nhan: 'Tình hình nghiệp vụ',
+    nhan: 'Theo dõi thực hiện',
     nhom: 'dieu-hanh',
     maQuyen: 'BO_CHI_SO',
     nguon: 'db',
-    mo: 'Số liệu do các nghiệp vụ đóng góp (hiện có Dự án): tiến độ, cảnh báo, giải ngân theo từng góc nhìn; chấm điểm 100 (đúng hạn 40 · độ trễ 25 · điều chỉnh kế hoạch 15 · giải ngân 20 → A/B/C/D) và xếp hạng đơn vị.',
+    mo: 'Số liệu do các nghiệp vụ đóng góp (hiện có Dự án): tiến độ, cảnh báo, giải ngân theo đơn vị và theo lĩnh vực; xếp hạng đơn vị theo điểm thực hiện.',
     con: [
-      { id: 'tq-toan', nhan: 'Toàn cảnh' },
       { id: 'tq-don-vi', nhan: 'Theo đơn vị' },
       { id: 'tq-lv', nhan: 'Theo lĩnh vực' },
-      { id: 'bcs-tat-ca', nhan: 'Chấm điểm thực hiện' },
       { id: 'bcs-xep-hang', nhan: 'Xếp hạng đơn vị' },
     ],
   },
@@ -248,18 +219,27 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     ],
   },
   {
+    id: 'ho-so-tthc',
+    nhan: 'Hồ sơ TTHC',
+    nhom: 'tac-nghiep',
+    maQuyen: 'HO_SO_TTHC',
+    nguon: 'db',
+    mo: 'Danh sách hồ sơ thủ tục hành chính đang xử lý (màn của GDOS trước đây, đang chạy dữ liệu mẫu). Số tổng hợp xem ở Điều hành › Theo lĩnh vực › TTHC – Một cửa.',
+    con: [{ id: 'dh-ho-so-tthc', nhan: 'Hồ sơ đang xử lý' }],
+  },
+  {
     id: 'don-thu',
-    nhan: 'Đơn thư — Khiếu nại',
+    nhan: 'Phản ánh – Kiến nghị – Đơn thư',
     nhom: 'tac-nghiep',
     maQuyen: 'DON_THU',
     nguon: 'db',
-    phac: true,
-    mo: 'Cấp 4 xếp theo HÀNH TRÌNH của một lá đơn, không đẻ nhóm "giai đoạn".',
+    mo: 'Phản ánh, kiến nghị của người dân và đơn thư khiếu nại. Cấp 4 của đơn thư xếp theo HÀNH TRÌNH của một lá đơn, không đẻ nhóm "giai đoạn".',
     con: [
-      { id: 'dt-tiep-nhan', nhan: 'Tiếp nhận — chờ thụ lý' },
-      { id: 'dt-thu-ly', nhan: 'Đang thụ lý, xác minh' },
-      { id: 'dt-giai-quyet', nhan: 'Đang giải quyết' },
-      { id: 'dt-xong', nhan: 'Đã giải quyết' },
+      { id: 'dh-phan-anh', nhan: 'Phản ánh kiến nghị' },
+      { id: 'dt-tiep-nhan', nhan: 'Đơn thư: chờ thụ lý', phac: true },
+      { id: 'dt-thu-ly', nhan: 'Đơn thư: đang xác minh', phac: true },
+      { id: 'dt-giai-quyet', nhan: 'Đơn thư: đang giải quyết', phac: true },
+      { id: 'dt-xong', nhan: 'Đơn thư: đã giải quyết', phac: true },
     ],
   },
   {
@@ -474,6 +454,7 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     con: [
       { id: 'ch-nhan-dien', nhan: 'Tên & nhận diện' },
       { id: 'ht-trang-dau', nhan: 'Trang mặc định theo vai' },
+      { id: 'dh-thiet-ke-dashboard', nhan: 'Thiết kế Dashboard' },
     ],
   },
   {

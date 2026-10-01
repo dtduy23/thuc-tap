@@ -3,7 +3,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { truyVanChiSo } from '@/lib/xuyen-suot'
 import { CacKhoiSoLieu } from './khoi-so-lieu'
 
-/** Điều hành › Tình hình nghiệp vụ — chấm điểm thực hiện và xếp hạng do các nghiệp vụ góp (ADR-0007). */
+/** Điều hành › KPI điều hành (thẻ Chấm điểm dự án) và Theo dõi thực hiện — chấm điểm thực hiện và xếp hạng do các nghiệp vụ góp (ADR-0007). */
 function ChiSo({ loai }: { loai: LoaiChiSo }) {
   const { data } = useSuspenseQuery(truyVanChiSo(loai))
   return <CacKhoiSoLieu ds={data} trong="Chưa có chỉ số nào trong phạm vi của bạn." />

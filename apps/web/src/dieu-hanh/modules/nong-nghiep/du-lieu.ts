@@ -17,12 +17,12 @@ export const THE_TRUY_XUAT: TheSo[] = [
   {
     nhan: 'MÃ VÙNG TRỒNG',
     giaTri: '8',
-    phu: 'đã cấp QR · mãng cầu chủ lực',
+    phu: 'đã cấp QR · cây ăn quả chủ lực',
     mau: 'var(--brand)',
     drill: {
       ten: 'Mã vùng trồng đã cấp',
       val: 8,
-      sub: 'mã QR đang vận hành · mãng cầu Bà Đen',
+      sub: 'mã QR đang vận hành · cây ăn quả',
       pct: 100,
       mod: 'nongnghiep',
       dv: 'Kinh tế - Nông nghiệp',
@@ -31,12 +31,12 @@ export const THE_TRUY_XUAT: TheSo[] = [
   {
     nhan: 'DIỆN TÍCH',
     giaTri: '238 ha',
-    phu: 'mãng cầu · lúa · rau',
+    phu: 'cây ăn quả · lúa · rau',
     mau: 'var(--ok)',
     drill: {
       ten: 'Diện tích truy xuất',
       val: 238,
-      sub: 'ha · mãng cầu, lúa, rau',
+      sub: 'ha · cây ăn quả, lúa, rau',
       pct: 91,
       mod: 'nongnghiep',
       dv: 'Kinh tế - Nông nghiệp',
@@ -74,8 +74,8 @@ export const THE_TRUY_XUAT: TheSo[] = [
 
 /** Bar "Diện tích theo vùng trồng (ha)". */
 export const DIEN_TICH_VUNG: MucChart[] = [
-  ['M.cầu BĐ', 86, '#12A150'],
-  ['M.cầu VGAP', 64, '#0E9488'],
+  ['Cây ăn quả', 86, '#12A150'],
+  ['CĂQ VGAP', 64, '#0E9488'],
   ['Lúa ST25', 42, '#1B66E0'],
   ['Nhãn', 18, '#D97E06'],
   ['Rau AT', 12, '#7C3AED'],
@@ -95,7 +95,7 @@ export const DRILL_QUET_QR: ChiTieuDrill = {
 
 /** Donut "Cơ cấu nhóm cây (ha)". */
 export const CO_CAU_CAY: MucChart[] = [
-  ['Mãng cầu', 150, '#12A150'],
+  ['Cây ăn quả', 150, '#12A150'],
   ['Lúa', 42, '#1B66E0'],
   ['Rau màu', 12, '#0E9488'],
   ['Khác', 34, '#5A6B7F'],

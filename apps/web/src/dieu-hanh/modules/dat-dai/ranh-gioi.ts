@@ -1,5 +1,5 @@
-/** Ranh giới phường Bình Minh — RANH_TN của bản gốc (dòng 2227), 72 đỉnh. */
-export const RANH_TN: [number, number][] = [
+/** Ranh giới đơn vị — port từ bản gốc (dòng 2227), 72 đỉnh. */
+export const RANH_GIOI: [number, number][] = [
   [11.345, 106.2112],
   [11.3494, 106.209],
   [11.3533, 106.2055],
@@ -75,32 +75,32 @@ export const RANH_TN: [number, number][] = [
 ]
 
 /**
- * Tên đơn vị hiển thị trên bản đồ địa giới — đơn vị mà ranh giới `RANH_TN` thuộc
- * về. Đổi theo yêu cầu chủ dự án (bản gốc ghi "Phường Bình Minh"); các nhãn đơn vị
- * **giáp ranh** trong `GIAP_RANH` là địa danh thật nên giữ nguyên.
+ * Tên đơn vị hiển thị trên bản đồ địa giới — đơn vị mà ranh giới `RANH_GIOI` thuộc
+ * về. Đổi theo yêu cầu chủ dự án (bản gốc ghi tên một phường cụ thể); các nhãn đơn
+ * vị **giáp ranh** trong `GIAP_RANH` cũng đã đổi sang tên mẫu.
  */
 export const TEN_DON_VI = 'Xã phường'
 
-/** Tâm bản đồ: chân núi Bà Đen. */
+/** Tâm bản đồ của bản gốc. */
 export const CTR: [number, number] = [11.336, 106.128]
 
-/** 6 mốc địa giới — bản gốc lấy đỉnh 0,12,24,36,48,60 của RANH_TN. */
+/** 6 mốc địa giới — bản gốc lấy đỉnh 0,12,24,36,48,60 của RANH_GIOI. */
 export const CHI_SO_MOC = [0, 12, 24, 36, 48, 60]
-export const VI_TRI_MOC: [number, number][] = CHI_SO_MOC.map((i) => RANH_TN[i]!)
+export const VI_TRI_MOC: [number, number][] = CHI_SO_MOC.map((i) => RANH_GIOI[i]!)
 
 /** Ranh đơn vị hành chính cũ — 3 đường nét gãy, bật/tắt bằng ô "Hiện ranh cũ". */
 export const RANH_CU: [number, number][][] = [
-  [RANH_TN[66]!, [11.356, 106.131], [11.3395, 106.142], RANH_TN[27]!],
-  [[11.356, 106.131], [11.362, 106.172], RANH_TN[13]!],
-  [[11.3395, 106.142], [11.314, 106.152], RANH_TN[21]!],
+  [RANH_GIOI[66]!, [11.356, 106.131], [11.3395, 106.142], RANH_GIOI[27]!],
+  [[11.356, 106.131], [11.362, 106.172], RANH_GIOI[13]!],
+  [[11.3395, 106.142], [11.314, 106.152], RANH_GIOI[21]!],
 ]
 
 /** Nhãn các đơn vị giáp ranh. */
 export const GIAP_RANH: { ten: string; ll: [number, number] }[] = [
-  { ten: 'P. Tân Ninh', ll: [11.326, 106.079] },
-  { ten: 'P. Ninh Thạnh', ll: [11.293, 106.13] },
-  { ten: 'X. Suối Đá', ll: [11.34, 106.216] },
-  { ten: 'X. Tân Châu', ll: [11.399, 106.112] },
+  { ten: 'Phường A', ll: [11.326, 106.079] },
+  { ten: 'Phường B', ll: [11.293, 106.13] },
+  { ten: 'Xã C', ll: [11.34, 106.216] },
+  { ten: 'Xã D', ll: [11.399, 106.112] },
 ]
 
 /** Nhãn 3 khu phố trên bản đồ địa giới. */

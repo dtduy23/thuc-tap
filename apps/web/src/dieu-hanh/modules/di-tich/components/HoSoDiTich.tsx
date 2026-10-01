@@ -46,7 +46,7 @@ export function HoSoDiTich({ diTich: p, moAnh, moTour, moVideo }: Props) {
         >
           {!p.imgs?.length && (
             <span className="absolute bottom-2 left-2 rounded bg-black/55 px-2 py-0.5 text-[0.66rem] text-white">
-              Đang tải ảnh di tích…
+              Ảnh minh họa · chưa có ảnh tư liệu
             </span>
           )}
         </div>
@@ -88,7 +88,7 @@ export function HoSoDiTich({ diTich: p, moAnh, moTour, moVideo }: Props) {
           )}
 
           <a
-            href={`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`${p.ten} Tây Ninh`)}`}
+            href={`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(p.ten)}`}
             target="_blank"
             rel="noopener"
             className="rounded-3xl border border-line px-4 py-2 text-center text-[0.78rem] font-semibold text-ink no-underline hover:bg-row-hover"
@@ -109,8 +109,7 @@ export function HoSoDiTich({ diTich: p, moAnh, moTour, moVideo }: Props) {
       </div>
 
       <div className="mb-1.5 mt-3.5 text-[0.68rem] text-faint">
-        ẢNH TƯ LIỆU · bấm để phóng to · nguồn: báo chí/Wikimedia — thay ảnh chính thức của địa phương khi
-        triển khai
+        ẢNH TƯ LIỆU · bấm để phóng to · ảnh minh họa — thay ảnh chính thức của địa phương khi triển khai
       </div>
       <div className="grid grid-cols-4 gap-2">
         {anhTuLieu.map((a, k) => (

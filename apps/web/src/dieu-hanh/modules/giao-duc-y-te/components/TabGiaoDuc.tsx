@@ -24,11 +24,7 @@ interface Props {
 /** Tab 0 — "Giáo dục". */
 export function TabGiaoDuc({ moDrill, moTruong }: Props) {
   // Bản gốc: cột đỏ cam khi sĩ số > 34 (chuẩn ≤ 35)
-  const cotSiSo: MucChart[] = D.truong.map((t) => [
-    t.ten.replace(' Bình Minh', ''),
-    t.ss,
-    t.ss > 34 ? '#D97E06' : '#12A150',
-  ])
+  const cotSiSo: MucChart[] = D.truong.map((t) => [t.cap, t.ss, t.ss > 34 ? '#D97E06' : '#12A150'])
 
   return (
     <>

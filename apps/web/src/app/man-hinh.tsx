@@ -1,5 +1,6 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from 'react'
 import { manCu } from '@/man/dieu-hanh-cu'
+import { gopMan } from '@/man/gop-man'
 
 /**
  * Chức năng cấp 4 → màn hình. Tách bundle theo màn (lazy): người không có quyền
@@ -8,29 +9,71 @@ import { manCu } from '@/man/dieu-hanh-cu'
  * Chức năng nào trong registry cũng phải có màn ở đây, TRỪ màn phác (`phac`) —
  * test man-hinh.test.ts chặn cả hai chiều.
  */
+// Hai màn của hệ thống mới (số do Dự án đóng góp) — hiện thành thẻ trong trang Tổng quan / KPI.
+const TONG_QUAN_DU_AN = lazy(() => import('@/man/tong-quan').then((m) => ({ default: m.TongQuanToanCanh })))
+const CHAM_DIEM_DU_AN = lazy(() => import('@/man/chi-so').then((m) => ({ default: m.TatCaChiSo })))
+
 export const MAN_HINH: Partial<Record<string, LazyExoticComponent<ComponentType>>> = {
-  // Các màn Điều hành chép từ GDOS cũ (apps/web/src/dieu-hanh).
-  'dh-tong-quan': manCu(() => import('@/dieu-hanh/modules/tong-quan')),
-  'dh-ho-so-tthc': manCu(() => import('@/dieu-hanh/modules/ho-so-tthc')),
-  'dh-phan-anh': manCu(() => import('@/dieu-hanh/modules/phan-anh')),
-  'dh-dashboard-tong-quan': manCu(() => import('@/dieu-hanh/modules/dashboard-tong-quan'), { mau: false }),
-  'dh-bo-chi-so-kpi': manCu(() => import('@/dieu-hanh/modules/bo-chi-so-kpi'), { mau: false }),
+  // ── Điều hành — màn chép từ GDOS cũ (apps/web/src/dieu-hanh), sắp theo cây mới: mỗi chủ đề
+  // một mục, các góc nhìn của cùng chủ đề là thẻ trong trang (gopMan).
+  'dh-bang-dieu-hanh': gopMan('bang-dieu-hanh', [
+    { id: 'chung', nhan: 'Tổng quan', Man: manCu(() => import('@/dieu-hanh/modules/tong-quan')) },
+    {
+      id: 'chi-tieu',
+      nhan: 'Bộ chỉ tiêu xã/phường',
+      Man: manCu(() => import('@/dieu-hanh/modules/dashboard-tong-quan'), { mau: false }),
+    },
+    { id: 'du-an', nhan: 'Tình hình dự án', Man: TONG_QUAN_DU_AN },
+  ]),
+  'dh-kpi': gopMan('kpi', [
+    {
+      id: 'cap-tren',
+      nhan: 'KPI cấp trên giao',
+      Man: manCu(() => import('@/dieu-hanh/modules/bo-chi-so-kpi'), { mau: false }),
+    },
+    {
+      id: 'dieu-hanh',
+      nhan: 'Bộ chỉ số điều hành',
+      Man: manCu(() => import('@/dieu-hanh/modules/bo-chi-so')),
+    },
+    { id: 'du-an', nhan: 'Chấm điểm dự án', Man: CHAM_DIEM_DU_AN },
+  ]),
   'dh-tthc-mot-cua': manCu(() => import('@/dieu-hanh/modules/tthc-mot-cua'), { mau: false }),
-  'dh-kinh-te-dan-cu-xa-hoi': manCu(() => import('@/dieu-hanh/modules/kinh-te-dan-cu-xa-hoi'), {
-    mau: false,
-  }),
+  'dh-phan-anh-kien-nghi': manCu(() => import('@/dieu-hanh/modules/phan-anh-kien-nghi'), { mau: false }),
+  'dh-kinh-te-dan-cu-xa-hoi': gopMan('ktxh', [
+    {
+      id: 'dashboard',
+      nhan: 'Dashboard',
+      Man: manCu(() => import('@/dieu-hanh/modules/kinh-te-dan-cu-xa-hoi'), { mau: false }),
+    },
+    {
+      id: 'chi-tieu',
+      nhan: 'Chỉ tiêu kế hoạch năm',
+      Man: manCu(() => import('@/dieu-hanh/modules/chi-tieu-ktxh')),
+    },
+  ]),
+  'dh-nong-nghiep': manCu(() => import('@/dieu-hanh/modules/nong-nghiep')),
   'dh-an-ninh-trat-tu': manCu(() => import('@/dieu-hanh/modules/an-ninh-trat-tu'), { mau: false }),
   'dh-ha-tang-do-thi': manCu(() => import('@/dieu-hanh/modules/ha-tang-do-thi'), { mau: false }),
-  'dh-y-te-giao-duc': manCu(() => import('@/dieu-hanh/modules/y-te-giao-duc'), { mau: false }),
-  'dh-phan-anh-kien-nghi': manCu(() => import('@/dieu-hanh/modules/phan-anh-kien-nghi'), { mau: false }),
-  'dh-chi-tieu-ktxh': manCu(() => import('@/dieu-hanh/modules/chi-tieu-ktxh')),
-  'dh-bo-chi-so': manCu(() => import('@/dieu-hanh/modules/bo-chi-so')),
-  'dh-thiet-ke-dashboard': manCu(() => import('@/dieu-hanh/modules/thiet-ke-dashboard')),
   'dh-dat-dai': manCu(() => import('@/dieu-hanh/modules/dat-dai')),
-  'dh-nong-nghiep': manCu(() => import('@/dieu-hanh/modules/nong-nghiep')),
-  'dh-giao-duc-y-te': manCu(() => import('@/dieu-hanh/modules/giao-duc-y-te')),
+  'dh-y-te-giao-duc': gopMan('yt-gd', [
+    {
+      id: 'chi-tieu',
+      nhan: 'Chỉ tiêu',
+      Man: manCu(() => import('@/dieu-hanh/modules/y-te-giao-duc'), { mau: false }),
+    },
+    {
+      id: 'chi-tiet',
+      nhan: 'Trường học & cơ sở y tế',
+      Man: manCu(() => import('@/dieu-hanh/modules/giao-duc-y-te')),
+    },
+  ]),
   'dh-di-tich': manCu(() => import('@/dieu-hanh/modules/di-tich')),
   'dh-khu-pho-thong-minh': manCu(() => import('@/dieu-hanh/modules/khu-pho-thong-minh')),
+  // Chuyển khỏi Điều hành: danh sách để XỬ LÝ nằm ở Tác nghiệp, công cụ nằm ở Quản trị › Hiển thị.
+  'dh-ho-so-tthc': manCu(() => import('@/dieu-hanh/modules/ho-so-tthc')),
+  'dh-phan-anh': manCu(() => import('@/dieu-hanh/modules/phan-anh')),
+  'dh-thiet-ke-dashboard': manCu(() => import('@/dieu-hanh/modules/thiet-ke-dashboard')),
   'nk-tat-ca': lazy(() => import('@/man/nhat-ky-ds')),
   'nk-ho-so': lazy(() => import('@/man/nhat-ky-theo').then((m) => ({ default: m.NhatKyTheoHoSo }))),
   'nk-nguoi': lazy(() => import('@/man/nhat-ky-theo').then((m) => ({ default: m.NhatKyTheoNguoi }))),
@@ -56,10 +99,8 @@ export const MAN_HINH: Partial<Record<string, LazyExoticComponent<ComponentType>
   'qh-sla': lazy(() => import('@/man/canh-bao').then((m) => ({ default: m.DaQuaHan }))),
   'qh-sap': lazy(() => import('@/man/canh-bao').then((m) => ({ default: m.SapDenHan }))),
   'qh-lau': lazy(() => import('@/man/canh-bao').then((m) => ({ default: m.LauKhongCapNhat }))),
-  'tq-toan': lazy(() => import('@/man/tong-quan').then((m) => ({ default: m.TongQuanToanCanh }))),
   'tq-don-vi': lazy(() => import('@/man/tong-quan').then((m) => ({ default: m.TongQuanDonVi }))),
   'tq-lv': lazy(() => import('@/man/tong-quan').then((m) => ({ default: m.TongQuanLinhVuc }))),
-  'bcs-tat-ca': lazy(() => import('@/man/chi-so').then((m) => ({ default: m.TatCaChiSo }))),
   'bcs-xep-hang': lazy(() => import('@/man/chi-so').then((m) => ({ default: m.XepHangDonVi }))),
   'vb-den': lazy(() => import('@/man/van-ban/den')),
   'vb-tom-tat': lazy(() => import('@/man/van-ban/tom-tat')),

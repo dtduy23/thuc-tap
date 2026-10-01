@@ -91,10 +91,10 @@ export default function NapExcel() {
             Đã nạp {xong.soDong} số liệu từ “{xong.tenNguon}”. Số đã lên{' '}
             <Link
               to="/$chucNang"
-              params={{ chucNang: 'dh-dashboard-tong-quan' }}
+              params={{ chucNang: 'dh-bang-dieu-hanh' }}
               className="font-semibold underline"
             >
-              Tổng quan điều hành
+              Bảng điều hành
             </Link>
             ; xem lại ở{' '}
             <Link to="/$chucNang" params={{ chucNang: 'nd-ket-qua' }} className="font-semibold underline">

@@ -12,7 +12,7 @@ import {
 import { divIcon, latLngBounds } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { LOP_NEN, NEN_BAN_DO } from '@/dieu-hanh/components/map/lop-nen'
-import { GIAP_RANH, TEN_DON_VI, NHAN_KHU_PHO, RANH_CU, RANH_TN, VI_TRI_MOC } from '../ranh-gioi'
+import { GIAP_RANH, TEN_DON_VI, NHAN_KHU_PHO, RANH_CU, RANH_GIOI, VI_TRI_MOC } from '../ranh-gioi'
 
 const icMoc = (i: number) =>
   divIcon({
@@ -41,15 +41,15 @@ const icGiapRanh = (ten: string) =>
 
 const icNui = divIcon({
   className: '',
-  html: '<div style="font-size:12px;font-weight:800;color:#4A5A3A;text-shadow:0 1px 2px #fff">⛰ NÚI BÀ ĐEN (986m)</div>',
+  html: '<div style="font-size:12px;font-weight:800;color:#4A5A3A;text-shadow:0 1px 2px #fff">⛰ KHU DANH THẮNG</div>',
   iconSize: [150, 18],
 })
 
-/** Bản gốc fitBounds(RANH_TN).pad(0.22) khi mở tab lần đầu. */
+/** Bản gốc fitBounds(RANH_GIOI).pad(0.22) khi mở tab lần đầu. */
 function KhopRanh() {
   const map = useMap()
   useEffect(() => {
-    map.fitBounds(latLngBounds(RANH_TN).pad(0.22))
+    map.fitBounds(latLngBounds(RANH_GIOI).pad(0.22))
   }, [map])
   return null
 }
@@ -89,7 +89,7 @@ export default function BanDoDiaGioiInner({ chieuCao, hienRanhCu, mocDangXem }: 
         </LayersControl>
 
         <Polygon
-          positions={RANH_TN}
+          positions={RANH_GIOI}
           pathOptions={{ color: '#E5484D', weight: 3, fillColor: '#F03E3E', fillOpacity: 0.2 }}
         />
 
@@ -133,7 +133,7 @@ export default function BanDoDiaGioiInner({ chieuCao, hienRanhCu, mocDangXem }: 
       {/* .map-chip — nhãn đơn vị hành chính góc dưới trái */}
       <div className="map-chip">
         <span className="mc-org">{TEN_DON_VI}</span>
-        <span className="mc-w">Tỉnh Tây Ninh</span>
+        <span className="mc-w">Địa giới hành chính</span>
       </div>
     </div>
   )

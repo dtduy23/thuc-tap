@@ -63,7 +63,7 @@ export class XuyenSuotController {
 
   /** Điều hành › Tổng quan — mỗi nghiệp vụ góp một khối số liệu. */
   @Get('tong-quan')
-  // Các góc nhìn này nằm trong module Tình hình nghiệp vụ (BO_CHI_SO); giữ TONG_QUAN cho phân công cũ.
+  // Các góc nhìn này nằm trong module Theo dõi thực hiện (BO_CHI_SO) và thẻ "Tình hình dự án" của Bảng điều hành; giữ TONG_QUAN cho phân công cũ.
   @CanMotTrongQuyen('BO_CHI_SO.READ', 'TONG_QUAN.READ')
   async tongQuan(@NguoiDung() nd: NguoiDungPhien, @Query('theo') theo?: string): Promise<KhoiSoLieu[]> {
     if (!GOC_NHIN_TONG_QUAN.includes(theo as GocNhinTongQuan))
@@ -76,7 +76,7 @@ export class XuyenSuotController {
 
   /** Điều hành › Bộ chỉ số. */
   @Get('chi-so')
-  @CanQuyen('BO_CHI_SO.READ')
+  @CanMotTrongQuyen('BO_CHI_SO.READ', 'TONG_QUAN.READ')
   async chiSo(@NguoiDung() nd: NguoiDungPhien, @Query('loai') loai?: string): Promise<KhoiSoLieu[]> {
     if (!LOAI_CHI_SO.includes(loai as LoaiChiSo))
       throw new BadRequestException(`"loai" phải là một trong: ${LOAI_CHI_SO.join(', ')}`)

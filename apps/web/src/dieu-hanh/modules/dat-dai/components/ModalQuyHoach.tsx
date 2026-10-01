@@ -28,7 +28,7 @@ export function ModalQuyHoach({ state, thua, hoiAi }: Props) {
   return (
     <ModalKhung
       state={state}
-      tieuDe="Thông tin quy hoạch — Tỉnh Tây Ninh"
+      tieuDe="Thông tin quy hoạch — phường Mẫu"
       phu="Kỳ quy hoạch 2021–2030, tầm nhìn đến 2050"
       nhanDong="Đóng thông tin quy hoạch"
       chanTrang={
@@ -52,11 +52,8 @@ export function ModalQuyHoach({ state, thua, hoiAi }: Props) {
         </>
       }
     >
-      <Kv
-        nhan="Đồ án áp dụng"
-        giaTri="QH chung phường Bình Minh + QH sử dụng đất TP Tây Ninh (chuyển tiếp)"
-      />
-      <Kv nhan="Căn cứ" giaTri="QĐ 1856/QĐ-UBND tỉnh Tây Ninh · bản đồ 1/2.000 khu vực phường Bình Minh" />
+      <Kv nhan="Đồ án áp dụng" giaTri="QH chung phường Mẫu + QH sử dụng đất cấp huyện (chuyển tiếp)" />
+      <Kv nhan="Căn cứ" giaTri="QĐ 1856/QĐ-UBND tỉnh · bản đồ 1/2.000 khu vực phường Mẫu" />
       <Kv nhan="Lớp trên bản đồ" giaTri="Đất ở · giao thông (vùng tím) · cây xanh · TM-DV · đất lúa" />
       <Kv nhan="Thửa đang chọn" giaTri={`${thua.id} — ${thua.qh}`} />
       <Kv nhan="Nguồn dữ liệu" giaTri="Đồng bộ CSDL quy hoạch tỉnh qua LGSP · 09/2026" />

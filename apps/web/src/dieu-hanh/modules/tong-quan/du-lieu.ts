@@ -153,7 +153,7 @@ export const LIEN_THONG = [
 
 /** Ba gạch đầu dòng của bản tin AI 07:30. */
 export const BAN_TIN_AI = [
-  ['3 việc khẩn:', '2 hồ sơ TTHC quá hạn, 1 phản ánh môi trường vùng mãng cầu.'],
+  ['3 việc khẩn:', '2 hồ sơ TTHC quá hạn, 1 phản ánh môi trường vùng cây ăn quả.'],
   ['5 chỉ tiêu cần lưu ý:', 'DVC trực tuyến 67% (MT 80%)…'],
   ['Cảnh báo:', 'Kênh N4 vượt báo động 1 · SXH khu phố 5 vượt ngưỡng.'],
 ] as const

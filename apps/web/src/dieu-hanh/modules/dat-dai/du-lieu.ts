@@ -63,13 +63,13 @@ export interface TheDiaGioi {
 export const THE_DIA_GIOI: TheDiaGioi[] = [
   {
     nhan: 'DIỆN TÍCH TỰ NHIÊN',
-    giaTri: '105,35 km²',
-    phu: 'sau sắp xếp 16/6/2025',
+    giaTri: '100 km²',
+    phu: 'sau sắp xếp đơn vị hành chính',
     mau: 'var(--brand)',
     drill: {
       ten: 'Diện tích tự nhiên',
-      val: 105.35,
-      sub: 'km² · NQ 1685/NQ-UBTVQH15 (16/6/2025)',
+      val: 100,
+      sub: 'km² · theo nghị quyết sắp xếp đơn vị hành chính',
       pct: 100,
       mod: 'datdai',
       dv: 'Địa chính - Xây dựng',
@@ -78,12 +78,12 @@ export const THE_DIA_GIOI: TheDiaGioi[] = [
   {
     nhan: 'ĐVHC CŨ HỢP NHẤT',
     giaTri: '6',
-    phu: 'Ninh Sơn · Tân Bình · Bình Minh · Thạnh Tân +2',
+    phu: 'Xã A · Xã B · Phường C · Xã D +2',
     mau: 'var(--teal)',
     drill: {
       ten: 'Đơn vị hành chính cũ hợp nhất',
       val: 6,
-      sub: 'đơn vị: Ninh Sơn, Tân Bình, Bình Minh, Thạnh Tân + phần Suối Đá, Phan',
+      sub: 'đơn vị: Xã A, Xã B, Phường C, Xã D + phần Xã E, Xã F',
       pct: 100,
       mod: 'datdai',
       dv: 'Văn phòng UBND',
