@@ -1,11 +1,18 @@
 import { DANH_SACH_MODULE, locTheoQuyen } from '@gdos/shared'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { Outlet, useRouterState } from '@tanstack/react-router'
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { apDungChoNguoiDung } from '@/lib/giao-dien'
 import { truyVanToi } from '@/lib/phien'
 import { CayPhanHe } from './cay-phan-he'
+import { KhongGianDuAn } from './khong-gian-du-an'
+import { NutTroLy } from './nut-tro-ly'
 import { ThanhTren } from './thanh-tren'
+
+/** Vùng thông báo nổi của các màn chép từ GDOS cũ (và ngăn trợ lý) — tải sau, không nặng trang đầu. */
+const VungThongBao = lazy(() =>
+  import('@/dieu-hanh/components/overlay/Toast').then((m) => ({ default: m.ToastRegion })),
+)
 
 /**
  * Khung portal: thanh trên + cây phân hệ + nội dung. Màn hẹp (< md): cây thành
@@ -16,6 +23,11 @@ export function KhungPortal() {
   const cay = useMemo(() => locTheoQuyen(DANH_SACH_MODULE, new Set(toi.quyen)), [toi.quyen])
   const duongDan = useRouterState({ select: (s) => s.location.pathname })
   const dangXem = duongDan.slice(1) || undefined
+  // Đang ở trong MỘT dự án: cột trái đổi thành "Không gian dự án" (như PMS).
+  const duAnId = /^\/du-an\/([0-9a-f-]{36})$/i.exec(duongDan)?.[1]
+  const theDuAn = useRouterState({
+    select: (s) => (s.location.search as { the?: string }).the,
+  })
   const [ngan, datNgan] = useState(false)
 
   // Tông màu và sáng/tối là lựa chọn RIÊNG của từng người (lib/giao-dien.ts).
@@ -36,7 +48,11 @@ export function KhungPortal() {
         <aside
           className={`be-mat-dam w-[252px] flex-none overflow-y-auto px-2 pt-2.5 pb-6 max-md:fixed max-md:top-[54px] max-md:bottom-0 max-md:left-0 max-md:z-40 max-md:shadow-xl max-md:transition-transform ${ngan ? '' : 'max-md:-translate-x-[105%]'}`}
         >
-          <CayPhanHe cay={cay} dangXem={dangXem} />
+          {duAnId ? (
+            <KhongGianDuAn id={duAnId} the={theDuAn} quyen={toi.quyen} />
+          ) : (
+            <CayPhanHe cay={cay} dangXem={dangXem} />
+          )}
         </aside>
         <main className="min-w-0 flex-1 overflow-y-auto px-4 pt-5 pb-14 md:px-[26px]">
           {/* key theo đường dẫn: đổi trang là nội dung hiện dần lại (như PMS). */}
@@ -45,6 +61,10 @@ export function KhungPortal() {
           </div>
         </main>
       </div>
+      <NutTroLy quyen={toi.quyen} an={dangXem === 'tl-tro-chuyen'} />
+      <Suspense fallback={null}>
+        <VungThongBao />
+      </Suspense>
     </div>
   )
 }

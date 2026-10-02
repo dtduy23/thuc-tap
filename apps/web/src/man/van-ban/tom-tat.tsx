@@ -3,12 +3,11 @@ import {
   LOAI_VAN_BAN,
   NGUON_VAN_BAN,
   TRANG_THAI_VAN_BAN,
-  type TrangThaiVanBan,
   type VanBanDong,
 } from '@gdos/shared'
 import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { LoiApi } from '@/lib/http'
 import { truyVanToi } from '@/lib/phien'
 import {
@@ -19,106 +18,13 @@ import {
   truyVanVanBan,
   xoaVanBan,
 } from '@/lib/van-ban'
-import { Chip, Nut, OChon, ONhap, ODanhDau, ThongBao } from '@/ui/co-ban'
+import { phanCongTuTomTat } from '@/lib/native-vb'
+import { Nut, OChon, ONhap, ODanhDau, ThongBao } from '@/ui/co-ban'
 import { Luoi, type CotLuoi } from '@/ui/luoi/luoi'
-
-const MAU: Record<TrangThaiVanBan, 'xam' | 'brand' | 'warn' | 'ok' | 'danger'> = {
-  'chua-gui': 'xam',
-  cho: 'warn',
-  'dang-xu-ly': 'brand',
-  xong: 'ok',
-  loi: 'danger',
-}
-export const ChipVanBan = ({ tt }: { tt: TrangThaiVanBan }) => (
-  <Chip mau={MAU[tt]}>{TRANG_THAI_VAN_BAN[tt]}</Chip>
-)
-
-const DUONG_BIEU_TUONG = {
-  van: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z M14 2v6h6 M8 13h8 M8 17h6',
-  xong: 'M22 11.1V12a10 10 0 1 1-5.9-9.1 M22 4 12 14l-3-3',
-  cho: 'M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20 M12 6v6l4 2',
-  gon: 'm7 20 5-5 5 5 M7 4l5 5 5-5',
-  xem: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z M12 9a3 3 0 1 0 0 6 3 3 0 1 0 0-6',
-  sua: 'M12 20h9 M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4Z',
-  tai: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3',
-  xoa: 'M3 6h18 M8 6V4h8v2 M19 6l-1 14H6L5 6',
-  them: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z M14 2v6h6 M12 12v6 M9 15h6',
-}
-const BieuTuong = ({ ten, co = 18 }: { ten: keyof typeof DUONG_BIEU_TUONG; co?: number }) => (
-  <svg
-    aria-hidden="true"
-    width={co}
-    height={co}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.9"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d={DUONG_BIEU_TUONG[ten]} />
-  </svg>
-)
-
-function TheKpi({
-  nhan,
-  giaTri,
-  bieuTuong,
-  mau,
-}: {
-  nhan: string
-  giaTri: ReactNode
-  bieuTuong: keyof typeof DUONG_BIEU_TUONG
-  mau: 'brand' | 'ok' | 'warn' | 'tim'
-}) {
-  const lop = {
-    brand: 'bg-tint-brand text-brand',
-    ok: 'bg-tint-ok text-ok',
-    warn: 'bg-tint-warn text-warn',
-    tim: 'bg-tint-tim text-tim',
-  }[mau]
-  return (
-    <div className="flex items-center gap-4 rounded-[12px] border border-line bg-nen px-5 py-4 shadow-[0_1px_2px_rgba(16,30,54,.06),0_4px_14px_rgba(16,30,54,.05)]">
-      <span className={`grid size-11 flex-none place-items-center rounded-full ${lop}`}>
-        <BieuTuong ten={bieuTuong} co={20} />
-      </span>
-      <span>
-        <span className="block text-[11px] font-bold tracking-[.08em] text-faint uppercase">{nhan}</span>
-        <span className={`block text-[28px] leading-tight font-extrabold tabular-nums ${lop.split(' ')[1]}`}>
-          {giaTri}
-        </span>
-      </span>
-    </div>
-  )
-}
-
-const NutIcon = ({
-  nhan,
-  ten,
-  onClick,
-  nguyHiem,
-}: {
-  nhan: string
-  ten: keyof typeof DUONG_BIEU_TUONG
-  onClick: () => void
-  nguyHiem?: boolean
-}) => (
-  <button
-    type="button"
-    title={nhan}
-    aria-label={nhan}
-    onClick={(e) => {
-      e.stopPropagation()
-      onClick()
-    }}
-    className={`grid size-8 place-items-center rounded-lg ${nguyHiem ? 'text-danger hover:bg-tint-danger' : 'text-faint hover:bg-nav-hover hover:text-brand'}`}
-  >
-    <BieuTuong ten={ten} co={17} />
-  </button>
-)
+import { BieuTuong, ChipVanBan, LuoiKpi, NutIcon, TheKpi } from './chung'
 
 /**
- * Xử lý văn bản › Tóm tắt văn bản — bố cục theo màn cũ ở gdos.fox.ai.vn: thẻ số liệu,
+ * Xử lý văn bản › Tóm tắt văn bản — bố cục theo màn của GDOS cũ: thẻ số liệu,
  * "Thêm văn bản", bảng có thao tác từng dòng; lọc theo chuẩn lưới (ô lọc dưới mỗi cột).
  * Văn bản trong tài khoản FOXAI Native của người dùng được kéo về đây (ADR-0009).
  */
@@ -133,6 +39,8 @@ export default function TomTatVanBan() {
   const coTao = toi.quyen.includes('VAN_BAN.CREATE') && tt.cheDo !== 'chua' && tt.daLienKet
   const coSua = toi.quyen.includes('VAN_BAN.UPDATE')
   const coXoa = toi.quyen.includes('VAN_BAN.DELETE')
+  const coGiao = toi.quyen.includes('VAN_BAN.ASSIGN')
+  const coSoan = toi.quyen.includes('VAN_BAN.CREATE') && tt.cheDo === 'that'
 
   const daTomTat = ds.filter((d) => d.trangThai === 'xong')
   const tyLe = daTomTat.filter((d) => d.tyLeRutGon !== null)
@@ -218,7 +126,7 @@ export default function TomTatVanBan() {
       id: 'thaoTac',
       nhan: 'Thao tác',
       kieu: 'chu',
-      rong: 170,
+      rong: 240,
       khongLoc: true,
       giaTri: () => null,
       hien: (d) => (
@@ -239,6 +147,26 @@ export default function TomTatVanBan() {
                 )
             }
           />
+          {coSoan && d.trangThai === 'xong' && (
+            <NutIcon
+              nhan="Soạn văn bản từ bản tóm tắt"
+              ten="van"
+              onClick={() =>
+                void di({ to: '/$chucNang', params: { chucNang: 'vb-soan-thao' }, search: { nguon: d.id } })
+              }
+            />
+          )}
+          {coGiao && d.trangThai === 'xong' && d.nativeId && (
+            <NutIcon
+              nhan="AI phân công nhiệm vụ từ văn bản này"
+              ten="viec"
+              onClick={() => {
+                const ma = d.nativeId!
+                if (confirm(`AI đọc bản tóm tắt "${d.ten}" rồi giao việc cho các đơn vị nhận việc?`))
+                  lam(() => phanCongTuTomTat(ma), 'AI đã phân công — xem ở "Phân công từ văn bản".')
+              }}
+            />
+          )}
           {coXoa && (
             <NutIcon
               nhan="Xóa văn bản"
@@ -282,7 +210,7 @@ export default function TomTatVanBan() {
       )}
       {tb && <ThongBao kieu={tb.ok ? 'ok' : 'loi'}>{tb.cau}</ThongBao>}
 
-      <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <LuoiKpi>
         <TheKpi nhan="Tổng văn bản" giaTri={ds.length} bieuTuong="van" mau="brand" />
         <TheKpi nhan="Đã tóm tắt" giaTri={daTomTat.length} bieuTuong="xong" mau="ok" />
         <TheKpi nhan="Chưa tóm tắt" giaTri={ds.length - daTomTat.length} bieuTuong="cho" mau="warn" />
@@ -292,7 +220,7 @@ export default function TomTatVanBan() {
           bieuTuong="gon"
           mau="tim"
         />
-      </div>
+      </LuoiKpi>
 
       <Luoi
         ma="van-ban-tom-tat-v2"

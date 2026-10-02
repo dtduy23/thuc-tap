@@ -106,18 +106,24 @@ export const lamMoiPhienNgay = () => lamMoiPhien(fetch)
  * thì làm mới đúng một lần rồi gửi lại. Không đặt Content-Type — trình duyệt tự
  * thêm ranh giới multipart.
  */
-export async function taiLenTep<T>(duongDan: string, du: FormData, daThuLai = false): Promise<T> {
+export async function taiLenTep<T>(
+  duongDan: string,
+  du: FormData,
+  method: 'POST' | 'PATCH' = 'POST',
+  daThuLai = false,
+): Promise<T> {
   let res: Response
   try {
     res = await fetch(`/api${duongDan}`, {
-      method: 'POST',
+      method,
       headers: { [HEADER_CHONG_GIA_MAO]: '1' },
       body: du,
     })
   } catch {
     throw new LoiApi(MA_MAT_KET_NOI, 'Không kết nối được máy chủ. Kiểm tra đường truyền rồi thử lại.')
   }
-  if (res.status === 401 && !daThuLai && (await lamMoiPhien(fetch))) return taiLenTep<T>(duongDan, du, true)
+  if (res.status === 401 && !daThuLai && (await lamMoiPhien(fetch)))
+    return taiLenTep<T>(duongDan, du, method, true)
   if (res.status === 413) throw new LoiApi(413, 'Tệp quá lớn.')
   if (!res.ok) throw new LoiApi(res.status, await docThongDiep(res))
   return (await res.json()) as T

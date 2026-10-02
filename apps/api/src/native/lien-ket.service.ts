@@ -98,6 +98,16 @@ export class LienKetNativeService implements CapToken {
     return viec
   }
 
+  /** Token Native của người đang dùng — cho cổng chuyển tiếp (chuyen-tiep.controller.ts). */
+  tokenCua(nd: NguoiDungPhien): Promise<string> {
+    return this.layToken({ taiKhoanId: nd.taiKhoanId, nguCanh: nd.nguCanh, nativeUserId: '', hoTen: '' })
+  }
+
+  /** Native vừa từ chối access token đang nhớ (401) — bỏ để lần sau làm mới. */
+  quenToken(taiKhoanId: string): void {
+    this.boNho.delete(taiKhoanId)
+  }
+
   private async lamMoi(nc: NguCanh): Promise<string> {
     const [d] = await trongPhamVi(this.db, nc, (tx) =>
       tx.select().from(lienKetNative).where(eq(lienKetNative.taiKhoanId, nc.taiKhoanId)),

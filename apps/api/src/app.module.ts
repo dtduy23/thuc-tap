@@ -14,11 +14,21 @@ import { NGUON_DONG_GOP } from './xuyen-suot/nguon-dong-gop.js'
 import { HoSoDuAnService } from './du-an/ho-so.service.js'
 import { NhapDuAnService } from './du-an/nhap.service.js'
 import { KHO_TEP, KhoTepThuMuc } from './kho-tep/kho-tep.js'
+import { ChuyenTiepNativeController, GOI_NATIVE } from './native/chuyen-tiep.controller.js'
 import { KET_NOI_NATIVE, taoKetNoiNative } from './native/ket-noi-native.js'
 import { LienKetNativeService } from './native/lien-ket.service.js'
 import { XAC_THUC_NATIVE, XacThucNativeGia, XacThucNativeHttp } from './native/xac-thuc-native.js'
+import { GOI_NGUON_NGOAI, taoGoiNguonNgoai } from './nguon-vao/goi-ngoai.js'
+import { NguonVaoController } from './nguon-vao/nguon-vao.controller.js'
+import { NguonVaoService } from './nguon-vao/nguon-vao.service.js'
+import { OcrController } from './ocr/ocr.controller.js'
+import { OcrService } from './ocr/ocr.service.js'
 import { NhatKyController } from './nhat-ky/nhat-ky.controller.js'
 import { NhatKyService } from './nhat-ky/nhat-ky.service.js'
+import { ChiTieuController } from './chi-tieu/chi-tieu.controller.js'
+import { VanHanhController } from './van-hanh/van-hanh.controller.js'
+import { ChiTieuService } from './chi-tieu/chi-tieu.service.js'
+import { ToChucController } from './danh-muc/to-chuc.controller.js'
 import { DonViController } from './quan-tri/don-vi.controller.js'
 import { DonViService } from './quan-tri/don-vi.service.js'
 import { TaiKhoanController } from './quan-tri/tai-khoan.controller.js'
@@ -38,6 +48,9 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     XacThucController,
     TaiKhoanController,
     DonViController,
+    ToChucController,
+    ChiTieuController,
+    VanHanhController,
     NhatKyController,
     ThietLapController,
     DuAnController,
@@ -48,6 +61,9 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     VanBanController,
     KetNoiController,
     LienKetNativeController,
+    ChuyenTiepNativeController,
+    OcrController,
+    NguonVaoController,
   ],
   providers: [
     { provide: CAU_HINH, useFactory: () => docCauHinh() },
@@ -55,6 +71,7 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     XacThucService,
     TaiKhoanService,
     DonViService,
+    ChiTieuService,
     NhatKyService,
     ThietLapService,
     DuAnService,
@@ -64,6 +81,13 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     QuanLyDanhMucService,
     VanBanService,
     LienKetNativeService,
+    OcrService,
+    NguonVaoService,
+    {
+      provide: GOI_NGUON_NGOAI,
+      useFactory: (ch: CauHinh) => taoGoiNguonNgoai(ch.moiTruong === 'production'),
+      inject: [CAU_HINH],
+    },
     // Nguồn đóng góp cho nhóm xuyên suốt (ADR-0007). Module nghiệp vụ mới: thêm vào đây.
     {
       provide: NGUON_DONG_GOP,
@@ -82,6 +106,7 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
       useFactory: (ch: CauHinh, lienKet: LienKetNativeService) => taoKetNoiNative(ch.native, lienKet),
       inject: [CAU_HINH, LienKetNativeService],
     },
+    { provide: GOI_NATIVE, useFactory: () => fetch.bind(globalThis) },
     { provide: KHO_TEP, useFactory: (ch: CauHinh) => new KhoTepThuMuc(ch.thuMucTep), inject: [CAU_HINH] },
     // Toàn cục: mọi route mặc định bị chặn cho tới khi khai rõ (xem bao-ve.ts).
     { provide: APP_GUARD, useClass: BaoVeGuard },

@@ -61,7 +61,7 @@ export const xoaVanBan = (id: string) => goiApi<{ ok: true }>(`/van-ban/${id}/xo
 const thoatHtml = (s: string) =>
   s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
 
-/** Tải bản tóm tắt ra tệp .doc (Word mở được) — như màn cũ ở gdos.fox.ai.vn. */
+/** Tải bản tóm tắt ra tệp .doc (Word mở được) — như màn của GDOS cũ. */
 export async function taiTomTatDoc(id: string): Promise<'ok' | 'chua-co'> {
   const vb = await goiApi<VanBanChiTiet>(`/van-ban/${id}`)
   if (!vb.tomTat) return 'chua-co'

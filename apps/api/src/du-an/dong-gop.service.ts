@@ -4,8 +4,6 @@ import {
   DANH_SACH_MODULE,
   homNay,
   ngayKetThucDuKien,
-  NGUONG_LAU_CAP_NHAT,
-  NGUONG_SAP_HAN,
   soNgayGiua,
   tinhKpi,
   type CanhBaoDef,
@@ -37,6 +35,7 @@ import {
 import { bc35, bieu01, bieu0203, danhSach, type DuLieuBaoCao } from './bao-cao.js'
 import { chiSoDuAn, tongQuanDuAn, type DuAnTongHop } from './dieu-hanh.js'
 import { DuAnService } from './du-an.service.js'
+import { ThietLapService } from '../thiet-lap/thiet-lap.service.js'
 import type { NguoiDungPhien } from '../xac-thuc/bao-ve.js'
 import type { NguonDongGop } from '../xuyen-suot/nguon-dong-gop.js'
 
@@ -70,6 +69,7 @@ export class DongGopDuAnService implements NguonDongGop {
   constructor(
     @Inject(CoSoDuLieu) private readonly csdl: CoSoDuLieu,
     @Inject(DuAnService) private readonly duAnDv: DuAnService,
+    @Inject(ThietLapService) private readonly thietLap: ThietLapService,
   ) {}
 
   private get db() {
@@ -79,9 +79,11 @@ export class DongGopDuAnService implements NguonDongGop {
   async canhBao(nd: NguoiDungPhien, loai: CanhBaoDef['loai']): Promise<DongCanhBao[]> {
     if (!nd.quyen.has('DU_AN.READ')) return []
     const hn = homNay()
+    // Ngưỡng do quản trị đặt ở Quy tắc cảnh báo — đọc trước khi mở giao dịch.
+    const ng = await this.thietLap.nguong()
     return trongPhamVi(this.db, nd.nguCanh, async (tx) => {
       if (loai === 'lau-khong-cap-nhat') {
-        const moc = congNgay(hn, -NGUONG_LAU_CAP_NHAT)
+        const moc = congNgay(hn, -ng.lauCapNhatNgay)
         const ds = await tx
           .select({
             id: duAn.id,
@@ -119,7 +121,7 @@ export class DongGopDuAnService implements NguonDongGop {
       const dk =
         loai === 'qua-han'
           ? lt(duAnBuoc.han, hn)
-          : and(gte(duAnBuoc.han, hn), lte(duAnBuoc.han, congNgay(hn, NGUONG_SAP_HAN)))
+          : and(gte(duAnBuoc.han, hn), lte(duAnBuoc.han, congNgay(hn, ng.sapHanNgay)))
       const ds = await docBuocCanhBao(tx, and(BUOC_DANG_CHAY, dk))
       return ds.map((b) => ({
         nguon: loai === 'qua-han' ? 'du-an-qua-han' : 'du-an-sap-han',
@@ -141,13 +143,14 @@ export class DongGopDuAnService implements NguonDongGop {
     if (!nd.quyen.has('DU_AN.READ')) return []
     const hn = homNay()
     const xacNhan = nd.quyen.has('DU_AN.UPDATE') || nd.quyen.has('DU_AN.APPROVE')
+    const ng = await this.thietLap.nguong()
     return trongPhamVi(this.db, nd.nguCanh, async (tx) => {
       const viec: MucViec[] = []
 
       // Bước sắp / quá hạn ở dự án tôi phụ trách.
       const buoc = await docBuocCanhBao(
         tx,
-        and(BUOC_DANG_CHAY, cuaToi(nd.taiKhoanId), lte(duAnBuoc.han, congNgay(hn, NGUONG_SAP_HAN))),
+        and(BUOC_DANG_CHAY, cuaToi(nd.taiKhoanId), lte(duAnBuoc.han, congNgay(hn, ng.sapHanNgay))),
       )
       for (const b of buoc)
         viec.push({

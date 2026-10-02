@@ -16,50 +16,11 @@
  * Máy dev không có Docker: DB_NHUNG=1 → khởi tạo thẳng vào database nhúng.
  * (Tắt `pnpm dev` trước — database nhúng chỉ mở được từ một tiến trình.)
  */
-import { drizzle } from 'drizzle-orm/node-postgres'
-import { migrate } from 'drizzle-orm/node-postgres/migrator'
 import { parseArgs } from 'node:util'
-import pg from 'pg'
 import { docCauHinh } from '../cau-hinh.js'
-import { moDbNhung, THU_MUC_MIGRATION, type KetNoiDb } from '../db/migration.js'
-import * as schema from '../db/schema/index.js'
+import { moDbNhung, moPostgresVaDiTru } from '../db/migration.js'
 import { khoiTaoHeThong } from '../khoi-tao/khoi-tao.js'
-
-/** Đọc một dòng từ bàn phím mà không hiện ký tự nào — như lệnh sudo. */
-function hoiAn(cauHoi: string): Promise<string> {
-  const vao = process.stdin
-  process.stdout.write(cauHoi)
-  if (!vao.isTTY) {
-    // Có ống dẫn vào (echo … | lệnh): đọc dòng đầu.
-    return new Promise((xong) => {
-      let du = ''
-      vao.setEncoding('utf8')
-      vao.on('data', (d: string) => (du += d))
-      vao.on('end', () => xong(du.split(/\r?\n/)[0] ?? ''))
-    })
-  }
-  return new Promise((xong) => {
-    let kq = ''
-    vao.setRawMode(true)
-    vao.resume()
-    vao.setEncoding('utf8')
-    const nghe = (kyTu: string) => {
-      for (const c of kyTu) {
-        if (c === '\r' || c === '\n') {
-          vao.setRawMode(false)
-          vao.pause()
-          vao.off('data', nghe)
-          process.stdout.write('\n')
-          return xong(kq)
-        }
-        if (c === '\u0003') process.exit(130) // Ctrl+C
-        if (c === '\u007f' || c === '\b') kq = kq.slice(0, -1)
-        else kq += c
-      }
-    }
-    vao.on('data', nghe)
-  })
-}
+import { hoiAn } from './hoi-an.js'
 
 async function chay() {
   // pnpm 11 chuyển nguyên dấu "--" vào lệnh; parseArgs hiểu đó là "hết tham số".
@@ -92,7 +53,7 @@ async function chay() {
     if ((await hoiAn('Nhập lại: ')) !== matKhau) throw new Error('Hai lần nhập không khớp')
   }
 
-  const kn = url ? await moPostgres(url) : await moDbNhung(ch.dbNhung!)
+  const kn = url ? await moPostgresVaDiTru(url) : await moDbNhung(ch.dbNhung!)
   try {
     console.log('✓ Migration xong')
     const kq = await khoiTaoHeThong(kn.db, {
@@ -108,14 +69,6 @@ async function chay() {
   } finally {
     await kn.dong()
   }
-}
-
-/** Postgres thật bằng chủ bảng, chạy migration. */
-async function moPostgres(url: string): Promise<KetNoiDb> {
-  const pool = new pg.Pool({ connectionString: url, max: 1 })
-  const db = drizzle(pool, { schema })
-  await migrate(db, { migrationsFolder: THU_MUC_MIGRATION })
-  return { db, kiem: () => pool.query('select 1'), dong: () => pool.end() }
 }
 
 chay().catch((e: unknown) => {

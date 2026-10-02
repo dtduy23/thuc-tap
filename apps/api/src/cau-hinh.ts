@@ -29,6 +29,14 @@ export interface CauHinh {
   /** Cookie chỉ gửi qua HTTPS. Bật ở production; máy dev chạy http://localhost nên tắt. */
   cookieAnToan: boolean
   /**
+   * Địa chỉ được tin khi đọc X-Forwarded-For — IP này đi vào nhật ký phiên
+   * đăng nhập, nên tin sai là ghi sai người. Mặc định `loopback`: chỉ nginx
+   * chạy cùng máy. Trong Docker, nginx là container KHÁC nên IP nguồn là IP
+   * mạng nội bộ của compose — phải khai mạng đó qua TIN_PROXY, ví dụ
+   * `TIN_PROXY=172.31.0.0/16`. Có proxy ở ngoài nữa thì thêm cả IP proxy đó.
+   */
+  tinProxy: string
+  /**
    * FOXAI Native (ADR-0009). `gia`: bản giả cho máy dev (NATIVE_GIA=1, production cấm).
    * `url`: địa chỉ Native thật (NATIVE_URL) — KHÔNG có giá trị mặc định (GDOS cũ từng
    * để sẵn nativev3 làm mặc định). Vắng cả hai: tính năng gọi Native báo "chưa kết nối".
@@ -91,6 +99,10 @@ export function docCauHinh(env: NodeJS.ProcessEnv = process.env): CauHinh {
         ? join(tmpdir(), 'gdos-tep-test')
         : resolve('../../.data/tep'))
 
+  // Cố tình KHÔNG mặc định là "tin mọi proxy": để `true` thì bất cứ ai cũng tự
+  // khai được IP của mình bằng một header, và nhật ký đăng nhập thành vô nghĩa.
+  const tinProxy = env.TIN_PROXY?.trim() || 'loopback'
+
   const nativeGia = env.NATIVE_GIA === '1'
   if (nativeGia && laProduction)
     throw new Error('NATIVE_GIA chỉ dùng ở máy dev — production phải nối Native thật')
@@ -110,5 +122,6 @@ export function docCauHinh(env: NodeJS.ProcessEnv = process.env): CauHinh {
     phienBan: env.APP_VERSION?.trim() || 'dev',
     khoaKyVe,
     cookieAnToan: laProduction,
+    tinProxy,
   }
 }

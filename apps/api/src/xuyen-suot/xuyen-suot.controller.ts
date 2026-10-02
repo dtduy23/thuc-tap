@@ -27,7 +27,13 @@ import {
   type LoaiChiSo,
   type MucViec,
 } from '@gdos/shared'
-import { CanQuyen, ChiCanDangNhap, NguoiDung, type NguoiDungPhien } from '../xac-thuc/bao-ve.js'
+import {
+  CanMotTrongQuyen,
+  CanQuyen,
+  ChiCanDangNhap,
+  NguoiDung,
+  type NguoiDungPhien,
+} from '../xac-thuc/bao-ve.js'
 import { docBangXuat, headerTaiExcel, kiemThamSo, vietExcel } from './bao-cao-chung.js'
 import { NGUON_DONG_GOP, type NguonDongGop } from './nguon-dong-gop.js'
 
@@ -57,7 +63,8 @@ export class XuyenSuotController {
 
   /** Điều hành › Tổng quan — mỗi nghiệp vụ góp một khối số liệu. */
   @Get('tong-quan')
-  @CanQuyen('TONG_QUAN.READ')
+  // Các góc nhìn này nằm trong module Theo dõi thực hiện (BO_CHI_SO) và thẻ "Tình hình dự án" của Bảng điều hành; giữ TONG_QUAN cho phân công cũ.
+  @CanMotTrongQuyen('BO_CHI_SO.READ', 'TONG_QUAN.READ')
   async tongQuan(@NguoiDung() nd: NguoiDungPhien, @Query('theo') theo?: string): Promise<KhoiSoLieu[]> {
     if (!GOC_NHIN_TONG_QUAN.includes(theo as GocNhinTongQuan))
       throw new BadRequestException(`"theo" phải là một trong: ${GOC_NHIN_TONG_QUAN.join(', ')}`)
@@ -69,7 +76,7 @@ export class XuyenSuotController {
 
   /** Điều hành › Bộ chỉ số. */
   @Get('chi-so')
-  @CanQuyen('BO_CHI_SO.READ')
+  @CanMotTrongQuyen('BO_CHI_SO.READ', 'TONG_QUAN.READ')
   async chiSo(@NguoiDung() nd: NguoiDungPhien, @Query('loai') loai?: string): Promise<KhoiSoLieu[]> {
     if (!LOAI_CHI_SO.includes(loai as LoaiChiSo))
       throw new BadRequestException(`"loai" phải là một trong: ${LOAI_CHI_SO.join(', ')}`)

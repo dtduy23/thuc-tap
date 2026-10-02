@@ -1,9 +1,10 @@
-import { NHAN_DIEN_MAC_DINH } from '@gdos/shared'
+import { NHAN_DIEN_MAC_DINH, quyenCua, trangDauCua } from '@gdos/shared'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
 import { useEffect, useState, type FormEvent } from 'react'
 import { truyVanCongKhai } from '@/lib/cau-hinh'
 import { LoiApi } from '@/lib/http'
+import { timViTri } from '@/lib/phan-he'
 import { dangNhap } from '@/lib/phien'
 import { hoiPhuThuoc, type TinhTrang } from '@/suc-khoe'
 import { CoDoSaoVang } from '@/ui/co-do-sao-vang'
@@ -40,8 +41,21 @@ export function TrangDangNhap({ tiep }: { tiep: string | undefined }) {
     datLoi(undefined)
     datDangGui(true)
     try {
-      await dangNhap(qc, ten.trim(), matKhau)
-      router.history.push(tiep ?? '/')
+      const toi = await dangNhap(qc, ten.trim(), matKhau)
+      // Không có đích cụ thể → mở trang mặc định theo vai (Hiển thị › Trang mặc định theo vai), nếu người
+      // này có quyền mở chức năng đó; không thì về trang chủ.
+      const dau = cauHinh
+        ? trangDauCua(
+            cauHinh.trangDau,
+            toi.phanCong.map((p) => p.vai),
+            toi.laQuanTri,
+            (id) => {
+              const vt = timViTri(id)
+              return !!vt && toi.quyen.includes(quyenCua(vt.module, vt.chucNang))
+            },
+          )
+        : ''
+      router.history.push(tiep ?? (dau ? `/${dau}` : '/'))
     } catch (err) {
       datLoi(err instanceof LoiApi ? err.message : 'Đăng nhập không thành công.')
       datMatKhau('')

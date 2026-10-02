@@ -24,43 +24,71 @@ const NHOM_BAO_CAO_DU_AN = [
 export const DANH_SACH_MODULE: readonly ModuleDef[] = [
   // ══ TẦNG 1 · NGHIỆP VỤ ═════════════════════════════════════════════════
 
-  // ── Điều hành — đọc tổng hợp nhiều hồ sơ, không sửa gì ─────────────────
+  // ── Điều hành — nắm tình hình; việc có hồ sơ, có hạn xử lý nằm ở Tác nghiệp ──
+  //
+  // Bốn module theo BỐN CÂU HỎI của người điều hành, đi từ chung tới riêng:
+  //   1. Tổng quan          — "Hôm nay tình hình chung thế nào?"
+  //   2. Theo lĩnh vực      — "Từng lĩnh vực ra sao?"
+  //   3. Theo dõi thực hiện — "Việc đang chạy thế nào, ai làm tốt?"
+  //   4. Báo cáo            — "Cho tôi biểu để nộp, để xuất."
+  // MỖI CHỦ ĐỀ MỘT CHỖ trên menu. Các góc nhìn của cùng chủ đề (chỉ tiêu · chi tiết · chấm
+  // điểm) là thẻ TRONG trang (web: man/gop-man.tsx), không lên menu.
   {
     id: 'tong-quan',
     nhan: 'Tổng quan',
     nhom: 'dieu-hanh',
     maQuyen: 'TONG_QUAN',
     nguon: 'db',
-    mo: 'Bức tranh chung của mọi nghiệp vụ: tiến độ, cảnh báo, giải ngân.',
+    mo: 'Một chỗ nhìn hết: bảng điều hành chung và bộ KPI. Trong trang có các thẻ góc nhìn.',
     con: [
-      { id: 'tq-toan', nhan: 'Toàn cảnh' },
-      { id: 'tq-don-vi', nhan: 'Theo đơn vị' },
-      { id: 'tq-lv', nhan: 'Theo lĩnh vực' },
+      { id: 'dh-bang-dieu-hanh', nhan: 'Bảng điều hành' },
+      { id: 'dh-kpi', nhan: 'KPI điều hành' },
     ],
   },
   {
-    id: 'bao-cao',
-    nhan: 'Báo cáo điều hành',
+    id: 'chi-tieu',
+    nhan: 'Theo lĩnh vực',
     nhom: 'dieu-hanh',
-    maQuyen: 'BAO_CAO',
+    maQuyen: 'CHI_TIEU',
     nguon: 'db',
-    mo: 'Mọi báo cáo của các nghiệp vụ ở một nơi — cũng mở được ngay trong từng nghiệp vụ.',
+    mo: 'Mỗi lĩnh vực quản lý một mục: chỉ tiêu theo bộ đã thông qua, kèm bản đồ / danh sách chi tiết nếu lĩnh vực đó có. Chỉ tiêu nào có số thật (phân hệ đã xây, hoặc nạp qua API / Excel) thì hiện số thật kèm nguồn; còn lại là số mẫu.',
     con: [
-      { id: 'bc-tat-ca', nhan: 'Tất cả báo cáo' },
-      { id: 'bc-dinh-ky', nhan: 'Báo cáo định kỳ' },
-      { id: 'bc-xuat', nhan: 'Xuất dữ liệu', hanhDong: 'EXPORT' },
+      { id: 'dh-tthc-mot-cua', nhan: 'TTHC – Một cửa' },
+      { id: 'dh-phan-anh-kien-nghi', nhan: 'Phản ánh – Kiến nghị' },
+      { id: 'dh-kinh-te-dan-cu-xa-hoi', nhan: 'Kinh tế – Dân cư – Xã hội' },
+      { id: 'dh-nong-nghiep', nhan: 'Nông nghiệp số' },
+      { id: 'dh-an-ninh-trat-tu', nhan: 'An ninh – Trật tự' },
+      { id: 'dh-ha-tang-do-thi', nhan: 'Hạ tầng – Đô thị' },
+      { id: 'dh-dat-dai', nhan: 'Đất đai' },
+      { id: 'dh-y-te-giao-duc', nhan: 'Y tế – Giáo dục' },
+      { id: 'dh-di-tich', nhan: 'Di tích & Địa chỉ đỏ' },
+      { id: 'dh-khu-pho-thong-minh', nhan: 'Khu phố thông minh' },
     ],
   },
   {
     id: 'bo-chi-so',
-    nhan: 'Bộ chỉ số',
+    nhan: 'Theo dõi thực hiện',
     nhom: 'dieu-hanh',
     maQuyen: 'BO_CHI_SO',
     nguon: 'db',
-    mo: 'KPI 100 điểm: đúng hạn 40 · độ trễ 25 · điều chỉnh kế hoạch 15 · giải ngân 20 → A/B/C/D.',
+    mo: 'Số liệu do các nghiệp vụ đóng góp (hiện có Dự án): tiến độ, cảnh báo, giải ngân theo đơn vị và theo lĩnh vực; xếp hạng đơn vị theo điểm thực hiện.',
     con: [
-      { id: 'bcs-tat-ca', nhan: 'Tất cả chỉ số' },
+      { id: 'tq-don-vi', nhan: 'Theo đơn vị' },
+      { id: 'tq-lv', nhan: 'Theo lĩnh vực' },
       { id: 'bcs-xep-hang', nhan: 'Xếp hạng đơn vị' },
+    ],
+  },
+  {
+    id: 'bao-cao',
+    nhan: 'Báo cáo',
+    nhom: 'dieu-hanh',
+    maQuyen: 'BAO_CAO',
+    nguon: 'db',
+    mo: 'Mọi biểu báo cáo của các nghiệp vụ ở một nơi — cũng mở được ngay trong từng nghiệp vụ.',
+    con: [
+      { id: 'bc-dinh-ky', nhan: 'Báo cáo định kỳ' },
+      { id: 'bc-tat-ca', nhan: 'Tất cả báo cáo' },
+      { id: 'bc-xuat', nhan: 'Xuất dữ liệu', hanhDong: 'EXPORT' },
     ],
   },
 
@@ -148,13 +176,13 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
           id: 'du-an-sap-han',
           ten: 'Bước dự án sắp đến hạn',
           loai: 'sap-han',
-          mo: 'Bước chưa xong đến hạn trong 10 ngày tới.',
+          mo: 'Bước chưa xong sắp đến hạn (mặc định trong 10 ngày tới — đổi ở Quy tắc cảnh báo).',
         },
         {
           id: 'du-an-lau-cap-nhat',
           ten: 'Dự án lâu không cập nhật',
           loai: 'lau-khong-cap-nhat',
-          mo: 'Dự án đang thực hiện mà quá 15 ngày không ai cập nhật.',
+          mo: 'Dự án đang thực hiện mà lâu không ai cập nhật (mặc định quá 15 ngày — đổi ở Quy tắc cảnh báo).',
         },
       ],
       viec: [
@@ -181,26 +209,49 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nguon: 'native',
     mo: 'Văn bản đi qua Document Service của FOXAI Native. Tóm tắt, soạn thảo là chức năng của văn bản — không phải một nhóm "AI".',
     con: [
-      { id: 'vb-den', nhan: 'Văn bản đến', phac: true },
+      { id: 'vb-den', nhan: 'Văn bản đến' },
       { id: 'vb-tom-tat', nhan: 'Tóm tắt văn bản' },
-      { id: 'vb-soan-thao', nhan: 'Soạn thảo văn bản', hanhDong: 'CREATE', phac: true },
-      { id: 'vb-phan-cong', nhan: 'Phân công từ văn bản', hanhDong: 'ASSIGN', phac: true },
-      { id: 'vb-mau', nhan: 'Mẫu văn bản', phac: true },
+      { id: 'vb-soan-thao', nhan: 'Soạn thảo văn bản', hanhDong: 'CREATE' },
+      { id: 'vb-phan-cong', nhan: 'Phân công từ văn bản', hanhDong: 'ASSIGN' },
+      { id: 'vb-mau', nhan: 'Mẫu văn bản' },
+      // Danh sách AI chọn khi phân công — cấu hình riêng của nghiệp vụ văn bản.
+      { id: 'vb-don-vi', nhan: 'Đơn vị nhận việc' },
     ],
   },
   {
+    id: 'ho-so-tthc',
+    nhan: 'Hồ sơ TTHC',
+    nhom: 'tac-nghiep',
+    maQuyen: 'HO_SO_TTHC',
+    nguon: 'db',
+    mo: 'Danh sách hồ sơ thủ tục hành chính đang xử lý (màn của GDOS trước đây, đang chạy dữ liệu mẫu). Số tổng hợp xem ở Điều hành › Theo lĩnh vực › TTHC – Một cửa.',
+    con: [{ id: 'dh-ho-so-tthc', nhan: 'Hồ sơ đang xử lý' }],
+  },
+  {
     id: 'don-thu',
-    nhan: 'Đơn thư — Khiếu nại',
+    nhan: 'Phản ánh – Kiến nghị – Đơn thư',
     nhom: 'tac-nghiep',
     maQuyen: 'DON_THU',
     nguon: 'db',
-    phac: true,
-    mo: 'Cấp 4 xếp theo HÀNH TRÌNH của một lá đơn, không đẻ nhóm "giai đoạn".',
+    mo: 'Phản ánh, kiến nghị của người dân và đơn thư khiếu nại. Cấp 4 của đơn thư xếp theo HÀNH TRÌNH của một lá đơn, không đẻ nhóm "giai đoạn".',
     con: [
-      { id: 'dt-tiep-nhan', nhan: 'Tiếp nhận — chờ thụ lý' },
-      { id: 'dt-thu-ly', nhan: 'Đang thụ lý, xác minh' },
-      { id: 'dt-giai-quyet', nhan: 'Đang giải quyết' },
-      { id: 'dt-xong', nhan: 'Đã giải quyết' },
+      { id: 'dh-phan-anh', nhan: 'Phản ánh kiến nghị' },
+      { id: 'dt-tiep-nhan', nhan: 'Đơn thư: chờ thụ lý', phac: true },
+      { id: 'dt-thu-ly', nhan: 'Đơn thư: đang xác minh', phac: true },
+      { id: 'dt-giai-quyet', nhan: 'Đơn thư: đang giải quyết', phac: true },
+      { id: 'dt-xong', nhan: 'Đơn thư: đã giải quyết', phac: true },
+    ],
+  },
+  {
+    id: 'tro-ly-ai',
+    nhan: 'Trợ lý AI',
+    nhom: 'tac-nghiep',
+    maQuyen: 'TRO_LY',
+    nguon: 'native',
+    mo: 'Chatbot chạy trên FOXAI Native: trò chuyện với bot đã cấu hình (có nút trợ lý ở mọi trang) và cấu hình bot — mục đích, lời dặn, bộ tri thức, câu hỏi thường gặp, kịch bản, mã nhúng. Mỗi người dùng tài khoản Native đã liên kết của mình.',
+    con: [
+      { id: 'tl-tro-chuyen', nhan: 'Trò chuyện với Chatbot' },
+      { id: 'tl-cau-hinh', nhan: 'Cấu hình Chatbot', hanhDong: 'UPDATE' },
     ],
   },
   {
@@ -208,9 +259,8 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhan: 'Nhiệm vụ',
     nhom: 'tac-nghiep',
     maQuyen: 'NHIEM_VU',
-    nguon: 'db',
-    phac: true,
-    mo: 'Việc giao từ văn bản, cuộc họp, chỉ đạo.',
+    nguon: 'native',
+    mo: 'Việc giao từ văn bản, cuộc họp, chỉ đạo — cây việc nhiều cấp của FOXAI Native (ADR-0009).',
     con: [
       { id: 'nv-cua-toi', nhan: 'Việc được giao cho tôi' },
       { id: 'nv-da-giao', nhan: 'Việc tôi đã giao' },
@@ -225,7 +275,6 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'danh-muc',
     maQuyen: 'DM_TO_CHUC',
     nguon: 'db',
-    phac: true,
     mo: 'Danh bạ đơn vị và cán bộ cho mọi nghiệp vụ tra cứu, chọn — chỉ đọc. Khai báo ở Tầng 2 › Đơn vị, Tài khoản.',
     con: [
       { id: 'dm-don-vi', nhan: 'Đơn vị' },
@@ -307,7 +356,7 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nguon: 'db',
     mo: 'Ba vai cố định và ma trận quyền sinh ra từ đó. Chỉ xem.',
     con: [
-      { id: 'vt-tra-cuu', nhan: 'Tra cứu phân công', phac: true },
+      { id: 'vt-tra-cuu', nhan: 'Tra cứu phân công' },
       { id: 'vt-ma-tran', nhan: 'Ma trận quyền' },
     ],
   },
@@ -329,11 +378,10 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'qt-nguoi-dung',
     maQuyen: 'QT_PHE_DUYET',
     nguon: 'db',
-    phac: true,
-    mo: 'Định nghĩa luồng (quy tắc) — còn việc CHỜ DUYỆT (thể hiện) nằm ở "Việc của tôi".',
+    mo: 'Định nghĩa luồng (quy tắc): việc gì, qua mấy cấp, ai duyệt. Việc đang CHỜ DUYỆT (thể hiện) nằm ở chính hồ sơ nghiệp vụ. Hiện có: xin gia hạn bước dự án.',
     con: [
       { id: 'pd-ds', nhan: 'Luồng theo nghiệp vụ' },
-      { id: 'pd-them', nhan: 'Thêm luồng mới', hanhDong: 'CREATE' },
+      { id: 'pd-them', nhan: 'Thêm luồng mới', hanhDong: 'CREATE', phac: true },
     ],
   },
 
@@ -351,17 +399,28 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     ],
   },
   {
+    id: 'qt-ocr',
+    nhan: 'Nhận dạng chứng từ (OCR)',
+    nhom: 'qt-ket-noi',
+    maQuyen: 'QT_OCR',
+    nguon: 'native',
+    mo: 'Nối OCR Service của FOXAI Native: chọn loại chứng từ và LẤY KẾT QUẢ nhận dạng về GDOS. Kết quả giữ dạng động theo từng loại; trực quan hóa và dùng thế nào là việc của phân hệ tác nghiệp.',
+    con: [
+      { id: 'ocr-loai', nhan: 'Loại chứng từ' },
+      { id: 'ocr-ket-qua', nhan: 'Kết quả đã lấy về' },
+    ],
+  },
+  {
     id: 'qt-nguon-vao',
     nhan: 'Nguồn dữ liệu vào',
     nhom: 'qt-ket-noi',
     maQuyen: 'QT_NGUON_VAO',
-    nguon: 'native',
-    phac: true,
-    mo: 'Khai nguồn cho Hỏi đáp AI. Kết nối thật do Context Service làm phía máy chủ.',
+    nguon: 'db',
+    mo: 'Số liệu chỉ tiêu điều hành nạp từ NGOÀI hệ thống qua hai kênh ngang hàng: API của khách và tệp Excel (khi khách không có API). Cả hai đổ vào một kho; Điều hành chỉ đọc kho đó. Đây là kênh nạp của quản trị — không phải màn nhập liệu nghiệp vụ.',
     con: [
-      { id: 'nd-graphql', nhan: 'Nguồn GraphQL / ERP' },
-      { id: 'nd-ban-sao', nhan: 'Bản sao dữ liệu' },
-      { id: 'nd-cong-cu', nhan: 'Công cụ API' },
+      { id: 'nd-api', nhan: 'Nguồn API' },
+      { id: 'nd-excel', nhan: 'Nạp từ Excel' },
+      { id: 'nd-ket-qua', nhan: 'Kết quả lấy về' },
     ],
   },
   {
@@ -388,7 +447,7 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nguon: 'db',
     mo: 'Bật/tắt và đổi nhãn module theo từng khách hàng — không tách nhánh mã.',
     con: [
-      { id: 'kb-cay', nhan: 'Cây phân hệ', phac: true },
+      { id: 'kb-cay', nhan: 'Cây phân hệ' },
       { id: 'kb-nhan', nhan: 'Nhãn theo khách hàng', phac: true },
       {
         id: 'kb-tham-so',
@@ -406,7 +465,8 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     mo: 'Tên và nhận diện của hệ thống, trang mặc định. Tông màu thì mỗi người tự chọn ở Cài đặt cá nhân.',
     con: [
       { id: 'ch-nhan-dien', nhan: 'Tên & nhận diện' },
-      { id: 'ht-trang-dau', nhan: 'Trang mặc định theo vai', phac: true },
+      { id: 'ht-trang-dau', nhan: 'Trang mặc định theo vai' },
+      { id: 'dh-thiet-ke-dashboard', nhan: 'Thiết kế Dashboard' },
     ],
   },
   {
@@ -415,11 +475,10 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'qt-cau-hinh',
     maQuyen: 'QT_CANH_BAO',
     nguon: 'db',
-    phac: true,
     mo: 'QUY TẮC cảnh báo. Còn cảnh báo ĐANG MỞ nằm ở Giám sát & Lưu vết.',
     con: [
       { id: 'cb-sla', nhan: 'Hạn & ngưỡng cảnh báo' },
-      { id: 'cb-kenh', nhan: 'Kênh gửi thông báo' },
+      { id: 'cb-kenh', nhan: 'Kênh gửi thông báo', phac: true },
     ],
   },
   {
@@ -442,13 +501,12 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'qt-cau-hinh',
     maQuyen: 'QT_VAN_HANH',
     nguon: 'db',
-    phac: true,
     mo: 'Sức khỏe hệ thống — người xem là kỹ thuật, không phải thanh tra.',
     con: [
       { id: 'vh-suc-khoe', nhan: 'Sức khỏe hệ thống' },
       { id: 'vh-hang-doi', nhan: 'Hàng đợi xử lý' },
       { id: 'vh-tep', nhan: 'Lưu trữ tệp' },
-      { id: 'vh-nhat-ky', nhan: 'Nhật ký hệ thống' },
+      { id: 'vh-nhat-ky', nhan: 'Nhật ký hệ thống', phac: true },
     ],
   },
 ]

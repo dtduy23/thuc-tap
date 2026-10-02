@@ -45,6 +45,7 @@ const COT = {
   soKyTuGoc: vanBan.soKyTuGoc,
   soKyTuTomTat: vanBan.soKyTuTomTat,
   daHieuChinh: vanBan.daHieuChinh,
+  nativeId: vanBan.nativeId,
   // Văn bản kéo về từ Native: người tạo ghi bên Native; còn lại: tài khoản GDOS.
   nguoiTao: sql<string | null>`coalesce(${vanBan.nguoiTaoNative}, ten_tai_khoan(${vanBan.nguoiTao}))`,
   donViTen: sql<string>`ten_don_vi(${vanBan.donViId})`,
@@ -61,6 +62,7 @@ interface DongDb {
   soKyTuGoc: number | null
   soKyTuTomTat: number | null
   daHieuChinh: boolean
+  nativeId: string | null
   nguoiTao: string | null
   donViTen: string
   createdAt: Date
@@ -82,6 +84,8 @@ const chuyen = (d: DongDb): VanBanDong => ({
       ? Math.round((1 - d.soKyTuTomTat / d.soKyTuGoc) * 1000) / 10
       : null,
   daHieuChinh: d.daHieuChinh,
+  // Mã bản giả không có ở Native thật — không đưa ra ngoài.
+  nativeId: d.nativeId && !d.nativeId.startsWith('gia-') ? d.nativeId : null,
   nguoiTao: d.nguoiTao,
   donViTen: d.donViTen,
   taoLuc: d.createdAt.toISOString(),
@@ -109,7 +113,7 @@ const laMaGia = (nativeId: string) => nativeId.startsWith('gia-')
 /**
  * Xử lý văn bản (ADR-0009): hồ sơ ở GDOS (RLS theo đơn vị), FOXAI Native xử lý. Văn
  * bản đã có trong tài khoản Native của người dùng được KÉO VỀ hồ sơ GDOS khi họ xem
- * danh sách (như màn cũ ở gdos.fox.ai.vn). Gọi Native NGOÀI giao dịch database.
+ * danh sách (như màn của GDOS cũ). Gọi Native NGOÀI giao dịch database.
  */
 @Injectable()
 export class VanBanService {

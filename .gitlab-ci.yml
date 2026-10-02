@@ -1,63 +1,120 @@
 # ============================================================================
-# GDOS — GitLab CI
+# GDOS — GitLab CI/CD
 #
-#   kiem-tra   lint · kiểm dữ liệu thật · định dạng · kiểu · test · build
-#   bao-mat    gitleaks (bí mật lọt vào lịch sử git) · pnpm audit
+#   build    dựng image api + web, đẩy lên registry của GitLab
+#   deploy   đưa lên MÁY THỬ (bấm tay)
 #
-# RUNNER CỦA FOXAI LÀ SHELL EXECUTOR (docs/FOXAI-CICD-Runbook.md của repo cũ):
-#   tag `foxai-build`, chạy trên SRV-01, user chạy runner có quyền docker.
+# CHỈ CHẠY Ở NHÁNH `develop` (người dùng chốt 30/09/2026) — xem `workflow` dưới.
 #
-#   - Không gắn tag → không runner nào nhận → pipeline treo "stuck".
-#   - Shell executor BỎ QUA `image:` → job chạy thẳng trên máy chủ, không có
-#     Node. Nên mỗi job tự chạy trong container bằng `docker run`.
-#   - `--user $(id -u):$(id -g)`: file sinh ra trong thư mục build thuộc user
-#     của runner, không thuộc root — không thì lần clone sau runner không dọn
-#     được thư mục và job hỏng ở bước chuẩn bị.
-#   - node:24 bản ĐẦY ĐỦ (không phải alpine/slim) vì cần git: script
-#     kiem-du-lieu-that dùng `git ls-files`.
+# KHÔNG có chặng kiểm tra: người dùng chốt 30/09/2026 bỏ cả `kiem-tra`
+# (lint · test · typecheck) lẫn `bao-mat` (gitleaks · pnpm audit) để pipeline
+# đi thẳng từ mã nguồn sang image. Hệ quả phải biết:
+#   - Test quyền và RLS KHÔNG còn chạy trong CI. `pnpm kiem-tra` ở máy vẫn là
+#     cửa duy nhất — CLAUDE.md §3: phải xanh trước khi báo xong.
+#   - Không còn ai quét bí mật lọt vào lịch sử git.
 #
-# Stage đóng gói image + triển khai thuộc Mốc 2, theo mẫu nhánh develop của
-# repo foxai-gdos cũ (build SRV-01 → deploy SRV-03, deploy bấm tay).
+# HAI RUNNER, SHELL EXECUTOR (docs/FOXAI-CICD-Runbook.md của repo cũ):
+#   `foxai-build`     máy build — dựng image, đẩy lên registry
+#   `deploy-gdos`     CHÍNH MÁY THỬ (SRV-04) — deploy chạy tại chỗ, không SSH, không
+#                     khóa, không host key. Ít thứ phải giữ bí mật hơn hẳn.
+#   Shell executor BỎ QUA `image:` và không gắn tag → pipeline treo "stuck".
 # ============================================================================
 
 stages:
-  - kiem-tra
-  - bao-mat
+  - build
+  - deploy
+
+# Pipeline chỉ nổ ở `develop`. Nhánh mốc (`moc-*`) và `main` không chạy — tránh
+# việc một nhánh đang làm dở cũng chiếm runner và đẩy image lên registry.
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - when: never
 
 default:
   tags: ['foxai-build']
 
 variables:
-  NODE_IMAGE: 'node:24'
-  PNPM: 'pnpm@11.12.0'
+  # Một image cho API, một cho web (nginx tĩnh). Thẻ = SHA ngắn của commit:
+  # mỗi lần triển khai chỉ đúng một mã nguồn, không dùng `latest` mơ hồ.
+  ANH_API: '$CI_REGISTRY_IMAGE/api'
+  ANH_WEB: '$CI_REGISTRY_IMAGE/web'
+  THE: '$CI_COMMIT_SHORT_SHA'
+  # Thư mục GDOS trên máy thử, cùng lệ với các dự án khác ở /opt/foxai/*.
+  # Trong đó phải có sẵn `.env` do kỹ thuật đặt một lần — xem chú thích job deploy.
+  THU_MUC: '/opt/foxai/gdos'
 
-kiem-tra:
-  stage: kiem-tra
+build:
+  stage: build
   script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login --username "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    # `--cache-from` thẻ develop của lần trước: lớp `pnpm install` không đổi thì
+    # dùng lại, khỏi tải lại toàn bộ phụ thuộc mỗi lần đẩy.
+    - docker pull "$ANH_API:develop" || true
+    - docker pull "$ANH_WEB:develop" || true
     - >-
-      docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e CI=true
-      -v "$CI_PROJECT_DIR":/app -w /app "$NODE_IMAGE"
-      sh -c "npx --yes $PNPM install --frozen-lockfile --store-dir .pnpm-store && npx --yes $PNPM kiem-tra"
-  cache:
-    key:
-      files: [pnpm-lock.yaml]
-    paths: [.pnpm-store]
+      docker build --pull --file apps/api/Dockerfile
+      --cache-from "$ANH_API:develop" --build-arg BUILDKIT_INLINE_CACHE=1
+      --build-arg PHIEN_BAN="$CI_COMMIT_SHORT_SHA"
+      --tag "$ANH_API:$THE" --tag "$ANH_API:develop" .
+    - >-
+      docker build --pull --file apps/web/Dockerfile
+      --cache-from "$ANH_WEB:develop" --build-arg BUILDKIT_INLINE_CACHE=1
+      --tag "$ANH_WEB:$THE" --tag "$ANH_WEB:develop" .
+    - docker push "$ANH_API:$THE"
+    - docker push "$ANH_API:develop"
+    - docker push "$ANH_WEB:$THE"
+    - docker push "$ANH_WEB:develop"
 
-gitleaks:
-  stage: bao-mat
-  variables:
-    GIT_DEPTH: '0' # quét TOÀN BỘ lịch sử — bí mật đã commit rồi xoá vẫn còn trong lịch sử
+# ── deploy ───────────────────────────────────────────────────────────────────
+# BẤM TAY (`when: manual`) — máy thử không tự đổi sau mỗi commit.
+#
+# Chạy bằng runner `deploy-gdos` NẰM NGAY TRÊN MÁY THỬ, nên không cần biến
+# CI/CD nào cả. Thứ duy nhất phải chuẩn bị một lần trên máy thử:
+#
+#   mkdir -p /opt/foxai/gdos/.du-lieu/tep
+#   chown -R 1000:1000 /opt/foxai/gdos/.du-lieu/tep   # API chạy non-root (uid 1000)
+#   /opt/foxai/gdos/.env  (chmod 600, của gitlab-runner) gồm:
+#       POSTGRES_PASSWORD · AUTH_SECRET · MINIO_ROOT_USER · MINIO_ROOT_PASSWORD
+#       TIN_PROXY=172.31.0.0/16 · NATIVE_URL=
+#
+# Bí mật nằm trên máy thử, KHÔNG đi qua CI và không ai phải dán vào GitLab.
+deploy:
+  stage: deploy
+  tags: ['deploy-gdos']
+  when: manual
+  environment:
+    name: may-thu
+    url: https://gdosfox.fox.ai.vn
   script:
-    - >-
-      docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp
-      -v "$CI_PROJECT_DIR":/repo zricethezav/gitleaks:latest
-      git --redact --verbose /repo
-
-audit:
-  stage: bao-mat
-  script:
-    # Chỉ phụ thuộc chạy thật (--prod), chặn ở mức high trở lên. Đọc lockfile, không cần cài.
-    - >-
-      docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp
-      -v "$CI_PROJECT_DIR":/app -w /app "$NODE_IMAGE"
-      npx --yes $PNPM audit --prod --audit-level high
+    - |
+      # Thiếu chuẩn bị thì DỪNG và nói rõ thiếu gì — không tự tạo .env, vì .env
+      # tự tạo nghĩa là mật khẩu do CI sinh và nằm trong log.
+      [ -d "$THU_MUC" ] || { echo "✗ Chưa có $THU_MUC trên máy thử" >&2; exit 1; }
+      [ -f "$THU_MUC/.env" ] || { echo "✗ Thiếu $THU_MUC/.env — xem chú thích job deploy" >&2; exit 1; }
+    - cp compose.trien-khai.yaml "$THU_MUC/compose.yaml"
+    - |
+      cd "$THU_MUC"
+      # Vé của job, hết hiệu lực khi job xong; qua stdin để không hiện trong
+      # danh sách tiến trình của máy thử.
+      printf '%s' "$CI_JOB_TOKEN" | docker login --username gitlab-ci-token --password-stdin "$CI_REGISTRY"
+      # Thẻ image tách khỏi .env (bí mật) — mọi lệnh compose đọc CẢ HAI file.
+      printf 'ANH_API=%s\nANH_WEB=%s\nTHE=%s\n' "$ANH_API" "$ANH_WEB" "$THE" > .the-anh
+      DC="docker compose --env-file .env --env-file .the-anh"
+      $DC pull
+      $DC run --rm di-tru
+      $DC up --detach --remove-orphans
+      docker logout "$CI_REGISTRY"
+    - |
+      # Chỉ báo xong khi ĐI HẾT chuỗi thật: nginx → api → Postgres.
+      cd "$THU_MUC"
+      for _ in $(seq 1 30); do
+        if curl --fail --silent --output /dev/null http://127.0.0.1:8080/api/health/deps; then
+          echo "✓ Máy thử đã chạy bản $THE — https://gdosfox.fox.ai.vn"
+          exit 0
+        fi
+        sleep 2
+      done
+      echo "✗ Sau 60 giây /api/health/deps vẫn chưa ok — nhật ký API:" >&2
+      docker compose --env-file .env --env-file .the-anh logs --tail 60 api >&2
+      exit 1

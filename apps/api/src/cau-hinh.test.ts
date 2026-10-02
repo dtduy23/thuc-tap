@@ -54,6 +54,15 @@ describe('docCauHinh', () => {
     expect(ch.cookieAnToan).toBe(true)
   })
 
+  it('mặc định chỉ tin proxy chạy cùng máy — không tin header người dùng tự khai', () => {
+    expect(docCauHinh({}).tinProxy).toBe('loopback')
+    expect(docCauHinh({ TIN_PROXY: '   ' }).tinProxy).toBe('loopback')
+  })
+
+  it('khai được mạng proxy cho bản chạy Docker', () => {
+    expect(docCauHinh({ TIN_PROXY: '172.31.0.0/16' }).tinProxy).toBe('172.31.0.0/16')
+  })
+
   it('database nhúng: bật được ở máy dev', () => {
     expect(docCauHinh({ DB_NHUNG: '1' }).dbNhung).toMatch(/pglite$/)
   })

@@ -7,7 +7,7 @@ import { Chip, Nut, ONhap, The, ThongBao } from '@/ui/co-ban'
 
 /**
  * Cài đặt cá nhân › Liên kết FOXAI Native (ADR-0009). Người dùng đăng nhập tài khoản
- * Native CỦA MÌNH một lần — như đăng nhập gdos.fox.ai.vn. GDOS không lưu mật khẩu.
+ * Native CỦA MÌNH một lần — như đăng nhập thẳng vào FOXAI Native. GDOS không lưu mật khẩu.
  */
 export function LienKetNative() {
   const qc = useQueryClient()
@@ -56,8 +56,9 @@ export function LienKetNative() {
       ) : (
         <form onSubmit={gui} className="max-w-[420px]">
           <p className="mt-0 mb-3 text-[12.5px] text-faint">
-            Đăng nhập tài khoản FOXAI Native của bạn (tài khoản dùng ở gdos.fox.ai.vn). GDOS không lưu mật
-            khẩu — chỉ giữ phiên đăng nhập đã mã hóa để gọi Native thay bạn; hủy liên kết lúc nào cũng được.
+            Đăng nhập tài khoản FOXAI Native của bạn (tài khoản dùng ở nativev3.foxai.com.vn). GDOS không lưu
+            mật khẩu — chỉ giữ phiên đăng nhập đã mã hóa để gọi Native thay bạn; hủy liên kết lúc nào cũng
+            được.
           </p>
           <ONhap
             id="nv-ten"

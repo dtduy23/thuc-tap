@@ -6,6 +6,7 @@ import { taoRouter } from '@/app/router'
 import { apDungGiaoDien } from '@/lib/giao-dien'
 import { LoiApi } from '@/lib/http'
 import { KHOA_TOI } from '@/lib/phien'
+import '@heroui/styles/css'
 import '@/styles.css'
 
 apDungGiaoDien()

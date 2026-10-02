@@ -51,7 +51,7 @@ class DemLamMoi extends XacThucNativeGia {
 }
 const xacThuc = new DemLamMoi()
 
-/** Native giả có sẵn MỘT văn bản trong tài khoản người dùng (tạo từ gdos.fox.ai.vn trước đây). */
+/** Native giả có sẵn MỘT văn bản trong tài khoản người dùng (tạo từ GDOS cũ trước đây). */
 class NativeCoSan extends NativeGia {
   override dsTomTat(): Promise<VanBanTrenNative[]> {
     return Promise.resolve([
@@ -328,7 +328,7 @@ describe('liên kết tài khoản FOXAI Native (ADR-0009)', () => {
   })
 })
 
-describe('kéo văn bản đã có trên Native về (như màn cũ ở gdos.fox.ai.vn)', () => {
+describe('kéo văn bản đã có trên Native về (như màn của GDOS cũ)', () => {
   it('xem danh sách: văn bản của tài khoản Native hiện ra, giữ người tạo và nguồn bên Native', async () => {
     const cv = await vao('chuyenvien.a')
     ;(Reflect.get(app.get(VanBanService), 'keoVeLuc') as Map<string, number>).clear()

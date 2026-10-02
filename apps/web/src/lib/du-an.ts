@@ -127,6 +127,21 @@ export const moLaiVuongMac = (id: string, vmId: string) =>
 export const xoaVuongMac = (id: string, vmId: string) =>
   goiApi<HoSoDuAn>(`/du-an/${id}/vuong-mac/${vmId}/xoa`, { method: 'POST' })
 
+export const phanTichVuongMac = (id: string, vmId: string, dl: Record<string, unknown>) =>
+  goiApi<HoSoDuAn>(`/du-an/${id}/vuong-mac/${vmId}`, { method: 'PATCH', body: dl })
+
+// ── Xin gia hạn bước ───────────────────────────────────────────────────────
+
+export const xinGiaHan = (id: string, buocId: string, dl: { hanMoi: string; lyDo: string; canCu?: string }) =>
+  goiApi<HoSoDuAn>(`/du-an/${id}/buoc/${buocId}/xin-gia-han`, { method: 'POST', body: dl })
+export const duyetGiaHan = (id: string, yeuCauId: string, dongY: boolean, yKien: string) =>
+  goiApi<HoSoDuAn>(`/du-an/${id}/gia-han/${yeuCauId}/duyet`, {
+    method: 'POST',
+    body: { dongY, yKien: yKien || null },
+  })
+export const rutGiaHan = (id: string, yeuCauId: string) =>
+  goiApi<HoSoDuAn>(`/du-an/${id}/gia-han/${yeuCauId}/rut`, { method: 'POST' })
+
 export const truyVanLichSuDonDoc = queryOptions({
   queryKey: [...KHOA_DU_AN, 'don-doc'],
   queryFn: () => goiApi<DotDonDoc[]>('/du-an/don-doc'),

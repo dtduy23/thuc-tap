@@ -1,0 +1,482 @@
+/*
+ * KIỂU CỦA CÁC MÀN ĐIỀU HÀNH chép từ GDOS cũ (apps/web/src/dieu-hanh). Sinh từ globals.css
+ * của GDOS cũ: token nào hệ thống mới đã có thì DÙNG CỦA HỆ THỐNG MỚI (đi theo tông màu và
+ * sáng / tối người dùng chọn); token chỉ GDOS cũ có thì giữ nguyên giá trị gốc.
+ */
+:root {
+  --navy: var(--dam-1);
+  --navy-2: var(--dam-2);
+  --brand-soft: var(--tint-brand);
+  --gdos-surface: var(--nen);
+  --gdos-muted: var(--faint);
+  --ok-bg: var(--tint-ok);
+  --ok-tx: var(--ok);
+  --gdos-danger: var(--danger);
+  --gdos-danger-bg: var(--tint-danger);
+  --warn-bg: var(--tint-warn);
+  --warn-tx: var(--warn);
+  --gdos-accent: var(--tim);
+  --gdos-accent-bg: var(--tint-tim);
+  --teal: #0e9488;
+  --row-head: var(--nen-2);
+  --row-hover: var(--nav-hover);
+  --nen-tab: #e7edf4;
+  --cot-nang: #bfd9ee;
+  --nen-tin-ai: #f2f5fa;
+  --nen-goi-y: #f7fafe;
+  --vien-goi-y: #c9d8ec;
+  --vien-keo: #c6d3e1;
+  --nen-keo: #fbfcfe;
+  --vien-khung: #dce5ef;
+  --nen-khung: #fafcfe;
+  --nav-active: var(--tint-brand);
+  --grid-line: #edf2f7;
+  --track: #eff3f8;
+  --divider-soft: #f0f4f9;
+  --border-strong: #c6d3e1;
+  --chart-axis: #9aaabc;
+  --hero-rule: #f5b301;
+  --ai-ink: #4a48c4;
+  --ai-line: #dce4fa;
+  --ai-chip-from: #eef3ff;
+  --ai-chip-to: #f4edff;
+  --ai-box-line: #e0e6f8;
+  --ai-box-from: #f4f7ff;
+  --ai-box-to: #f8f4ff;
+  --tint-accent: var(--tint-tim);
+  --tint-teal: #e0f4f6;
+  --sap-han: #ea580c;
+  --sap-han-bg: #ffedd5;
+  --sap-han-tx: #c2410c;
+  --bd-nen-nhan: #cde2fb;
+  --bd-ray: #ebeae5;
+  --bd-khac: #c9c7bf;
+  --bd-luoi: #e6e5df;
+  --bd-truc: #c3c2b7;
+  --bd-dat: #1f9d55;
+  --bd-dat-chu: #15803d;
+  --bd-canh-bao: #eda100;
+  --bd-canh-bao-chu: #8a5a00;
+  --bd-chua-dat: #d03b3b;
+  --bd-chu-xanh: #1c5cab;
+  --bd-chu-teal: #0f7a55;
+  --bd-chu-tim: #4a3aa7;
+  --bd-chu-cam: #b8481c;
+  --bd-nen-phu: #f3f4f1;
+  --bd-tip-nen: #0b0b0b;
+  --bd-tip-chu: #ffffff;
+  --thieu-chu: #94a3b8;
+  --thieu-vien: #cbd5e1;
+  --thieu-nen: #f8fafc;
+  --the-thieu-nen: #fcfdfe;
+  --nen-nguon: #fbfcfe;
+  --ghi-chu-nen: #f2f7ff;
+  --ghi-chu-nen-canh-bao: #fffaf0;
+  --dai-tu: #132a55;
+  --dai-den: #1b3a72;
+  --dai-ic-tu: #3b82f6;
+  --dai-ic-den: #0ea5e9;
+  --dai-chu-phu: #a8c0e8;
+  --dai-so: #7dd3fc;
+  --dai-nhan-nen: rgb(56 189 248 / 0.18);
+  --dai-nhan-vien: rgb(56 189 248 / 0.45);
+  --dai-nhan-chu: #7dd3fc;
+  --dai-nhan-tat-nen: rgb(148 163 184 / 0.14);
+  --dai-nhan-tat-vien: rgb(148 163 184 / 0.4);
+  --dai-nhan-tat-chu: #cbd5e1;
+  --vach-muc-tieu: #475569;
+  --nen-ban-do: #eef2f7;
+  --phu-ban-do: rgb(248 250 252 / 0.82);
+  --anh-trong-1: #f1f5f9;
+  --anh-trong-2: #e8edf4;
+  --gdos-radius: 12px;
+  --shadow: 0 1px 3px rgb(10 37 64 / 0.07), 0 8px 24px -12px rgb(10 37 64 / 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --teal: #22b3a5;
+    --nen-tab: #16283a;
+    --cot-nang: #24425c;
+    --nen-tin-ai: #16283a;
+    --nen-goi-y: #142434;
+    --vien-goi-y: #24425c;
+    --vien-keo: #2a4258;
+    --nen-keo: #142434;
+    --vien-khung: #243a4f;
+    --nen-khung: #101d2b;
+    --grid-line: #1c3245;
+    --track: #1a2c3e;
+    --divider-soft: #1a2e41;
+    --border-strong: #2c4a66;
+    --chart-axis: #6f87a0;
+    --hero-rule: #f5b301;
+    --ai-ink: #b9b6ff;
+    --ai-line: #2b2f5e;
+    --ai-chip-from: #1b1f3d;
+    --ai-chip-to: #241b3d;
+    --ai-box-line: #2b2f5e;
+    --ai-box-from: #161a33;
+    --ai-box-to: #1c1733;
+    --tint-teal: #0d2f2e;
+    --sap-han: #f28a3c;
+    --sap-han-bg: #3a200b;
+    --sap-han-tx: #f7a364;
+    --bd-nen-nhan: #184f95;
+    --bd-ray: #2c2c2a;
+    --bd-khac: #5d5c57;
+    --bd-luoi: #2c2c2a;
+    --bd-truc: #383835;
+    --bd-dat: #22b35e;
+    --bd-dat-chu: #3ecf7a;
+    --bd-canh-bao: #fab219;
+    --bd-canh-bao-chu: #fab219;
+    --bd-chua-dat: #e66767;
+    --bd-chu-xanh: #86b6ef;
+    --bd-chu-teal: #3fcf98;
+    --bd-chu-tim: #b3aaf2;
+    --bd-chu-cam: #f08a5d;
+    --bd-nen-phu: #232321;
+    --bd-tip-nen: #ffffff;
+    --bd-tip-chu: #1a1a19;
+    --thieu-chu: #7f93a8;
+    --thieu-vien: #2c4256;
+    --thieu-nen: #0e1c29;
+    --the-thieu-nen: #0d1b28;
+    --nen-nguon: #0d1b28;
+    --ghi-chu-nen: #12253a;
+    --ghi-chu-nen-canh-bao: #2a2210;
+    --dai-tu: #0f2246;
+    --dai-den: #16305e;
+    --dai-ic-tu: #2f6fd8;
+    --dai-ic-den: #0a90b8;
+    --dai-chu-phu: #93abd4;
+    --dai-so: #6cc5ec;
+    --dai-nhan-nen: rgb(56 189 248 / 0.16);
+    --dai-nhan-vien: rgb(56 189 248 / 0.4);
+    --dai-nhan-chu: #6cc5ec;
+    --dai-nhan-tat-nen: rgb(148 163 184 / 0.12);
+    --dai-nhan-tat-vien: rgb(148 163 184 / 0.34);
+    --dai-nhan-tat-chu: #aebdcd;
+    --vach-muc-tieu: #93a6ba;
+    --nen-ban-do: #16283a;
+    --phu-ban-do: rgb(11 23 36 / 0.84);
+    --anh-trong-1: #15242f;
+    --anh-trong-2: #1b2c39;
+    --shadow: 0 1px 3px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+  }
+}
+:root[data-theme='dark'] {
+  --teal: #22b3a5;
+  --nen-tab: #16283a;
+  --cot-nang: #24425c;
+  --nen-tin-ai: #16283a;
+  --nen-goi-y: #142434;
+  --vien-goi-y: #24425c;
+  --vien-keo: #2a4258;
+  --nen-keo: #142434;
+  --vien-khung: #243a4f;
+  --nen-khung: #101d2b;
+  --grid-line: #1c3245;
+  --track: #1a2c3e;
+  --divider-soft: #1a2e41;
+  --border-strong: #2c4a66;
+  --chart-axis: #6f87a0;
+  --hero-rule: #f5b301;
+  --ai-ink: #b9b6ff;
+  --ai-line: #2b2f5e;
+  --ai-chip-from: #1b1f3d;
+  --ai-chip-to: #241b3d;
+  --ai-box-line: #2b2f5e;
+  --ai-box-from: #161a33;
+  --ai-box-to: #1c1733;
+  --tint-teal: #0d2f2e;
+  --sap-han: #f28a3c;
+  --sap-han-bg: #3a200b;
+  --sap-han-tx: #f7a364;
+  --bd-nen-nhan: #184f95;
+  --bd-ray: #2c2c2a;
+  --bd-khac: #5d5c57;
+  --bd-luoi: #2c2c2a;
+  --bd-truc: #383835;
+  --bd-dat: #22b35e;
+  --bd-dat-chu: #3ecf7a;
+  --bd-canh-bao: #fab219;
+  --bd-canh-bao-chu: #fab219;
+  --bd-chua-dat: #e66767;
+  --bd-chu-xanh: #86b6ef;
+  --bd-chu-teal: #3fcf98;
+  --bd-chu-tim: #b3aaf2;
+  --bd-chu-cam: #f08a5d;
+  --bd-nen-phu: #232321;
+  --bd-tip-nen: #ffffff;
+  --bd-tip-chu: #1a1a19;
+  --thieu-chu: #7f93a8;
+  --thieu-vien: #2c4256;
+  --thieu-nen: #0e1c29;
+  --the-thieu-nen: #0d1b28;
+  --nen-nguon: #0d1b28;
+  --ghi-chu-nen: #12253a;
+  --ghi-chu-nen-canh-bao: #2a2210;
+  --dai-tu: #0f2246;
+  --dai-den: #16305e;
+  --dai-ic-tu: #2f6fd8;
+  --dai-ic-den: #0a90b8;
+  --dai-chu-phu: #93abd4;
+  --dai-so: #6cc5ec;
+  --dai-nhan-nen: rgb(56 189 248 / 0.16);
+  --dai-nhan-vien: rgb(56 189 248 / 0.4);
+  --dai-nhan-chu: #6cc5ec;
+  --dai-nhan-tat-nen: rgb(148 163 184 / 0.12);
+  --dai-nhan-tat-vien: rgb(148 163 184 / 0.34);
+  --dai-nhan-tat-chu: #aebdcd;
+  --vach-muc-tieu: #93a6ba;
+  --nen-ban-do: #16283a;
+  --phu-ban-do: rgb(11 23 36 / 0.84);
+  --anh-trong-1: #15242f;
+  --anh-trong-2: #1b2c39;
+  --shadow: 0 1px 3px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+}
+
+@theme inline {
+  --color-navy: var(--navy);
+  --color-navy-2: var(--navy-2);
+  --color-brand-soft: var(--brand-soft);
+  --color-chu-phu: var(--gdos-muted);
+  --color-ok-bg: var(--ok-bg);
+  --color-ok-tx: var(--ok-tx);
+  --color-canh-bao: var(--gdos-danger);
+  --color-canh-bao-bg: var(--gdos-danger-bg);
+  --color-warn-bg: var(--warn-bg);
+  --color-warn-tx: var(--warn-tx);
+  --color-tim-bg: var(--gdos-accent-bg);
+  --color-teal: var(--teal);
+  --color-qr-o: #0a2540;
+  --color-bien-so: #0a2540;
+  --color-cot-nang: var(--cot-nang);
+  --color-nen-tin-ai: var(--nen-tin-ai);
+  --color-nen-goi-y: var(--nen-goi-y);
+  --color-vien-goi-y: var(--vien-goi-y);
+  --color-vien-keo: var(--vien-keo);
+  --color-nen-keo: var(--nen-keo);
+  --color-vien-khung: var(--vien-khung);
+  --color-nen-khung: var(--nen-khung);
+  --color-nen-tab: var(--nen-tab);
+  --color-row-head: var(--row-head);
+  --color-row-hover: var(--row-hover);
+  --color-nav-active: var(--nav-active);
+  --color-grid-line: var(--grid-line);
+  --color-track: var(--track);
+  --color-divider-soft: var(--divider-soft);
+  --color-border-strong: var(--border-strong);
+  --color-chart-axis: var(--chart-axis);
+  --color-hero-rule: var(--hero-rule);
+  --color-ai-ink: var(--ai-ink);
+  --color-ai-line: var(--ai-line);
+  --color-ai-box-line: var(--ai-box-line);
+  --color-tint-accent: var(--tint-accent);
+  --color-tint-teal: var(--tint-teal);
+  --color-sap-han: var(--sap-han);
+  --color-sap-han-bg: var(--sap-han-bg);
+  --color-sap-han-tx: var(--sap-han-tx);
+  --color-bd-1: var(--bd-1);
+  --color-bd-2: var(--bd-2);
+  --color-bd-3: var(--bd-3);
+  --color-bd-4: var(--bd-4);
+  --color-bd-5: var(--bd-5);
+  --color-bd-7: var(--bd-7);
+  --color-bd-nen-nhan: var(--bd-nen-nhan);
+  --color-bd-ray: var(--bd-ray);
+  --color-bd-khac: var(--bd-khac);
+  --color-bd-luoi: var(--bd-luoi);
+  --color-bd-truc: var(--bd-truc);
+  --color-bd-dat: var(--bd-dat);
+  --color-bd-dat-chu: var(--bd-dat-chu);
+  --color-bd-canh-bao: var(--bd-canh-bao);
+  --color-bd-canh-bao-chu: var(--bd-canh-bao-chu);
+  --color-bd-chua-dat: var(--bd-chua-dat);
+  --color-bd-chu-xanh: var(--bd-chu-xanh);
+  --color-bd-chu-teal: var(--bd-chu-teal);
+  --color-bd-chu-tim: var(--bd-chu-tim);
+  --color-bd-chu-cam: var(--bd-chu-cam);
+  --color-bd-nen-phu: var(--bd-nen-phu);
+  --color-bd-tip-nen: var(--bd-tip-nen);
+  --color-bd-tip-chu: var(--bd-tip-chu);
+  --color-thieu-chu: var(--thieu-chu);
+  --color-thieu-vien: var(--thieu-vien);
+  --color-thieu-nen: var(--thieu-nen);
+  --color-the-thieu-nen: var(--the-thieu-nen);
+  --color-nen-nguon: var(--nen-nguon);
+  --color-ghi-chu-nen: var(--ghi-chu-nen);
+  --color-ghi-chu-nen-canh-bao: var(--ghi-chu-nen-canh-bao);
+  --color-dai-chu-phu: var(--dai-chu-phu);
+  --color-dai-so: var(--dai-so);
+  --color-vach-muc-tieu: var(--vach-muc-tieu);
+  --color-nen-ban-do: var(--nen-ban-do);
+  --color-phu-ban-do: var(--phu-ban-do);
+  --background-image-anh-trong: repeating-linear-gradient(
+    45deg,
+    var(--anh-trong-1) 0 8px,
+    var(--anh-trong-2) 8px 16px
+  );
+  --radius-card: var(--gdos-radius);
+  --shadow-card: var(--shadow);
+  --shadow-tab: 0 1px 3px rgb(10 37 64 / 0.12);
+}
+
+/*
+ * .mapwrap — khung bọc bản đồ (port từ bản gốc). Khung này chứa các lớp phủ
+ * đặt absolute (bảng chọn lớp, nhãn đơn vị) nên cũng phải là stacking context
+ * riêng để z-index của chúng chỉ so trong khung.
+ */
+.mapwrap {
+  position: relative;
+  isolation: isolate;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+/*
+ * Leaflet đặt z-index rất cao cho lớp và nút điều khiển của nó
+ * (.leaflet-top/.leaflet-bottom = 1000, .leaflet-control = 800). Bản thân
+ * .leaflet-container lại không tạo stacking context, nên các số đó leo thẳng
+ * ra ngoài và đè lên TopBar (z-60) cùng Sidebar (z-50).
+ *
+ * `isolation: isolate` tạo stacking context ngay tại khung bản đồ: mọi z-index
+ * bên trong chỉ so với nhau, không so với phần còn lại của portal. Giữ nguyên
+ * thứ tự lớp nội bộ của Leaflet nên bản đồ vẫn hiển thị và tương tác như cũ.
+ */
+.leaflet-container {
+  isolation: isolate;
+  /* Chặn thêm một lớp nữa: dù có gì lọt ra cũng phải nằm dưới Sidebar/TopBar. */
+  z-index: 0;
+}
+
+/*
+ * CSS của Leaflet bị Vite tách sang chunk riêng, nạp *sau* stylesheet chính khi
+ * bản đồ lazy-load. Cùng độ đặc hiệu mà đứng sau thì Leaflet thắng, nên quy tắc
+ * ở trên có thể bị `.leaflet-container{...}` của nó ghi đè.
+ *
+ * Hai lớp chồng nhau nâng độ đặc hiệu lên (0,2,0) — cao hơn mọi khai báo
+ * `.leaflet-container` một lớp của Leaflet, nên không còn phụ thuộc thứ tự nạp.
+ * Đây là cách duy nhất giữ được mà không dùng `!important`.
+ */
+.leaflet-container.leaflet-container {
+  isolation: isolate;
+  z-index: 0;
+}
+
+/*
+ * Nhãn và ghim vẽ trên nền bản đồ Leaflet — port nguyên giá trị bản gốc
+ * (dòng 843–949). Màu ở đây là màu bản đồ học: chữ tối trên viền trắng để đọc
+ * được trên mọi ảnh nền, nên giữ cố định ở cả giao diện sáng và tối.
+ */
+.ptip {
+  background: #fff;
+  border: 1px solid #e1e8f0;
+  border-radius: 6px;
+  color: #0a2540;
+  font-weight: 700;
+  font-size: 0.66rem;
+  padding: 1px 6px;
+  box-shadow: none;
+}
+.ptip.qh {
+  color: #7c3aed;
+}
+.ptip::before {
+  display: none;
+}
+.moc-ic {
+  color: #e5484d;
+  font-size: 15px;
+  line-height: 1;
+  text-shadow: 0 1px 2px #fff;
+  white-space: nowrap;
+}
+.moc-ic span {
+  font-size: 11px;
+  font-weight: 800;
+  margin-left: 2px;
+}
+.kv-lb {
+  font-size: 12px;
+  font-weight: 800;
+  color: #3d5a3d;
+  text-shadow:
+    0 1px 3px #fff,
+    0 -1px 3px #fff;
+  white-space: nowrap;
+}
+.edge-lb {
+  background: #fff;
+  border: 1px solid #8b98a8;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #0a2540;
+  padding: 1px 4px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+  white-space: nowrap;
+  text-align: center;
+}
+.qz-lb {
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-shadow: 0 1px 2px rgb(255 255 255 / 0.55);
+  white-space: nowrap;
+}
+.pu-tb {
+  border-collapse: collapse;
+}
+.pu-tb td {
+  padding: 3px 8px;
+  font-size: 0.76rem;
+  border-bottom: 1px solid #eef2f7;
+  color: #5a6b7f;
+}
+.pu-tb td b {
+  color: #0a2540;
+}
+
+/* .sn-pin — ghim số nhà trên bản đồ biển số thông minh */
+.sn-pin {
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  border-radius: 5px;
+  padding: 2px 0;
+  text-align: center;
+  box-shadow: 0 2px 6px rgb(10 37 64 / 0.4);
+  border: 1.5px solid #fff;
+}
+
+/*
+ * .map-chip — nhãn đơn vị hành chính góc dưới bản đồ.
+ * Bản gốc để z-index 500 vì cả trang là một stacking context phẳng; ở bản React
+ * nhãn này nằm trong khung bản đồ đã `isolation: isolate` nên chỉ cần nổi trên
+ * lớp bản đồ, không được cạnh tranh với TopBar/Sidebar.
+ */
+.map-chip {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 10;
+  display: flex;
+  box-shadow: 0 3px 10px rgb(10 37 64 / 0.25);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.map-chip .mc-org {
+  background: #f4511e;
+  color: #fff;
+  padding: 7px 13px;
+}
+.map-chip .mc-w {
+  background: #fff;
+  color: #0a2540;
+  padding: 7px 13px;
+}

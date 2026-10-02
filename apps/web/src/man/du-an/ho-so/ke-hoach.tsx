@@ -11,6 +11,7 @@ import { useState, type FormEvent } from 'react'
 import { chotKeHoach, themBuoc } from '@/lib/du-an'
 import { ngayVn } from '@/lib/ngay'
 import { KhungBang, LOP_TD, LOP_TH, Nut, OChon, ODanhDau, ONhap, The, ThongBao } from '@/ui/co-ban'
+import { BangGiaHan } from './gia-han'
 import { useGhiHoSo } from './ghi-ho-so'
 
 /**
@@ -19,6 +20,52 @@ import { useGhiHoSo } from './ghi-ho-so'
  * thức và ghi phiên bản mới kèm lý do — số lần điều chỉnh vào KPI.
  */
 export default function KeHoach({ hs }: { hs: HoSoDuAn }) {
+  const cuoi = hs.phienBan[0]
+  const that = hs.buoc.filter((b) => !b.laNhom && !b.laNhap)
+  const nhap = hs.buoc.filter((b) => b.laNhap)
+  const lech = that.filter((b) => b.id in hs.hanDaChot && hs.hanDaChot[b.id] !== b.han)
+  const coThayDoi = nhap.length > 0 || lech.length > 0
+
+  return (
+    <>
+      <div className="mb-4 grid gap-3 sm:grid-cols-3">
+        <TheSo
+          nhan="Phiên bản đã chốt"
+          gt={`v${cuoi?.so ?? 1}`}
+          phu={`${Math.max(0, hs.phienBan.length - 1)} lần điều chỉnh`}
+        />
+        <TheSo
+          nhan="Thay đổi chưa chốt"
+          gt={nhap.length + lech.length}
+          phu="đang lưu nháp"
+          mau={coThayDoi ? 'text-warn' : undefined}
+        />
+        <TheSo
+          nhan="Trượt tích lũy"
+          gt={hs.phienBan.reduce((t, p) => t + p.soNgayLui, 0)}
+          phu="ngày qua các lần chốt"
+          mau={hs.phienBan.some((p) => p.soNgayLui > 0) ? 'text-danger' : undefined}
+        />
+      </div>
+      <BangGiaHan hs={hs} />
+      <KeHoachChinh hs={hs} />
+    </>
+  )
+}
+
+function TheSo({ nhan, gt, phu, mau }: { nhan: string; gt: string | number; phu: string; mau?: string }) {
+  return (
+    <div className="rounded-[10px] border border-line bg-nen px-3.5 py-3">
+      <p className="m-0 text-[11px] font-bold tracking-[.06em] text-faint uppercase">{nhan}</p>
+      <p className={`m-0 mt-0.5 text-[24px] leading-tight font-bold tabular-nums ${mau ?? 'text-ink'}`}>
+        {gt}
+      </p>
+      <p className="m-0 text-[11.5px] text-faint">{phu}</p>
+    </div>
+  )
+}
+
+function KeHoachChinh({ hs }: { hs: HoSoDuAn }) {
   const cuoi = hs.phienBan[0]
   const that = hs.buoc.filter((b) => !b.laNhom && !b.laNhap)
   const nhap = hs.buoc.filter((b) => b.laNhap)

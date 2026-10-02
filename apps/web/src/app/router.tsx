@@ -142,6 +142,15 @@ const vanBan = createRoute({
 const chucNang = createRoute({
   getParentRoute: () => portal,
   path: '/$chucNang',
+  // "nguon": mở sẵn một văn bản làm nguồn (vd Soạn thảo văn bản từ bản tóm tắt).
+  // "ma": mở thẳng một bản ghi trong màn (vd ngăn chi tiết nhiệm vụ từ thông báo).
+  validateSearch: (s: Record<string, unknown>): { nguon?: string; ma?: string } => {
+    const uuid = (v: unknown) => (typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v) ? v : undefined)
+    const nguon = uuid(s.nguon)
+    // Mã bản ghi của Native (chatbot) không chắc là UUID — chỉ cho chữ, số, gạch.
+    const ma = typeof s.ma === 'string' && /^[A-Za-z0-9_-]{6,64}$/.test(s.ma) ? s.ma : undefined
+    return { ...(nguon ? { nguon } : {}), ...(ma ? { ma } : {}) }
+  },
   component: function ManChucNang() {
     const { chucNang: id } = chucNang.useParams()
     return <TrangChucNang id={id} />

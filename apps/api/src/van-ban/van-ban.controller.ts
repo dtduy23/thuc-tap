@@ -18,6 +18,7 @@ import { maUuid } from '../chung/kiem-than.js'
 import type { TepTaiLen } from '../du-an/ho-so.service.js'
 import { KET_NOI_NATIVE, type KetNoiNative } from '../native/ket-noi-native.js'
 import { LienKetNativeService } from '../native/lien-ket.service.js'
+import { OcrService } from '../ocr/ocr.service.js'
 import { CanQuyen, ChiCanDangNhap, NguoiDung, type NguoiDungPhien } from '../xac-thuc/bao-ve.js'
 import { VanBanService } from './van-ban.service.js'
 
@@ -94,7 +95,10 @@ export class VanBanController {
 /** Quản trị › Kết nối › Dịch vụ nền tảng — hệ thống GDOS gọi tới và trạng thái. */
 @Controller('ket-noi')
 export class KetNoiController {
-  constructor(@Inject(KET_NOI_NATIVE) private readonly native: KetNoiNative) {}
+  constructor(
+    @Inject(KET_NOI_NATIVE) private readonly native: KetNoiNative,
+    @Inject(OcrService) private readonly ocr: OcrService,
+  ) {}
 
   @Get()
   @CanQuyen('QT_DICH_VU.READ')
@@ -107,6 +111,13 @@ export class KetNoiController {
         diaChi: this.native.diaChi,
         moTa: this.native.moTa,
       },
+      {
+        ma: 'foxai-native-ocr',
+        ten: 'FOXAI Native — OCR Service',
+        cheDo: this.ocr.cheDo,
+        diaChi: this.ocr.diaChi,
+        moTa: 'Nhận dạng chứng từ: GDOS lấy kết quả (JSON) về — xem Kết nối › Nhận dạng chứng từ (OCR).',
+      },
     ]
   }
 
@@ -116,7 +127,11 @@ export class KetNoiController {
   async kiemTra(@Param('ma') ma: string): Promise<KetQuaKiemTraKetNoi> {
     const batDau = Date.now()
     const kq =
-      ma === 'foxai-native' ? await this.native.kiemTra() : { ok: false, thongDiep: 'Không có kết nối này.' }
+      ma === 'foxai-native'
+        ? await this.native.kiemTra()
+        : ma === 'foxai-native-ocr'
+          ? await this.ocr.kiemTra()
+          : { ok: false, thongDiep: 'Không có kết nối này.' }
     return { ma, ...kq, msPhanHoi: Date.now() - batDau, luc: new Date().toISOString() }
   }
 }

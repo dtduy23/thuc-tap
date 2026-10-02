@@ -106,7 +106,7 @@ export function CayPhanHe({ cay, dangXem }: { cay: NhanhTang[]; dangXem: string 
                 const k2 = `g:${n.ma}`
                 const mo2 = !dong.includes(k2)
                 return (
-                  <section key={n.ma} aria-label={n.nhan}>
+                  <section key={n.ma} aria-label={n.nhan} className="ml-3">
                     {/* Cấp 2 — Nhóm */}
                     <button
                       type="button"

@@ -14,6 +14,7 @@ nào** — để sáu tháng sau không ai phải đoán, và AI không lặng l
 | [0007](0007-mot-chu-nhieu-loi-vao.md)  | Một chủ, nhiều lối vào — báo cáo, chỉ số, cảnh báo khai một lần        | Đã chốt    |
 | [0008](0008-mo-hinh-du-an.md)          | Mô hình dữ liệu Dự án: chủ đầu tư là đơn vị, nhà thầu là thành viên    | Đã chốt    |
 | [0009](0009-noi-foxai-native.md)       | Nối FOXAI Native qua máy chủ GDOS; hồ sơ ở GDOS, Native chỉ xử lý      | Đã chốt    |
+| [0010](0010-nguon-du-lieu-vao.md)      | Nguồn dữ liệu vào: số liệu chỉ tiêu nạp qua API và Excel, một kho      | Đã chốt    |
 
 ## Viết ADR mới
 

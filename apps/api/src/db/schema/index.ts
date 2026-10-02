@@ -477,9 +477,62 @@ export const duAnVuongMac = pgTable(
     ngayGiaiQuyet: date('ngay_giai_quyet', { mode: 'string' }),
     ketQua: text('ket_qua'),
     nguoiNeu: uuid('nguoi_neu'),
+    // Phân tích nguyên nhân và giải pháp.
+    nhomNguyenNhan: text('nhom_nguyen_nhan'),
+    nguyenNhan: text('nguyen_nhan'),
+    giaiPhap: text('giai_phap'),
+    donViXuLy: text('don_vi_xu_ly'),
+    hanXuLy: date('han_xu_ly', { mode: 'string' }),
+    mucDo: text('muc_do').notNull().default('trung-binh'),
     ...thoiDiem,
   },
-  (t) => [index('du_an_vuong_mac_du_an_idx').on(t.duAnId)],
+  (t) => [
+    index('du_an_vuong_mac_du_an_idx').on(t.duAnId),
+    check('du_an_vuong_mac_muc_do_ck', sql`${t.mucDo} in ('thap', 'trung-binh', 'cao')`),
+  ],
+)
+
+/**
+ * Yêu cầu XIN GIA HẠN một bước, đi qua luồng phê duyệt (Tầng 2 › Luồng phê duyệt). Các cấp
+ * duyệt được chụp lại lúc gửi; mỗi quyết định ghi thêm vào `da_qua`. Duyệt xong cấp cuối
+ * thì hạn bước đổi theo và kế hoạch chốt thành phiên bản mới.
+ */
+export const duAnGiaHan = pgTable(
+  'du_an_gia_han',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    duAnId: uuid('du_an_id')
+      .notNull()
+      .references(() => duAn.id),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    buocId: uuid('buoc_id')
+      .notNull()
+      .references(() => duAnBuoc.id),
+    hanCu: date('han_cu', { mode: 'string' }),
+    hanMoi: date('han_moi', { mode: 'string' }).notNull(),
+    lyDo: text('ly_do').notNull(),
+    canCu: text('can_cu'),
+    /** cho-duyet · da-duyet · tu-choi · da-rut */
+    trangThai: text('trang_thai').notNull().default('cho-duyet'),
+    nguoiXin: uuid('nguoi_xin').notNull(),
+    ngayXin: date('ngay_xin', { mode: 'string' }).notNull(),
+    /** [{ ten, vai }] — luồng lúc gửi. */
+    cacCap: jsonb('cac_cap').notNull(),
+    /** Cấp đang chờ (từ 1). */
+    capHienTai: integer('cap_hien_tai').notNull().default(1),
+    /** [{ cap, tenCap, nguoiId, dongY, yKien, luc }] */
+    daQua: jsonb('da_qua').notNull(),
+    ...thoiDiem,
+  },
+  (t) => [
+    index('du_an_gia_han_du_an_idx').on(t.duAnId, t.createdAt),
+    check(
+      'du_an_gia_han_trang_thai_ck',
+      sql`${t.trangThai} in ('cho-duyet', 'da-duyet', 'tu-choi', 'da-rut')`,
+    ),
+  ],
 )
 
 /** Một lần đôn đốc (Điều 36 NĐ 45) gửi tới một dự án. Vết — không sửa; hiện ở "Việc của tôi" của cán bộ phụ trách. */
@@ -596,3 +649,163 @@ export const lienKetNative = pgTable('lien_ket_native', {
   lienKetLuc: timestamp('lien_ket_luc', { withTimezone: true }).notNull().defaultNow(),
   lamMoiLuc: timestamp('lam_moi_luc', { withTimezone: true }).notNull().defaultNow(),
 })
+
+/**
+ * LOẠI CHỨNG TỪ của OCR Service (FOXAI Native) — bản chụp ĐỊNH NGHĨA trường và bảng của
+ * từng loại. GDOS không khai cứng trường nào: màn hình và nghiệp vụ dựng theo `dinh_nghia`.
+ * `bat` = loại này được lấy kết quả về GDOS (Native dùng chung nhiều khách — không lấy hết).
+ */
+export const ocrLoai = pgTable(
+  'ocr_loai',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    /** Mã loại phía Native (schema code), vd CHUNGTU. */
+    ma: text('ma').notNull(),
+    ten: text('ten').notNull(),
+    moTa: text('mo_ta'),
+    nativeId: text('native_id').notNull(),
+    /** Native còn bật loại này không. */
+    hoatDong: boolean('hoat_dong').notNull().default(true),
+    /** { truong: [{khoa, nhan, kieu, batBuoc}], bang: [{khoa, ten, cot: [{khoa, nhan, kieu}]}] } */
+    dinhNghia: jsonb('dinh_nghia').notNull(),
+    bat: boolean('bat').notNull().default(false),
+    dongBoLuc: timestamp('dong_bo_luc', { withTimezone: true }).notNull().defaultNow(),
+    ...thoiDiem,
+  },
+  (t) => [uniqueIndex('ocr_loai_ma_uq').on(t.donViId, t.ma)],
+)
+
+/**
+ * KẾT QUẢ NHẬN DẠNG lấy về từ OCR Service của FOXAI Native — một dòng một chứng từ.
+ * `du_lieu` (trường → giá trị) và `bang` (bảng → các dòng) giữ NGUYÊN như Native trả;
+ * dùng thế nào là việc của phân hệ tác nghiệp.
+ */
+export const ocrChungTu = pgTable(
+  'ocr_chung_tu',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    nativeId: text('native_id').notNull(),
+    maLoai: text('ma_loai').notNull(),
+    tenLoai: text('ten_loai').notNull(),
+    tenTep: text('ten_tep').notNull(),
+    loaiTep: text('loai_tep'),
+    /** da-xu-ly (Native nhận dạng xong) · da-xac-nhan (người dùng Native đã soát). */
+    trangThai: text('trang_thai').notNull(),
+    /** Độ tin cậy 0–1 do Native chấm. */
+    doTinCay: doublePrecision('do_tin_cay'),
+    duLieu: jsonb('du_lieu').notNull(),
+    bang: jsonb('bang').notNull(),
+    nativeTaoLuc: timestamp('native_tao_luc', { withTimezone: true }),
+    nativeCapNhatLuc: timestamp('native_cap_nhat_luc', { withTimezone: true }),
+    layVeLuc: timestamp('lay_ve_luc', { withTimezone: true }).notNull().defaultNow(),
+    layBoi: uuid('lay_boi'),
+    ...thoiDiem,
+  },
+  (t) => [
+    uniqueIndex('ocr_chung_tu_native_uq').on(t.donViId, t.nativeId),
+    index('ocr_chung_tu_loai_idx').on(t.donViId, t.maLoai, t.nativeCapNhatLuc),
+    check('ocr_chung_tu_trang_thai_ck', sql`${t.trangThai} in ('da-xu-ly', 'da-xac-nhan')`),
+  ],
+)
+
+/**
+ * NGUỒN DỮ LIỆU VÀO kiểu API — hệ thống của khách trả số liệu chỉ tiêu (JSON). Quản trị khai
+ * địa chỉ, cách xác thực và ÁNH XẠ trường → mã chỉ tiêu. Bí mật nằm ở bảng riêng
+ * `nguon_du_lieu_bi_mat` (không vào nhật ký, không bao giờ trả về trình duyệt).
+ */
+export const nguonDuLieu = pgTable(
+  'nguon_du_lieu',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    ten: text('ten').notNull(),
+    diaChi: text('dia_chi').notNull(),
+    /** khong · bearer (Authorization: Bearer …) · header (tên header tự đặt). */
+    xacThuc: text('xac_thuc').notNull().default('khong'),
+    tenHeader: text('ten_header'),
+    /** AnhXaNguon (@gdos/shared). */
+    anhXa: jsonb('anh_xa').notNull(),
+    bat: boolean('bat').notNull().default(true),
+    ...thoiDiem,
+  },
+  (t) => [
+    index('nguon_du_lieu_don_vi_idx').on(t.donViId),
+    check('nguon_du_lieu_xac_thuc_ck', sql`${t.xacThuc} in ('khong', 'bearer', 'header')`),
+  ],
+)
+
+/** Khóa / token của một nguồn API — ĐÃ MÃ HÓA (AES-GCM). Kho bí mật: không gắn trigger nhật ký. */
+export const nguonDuLieuBiMat = pgTable('nguon_du_lieu_bi_mat', {
+  nguonId: uuid('nguon_id')
+    .primaryKey()
+    .references(() => nguonDuLieu.id),
+  donViId: uuid('don_vi_id')
+    .notNull()
+    .references(() => donVi.id),
+  maHoa: text('ma_hoa').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+/** Một LẦN NẠP số liệu chỉ tiêu — qua API hoặc tệp Excel. Vết để tra: ai, lúc nào, bao nhiêu dòng, lỗi gì. */
+export const chiTieuLanNap = pgTable(
+  'chi_tieu_lan_nap',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    kenh: text('kenh').notNull(),
+    nguonId: uuid('nguon_id').references(() => nguonDuLieu.id),
+    /** Tên nguồn API hoặc tên tệp Excel lúc nạp. */
+    tenNguon: text('ten_nguon').notNull(),
+    trangThai: text('trang_thai').notNull(),
+    soDong: integer('so_dong').notNull().default(0),
+    soLoi: integer('so_loi').notNull().default(0),
+    /** Các câu lỗi (tối đa 50). */
+    loi: jsonb('loi').notNull(),
+    nguoiNap: uuid('nguoi_nap'),
+    ...thoiDiem,
+  },
+  (t) => [
+    index('chi_tieu_lan_nap_don_vi_idx').on(t.donViId, t.createdAt),
+    check('chi_tieu_lan_nap_kenh_ck', sql`${t.kenh} in ('api', 'excel')`),
+    check('chi_tieu_lan_nap_trang_thai_ck', sql`${t.trangThai} in ('xong', 'loi')`),
+  ],
+)
+
+/**
+ * KHO SỐ LIỆU CHỈ TIÊU nạp từ ngoài — một dòng cho (đơn vị, chỉ tiêu, kỳ). Nạp lại cùng kỳ thì
+ * ghi đè, lần nạp sau cùng thắng. Điều hành chỉ ĐỌC kho này; không màn nghiệp vụ nào sửa tay.
+ */
+export const chiTieuSoLieu = pgTable(
+  'chi_tieu_so_lieu',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    maChiTieu: text('ma_chi_tieu').notNull(),
+    /** Kỳ tháng 'YYYY-MM'. */
+    ky: text('ky').notNull(),
+    giaTri: doublePrecision('gia_tri').notNull(),
+    kenh: text('kenh').notNull(),
+    tenNguon: text('ten_nguon').notNull(),
+    lanNapId: uuid('lan_nap_id')
+      .notNull()
+      .references(() => chiTieuLanNap.id),
+    ...thoiDiem,
+  },
+  (t) => [
+    uniqueIndex('chi_tieu_so_lieu_uq').on(t.donViId, t.maChiTieu, t.ky),
+    check('chi_tieu_so_lieu_kenh_ck', sql`${t.kenh} in ('api', 'excel')`),
+    check('chi_tieu_so_lieu_ky_ck', sql`${t.ky} ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'`),
+  ],
+)

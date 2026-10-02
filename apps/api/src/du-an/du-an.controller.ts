@@ -16,7 +16,8 @@ import { FileInterceptor } from '@nestjs/platform-express'
 import { homNay, LOC_DU_AN, type LocDuAn } from '@gdos/shared'
 import type { Response } from 'express'
 import { maUuid } from '../chung/kiem-than.js'
-import { CanQuyen, NguoiDung, type NguoiDungPhien } from '../xac-thuc/bao-ve.js'
+import { ThietLapService } from '../thiet-lap/thiet-lap.service.js'
+import { CanMotTrongQuyen, CanQuyen, NguoiDung, type NguoiDungPhien } from '../xac-thuc/bao-ve.js'
 import { headerTaiExcel, vietExcel } from '../xuyen-suot/bao-cao-chung.js'
 import { checklist } from './bao-cao.js'
 import { DongGopDuAnService } from './dong-gop.service.js'
@@ -35,6 +36,7 @@ export class DuAnController {
     @Inject(DuAnService) private readonly dv: DuAnService,
     @Inject(DongGopDuAnService) private readonly dongGop: DongGopDuAnService,
     @Inject(NhapDuAnService) private readonly nhapDv: NhapDuAnService,
+    @Inject(ThietLapService) private readonly thietLap: ThietLapService,
   ) {}
 
   @Get()
@@ -104,7 +106,8 @@ export class DuAnController {
   @Get(':id/checklist/excel')
   @CanQuyen('DU_AN.READ')
   async checklistExcel(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string, @Res() res: Response) {
-    const kq = checklist(await this.dv.hoSo(nd, maUuid(id)), homNay())
+    const { sapHanNgay } = await this.thietLap.nguong()
+    const kq = checklist(await this.dv.hoSo(nd, maUuid(id)), homNay(), sapHanNgay)
     res.set(headerTaiExcel(kq.tenTep)).send(await vietExcel(kq))
   }
 
@@ -200,6 +203,39 @@ export class DuAnController {
   @HttpCode(200)
   xoaBuoc(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string, @Param('buocId') b: string) {
     return this.dv.xoaBuoc(nd, maUuid(id), maUuid(b, 'buocId'))
+  }
+
+  // ── Xin gia hạn bước — qua luồng phê duyệt. Quyền chi tiết kiểm trên từng dự án. ──
+
+  @Post(':id/buoc/:buocId/xin-gia-han')
+  @CanQuyen('DU_AN.READ')
+  @HttpCode(200)
+  xinGiaHan(
+    @NguoiDung() nd: NguoiDungPhien,
+    @Param('id') id: string,
+    @Param('buocId') b: string,
+    @Body() than: unknown,
+  ) {
+    return this.dv.xinGiaHan(nd, maUuid(id), maUuid(b, 'buocId'), than)
+  }
+
+  @Post(':id/gia-han/:yeuCauId/duyet')
+  @CanMotTrongQuyen('DU_AN.UPDATE', 'DU_AN.APPROVE')
+  @HttpCode(200)
+  duyetGiaHan(
+    @NguoiDung() nd: NguoiDungPhien,
+    @Param('id') id: string,
+    @Param('yeuCauId') y: string,
+    @Body() than: unknown,
+  ) {
+    return this.dv.duyetGiaHan(nd, maUuid(id), maUuid(y, 'yeuCauId'), than)
+  }
+
+  @Post(':id/gia-han/:yeuCauId/rut')
+  @CanQuyen('DU_AN.READ')
+  @HttpCode(200)
+  rutGiaHan(@NguoiDung() nd: NguoiDungPhien, @Param('id') id: string, @Param('yeuCauId') y: string) {
+    return this.dv.rutGiaHan(nd, maUuid(id), maUuid(y, 'yeuCauId'))
   }
 
   @Post(':id/chot-ke-hoach')

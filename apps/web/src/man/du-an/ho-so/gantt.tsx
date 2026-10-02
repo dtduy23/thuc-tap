@@ -1,3 +1,5 @@
+import { useSuspenseQuery } from '@tanstack/react-query'
+import { truyVanCongKhai } from '@/lib/cau-hinh'
 import {
   GIAI_DOAN,
   homNay,
@@ -36,6 +38,7 @@ const COT_TEN = 300
 export default function Gantt({ hs }: { hs: HoSoDuAn }) {
   const [zoom, datZoom] = useState(1)
   const hn = homNay()
+  const { nguong } = useSuspenseQuery(truyVanCongKhai).data
   const px = MUC_ZOOM[zoom]!.px
 
   const { khoang, tu, den } = useMemo(() => {
@@ -81,7 +84,7 @@ export default function Gantt({ hs }: { hs: HoSoDuAn }) {
   const giaiDoan = Object.keys(GIAI_DOAN) as GiaiDoan[]
   const hang = (b: BuocDuAn) => {
     const k = khoang.get(b.id)
-    const tt = trangThaiBuoc(b, hn)
+    const tt = trangThaiBuoc(b, hn, nguong.sapHanNgay)
     return (
       <div key={b.id} className="flex min-h-[28px] items-center border-b border-line-2 hover:bg-nav-hover">
         <div

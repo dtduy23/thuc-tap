@@ -22,17 +22,24 @@ import {
   thongKeTienDo,
   tinhHan,
   TRANG_THAI_DU_AN,
+  VAI_DUYET,
   VAI_TRO_THANH_VIEN,
   type BuocDuAn,
+  type BuocDuyetDaQua,
   type BuocMau,
+  type CapDuyet,
   type CapNhatCho,
   type DuAnDong,
   type HoSoDuAn,
   type LocDuAn,
   type LoaiChi,
+  type LuongDuyet,
   type NhomDuAn,
   type TrangThaiDuAn,
+  type TrangThaiYeuCau,
   type VaiTroThanhVien,
+  type VuongMacDuAn,
+  type YeuCauGiaHan,
 } from '@gdos/shared'
 import { and, asc, desc, eq, inArray, isNull, or, sql, type SQL } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
@@ -53,6 +60,7 @@ import {
   donVi,
   duAn,
   duAnBuoc,
+  duAnGiaHan,
   duAnGiaiNgan,
   duAnPhienBan,
   duAnThanhVien,
@@ -61,6 +69,7 @@ import {
   duAnVuongMac,
   quyTrinhMau,
 } from '../db/schema/index.js'
+import { ThietLapService } from '../thiet-lap/thiet-lap.service.js'
 import type { NguoiDungPhien } from '../xac-thuc/bao-ve.js'
 
 const VAI_TRO = Object.keys(VAI_TRO_THANH_VIEN) as VaiTroThanhVien[]
@@ -182,13 +191,22 @@ type DongBuoc = Awaited<ReturnType<typeof docBuoc>>[number]
  */
 @Injectable()
 export class DuAnService {
-  constructor(@Inject(CoSoDuLieu) private readonly csdl: CoSoDuLieu) {}
+  constructor(
+    @Inject(CoSoDuLieu) private readonly csdl: CoSoDuLieu,
+    @Inject(ThietLapService) private readonly thietLap: ThietLapService,
+  ) {}
 
   private get db() {
     return dbCua(this.csdl)
   }
 
+  /** Ngưỡng "sắp hạn" đang cấu hình. Đọc TRƯỚC khi mở giao dịch — không lồng giao dịch. */
+  private async nguongSapHan(): Promise<number> {
+    return (await this.thietLap.nguong()).sapHanNgay
+  }
+
   async danhSach(nd: NguoiDungPhien, loc: LocDuAn): Promise<DuAnDong[]> {
+    const sapHanNgay = await this.nguongSapHan()
     return trongPhamVi(this.db, nd.nguCanh, async (tx) => {
       const dk: SQL | undefined =
         loc === 'cua-toi'
@@ -208,20 +226,29 @@ export class DuAnService {
           d,
           buoc.filter((b) => b.duAnId === d.id),
           hn,
+          sapHanNgay,
         ),
       )
     })
   }
 
-  hoSo(nd: NguoiDungPhien, id: string): Promise<HoSoDuAn> {
-    return trongPhamVi(this.db, nd.nguCanh, (tx) => docHoSo(tx, nd, id))
+  async hoSo(nd: NguoiDungPhien, id: string): Promise<HoSoDuAn> {
+    const ng = await this.nguongSapHan()
+    const luong = await this.luongGiaHan()
+    return trongPhamVi(this.db, nd.nguCanh, (tx) => docHoSo(tx, nd, id, ng, luong))
+  }
+
+  private async luongGiaHan(): Promise<LuongDuyet> {
+    return (await this.thietLap.luongDuyet())['gia-han-buoc']
   }
 
   async tao(nd: NguoiDungPhien, than: unknown): Promise<HoSoDuAn> {
     const dl = docDuAnMoi(than, nd.taiKhoanId)
+    const ng = await this.nguongSapHan()
+    const luong = await this.luongGiaHan()
     try {
       return await trongPhamVi(this.db, nd.nguCanh, async (tx) =>
-        docHoSo(tx, nd, await this.taoMot(tx, nd, dl)),
+        docHoSo(tx, nd, await this.taoMot(tx, nd, dl), ng, luong),
       )
     } catch (e) {
       if (maLoiPg(e) === TRUNG_KHOA) throw new ConflictException(`Mã dự án "${dl.ma}" đã có`)
@@ -396,6 +423,7 @@ export class DuAnService {
       donViThucHien: chuoiHoacRong(than, 'donViThucHien', 300),
       ghiChu: chuoiHoacRong(than, 'ghiChu', 2000),
       sanPham: chuoiHoacRong(than, 'sanPham', 2000),
+      anTongQuan: coKhong(than, 'anTongQuan'),
     }
     return this.voiBuoc(nd, id, buocId, 'sua', (tx, b) => {
       if (b.batBuoc && (ten !== undefined || stt !== undefined || benThucHien !== undefined))
@@ -480,6 +508,117 @@ export class DuAnService {
         .where(and(eq(duAnBuoc.duAnId, id), eq(duAnBuoc.laNhap, true), isNull(duAnBuoc.deletedAt)))
       await tinhLaiHan(tx, id)
       await ghiPhienBan(tx, nd, id, da.donViId, lyDo, canCu)
+    })
+  }
+
+  // ── Xin gia hạn bước (qua luồng phê duyệt — Tầng 2 › Luồng phê duyệt) ─────
+
+  /**
+   * Gửi yêu cầu lùi hạn một bước. Các cấp duyệt chụp lại lúc gửi. Một bước chỉ có một yêu cầu
+   * đang chờ. Hạn CHƯA đổi — chỉ đổi khi cấp cuối duyệt.
+   */
+  async xinGiaHan(nd: NguoiDungPhien, id: string, buocId: string, than: unknown): Promise<HoSoDuAn> {
+    const hanMoi = ngay(than, 'hanMoi')
+    const lyDo = chuoi(than, 'lyDo', 1000, true)
+    const canCu = chuoiHoacRong(than, 'canCu', 500) ?? null
+    const luong = await this.luongGiaHan()
+    if (!luong.bat)
+      throw new BadRequestException(
+        'Chức năng xin gia hạn đang tắt — quản trị bật ở Quản trị hệ thống › Luồng phê duyệt.',
+      )
+    return this.voiDuAn(nd, id, 'xinGiaHan', async (tx, da) => {
+      const [b] = (await docBuoc(tx, [id])).filter((x) => x.id === buocId)
+      if (!b) throw new NotFoundException('Không tìm thấy bước')
+      if (b.laNhom || b.laNhap || b.boQua || b.ngayHoanThanh || !b.han)
+        throw new BadRequestException('Bước này không xin gia hạn được (nhóm, nháp, đã bỏ qua hoặc đã xong)')
+      if (hanMoi <= b.han) throw new BadRequestException('Hạn mới phải sau hạn hiện tại của bước')
+      const [dangCho] = await tx
+        .select({ id: duAnGiaHan.id })
+        .from(duAnGiaHan)
+        .where(
+          and(
+            eq(duAnGiaHan.buocId, buocId),
+            eq(duAnGiaHan.trangThai, 'cho-duyet'),
+            isNull(duAnGiaHan.deletedAt),
+          ),
+        )
+      if (dangCho) throw new ConflictException('Bước này đang có một yêu cầu gia hạn chờ duyệt')
+      await tx.insert(duAnGiaHan).values({
+        duAnId: id,
+        donViId: da.donViId,
+        buocId,
+        hanCu: b.han,
+        hanMoi,
+        lyDo,
+        canCu,
+        nguoiXin: nd.taiKhoanId,
+        ngayXin: homNay(),
+        cacCap: luong.cap,
+        daQua: [],
+      })
+    })
+  }
+
+  /**
+   * Ra quyết định ở cấp đang chờ. Đồng ý ở cấp cuối: đặt hạn mới cho bước (các bước sau dời
+   * theo) và chốt kế hoạch thành phiên bản mới. Từ chối ở bất kỳ cấp nào: kết thúc, hạn giữ nguyên.
+   */
+  async duyetGiaHan(nd: NguoiDungPhien, id: string, yeuCauId: string, than: unknown): Promise<HoSoDuAn> {
+    const dongY = coKhong(than, 'dongY')
+    if (dongY === undefined) throw new BadRequestException('Thiếu quyết định đồng ý / từ chối')
+    const yKien = chuoiHoacRong(than, 'yKien', 1000) ?? null
+    if (!dongY && !yKien) throw new BadRequestException('Từ chối phải ghi lý do')
+    const luong = await this.luongGiaHan()
+    return this.voiDuAn(nd, id, 'xacNhan', async (tx, da) => {
+      const [yc] = await tx
+        .select()
+        .from(duAnGiaHan)
+        .where(and(eq(duAnGiaHan.id, yeuCauId), eq(duAnGiaHan.duAnId, id), isNull(duAnGiaHan.deletedAt)))
+      if (!yc) throw new NotFoundException('Không tìm thấy yêu cầu gia hạn')
+      if (yc.trangThai !== 'cho-duyet') throw new BadRequestException('Yêu cầu này đã kết thúc')
+      const cacCap = yc.cacCap as CapDuyet[]
+      const cap = cacCap[yc.capHienTai - 1]
+      if (!cap) throw new BadRequestException('Yêu cầu không còn cấp nào chờ duyệt')
+      if (!nd.quyen.has(VAI_DUYET[cap.vai].quyen))
+        throw new ForbiddenException(`Cấp “${cap.ten}” do ${VAI_DUYET[cap.vai].ten} duyệt`)
+      if (yc.nguoiXin === nd.taiKhoanId && !luong.choTuDuyet)
+        throw new ForbiddenException('Người gửi yêu cầu không tự duyệt được')
+      const daQua = [
+        ...(yc.daQua as Omit<BuocDuyetDaQua, 'nguoiTen'>[]),
+        {
+          cap: yc.capHienTai,
+          tenCap: cap.ten,
+          nguoiId: nd.taiKhoanId,
+          dongY,
+          yKien,
+          luc: new Date().toISOString(),
+        },
+      ]
+      const ghi = (gt: Partial<typeof duAnGiaHan.$inferInsert>) =>
+        tx.update(duAnGiaHan).set(gt).where(eq(duAnGiaHan.id, yc.id))
+      if (!dongY) return ghi({ trangThai: 'tu-choi', daQua })
+      if (yc.capHienTai < cacCap.length) return ghi({ capHienTai: yc.capHienTai + 1, daQua })
+      const [b] = (await docBuoc(tx, [id])).filter((x) => x.id === yc.buocId)
+      if (!b || b.ngayHoanThanh || b.boQua)
+        throw new BadRequestException('Bước đã xong hoặc đã bỏ qua — không gia hạn được nữa')
+      await ghi({ trangThai: 'da-duyet', daQua })
+      await capNhatBuoc(tx, b.id, { hanGhiDe: yc.hanMoi })
+      await tinhLaiHan(tx, id)
+      await ghiPhienBan(tx, nd, id, da.donViId, `Gia hạn bước ${b.stt}: ${yc.lyDo}`.slice(0, 1000), yc.canCu)
+    })
+  }
+
+  /** Người gửi rút yêu cầu khi còn chờ duyệt. */
+  rutGiaHan(nd: NguoiDungPhien, id: string, yeuCauId: string): Promise<HoSoDuAn> {
+    return this.voiDuAn(nd, id, 'xinGiaHan', async (tx) => {
+      const [yc] = await tx
+        .select({ id: duAnGiaHan.id, nguoiXin: duAnGiaHan.nguoiXin, trangThai: duAnGiaHan.trangThai })
+        .from(duAnGiaHan)
+        .where(and(eq(duAnGiaHan.id, yeuCauId), eq(duAnGiaHan.duAnId, id), isNull(duAnGiaHan.deletedAt)))
+      if (!yc) throw new NotFoundException('Không tìm thấy yêu cầu gia hạn')
+      if (yc.nguoiXin !== nd.taiKhoanId) throw new ForbiddenException('Chỉ người gửi được rút yêu cầu')
+      if (yc.trangThai !== 'cho-duyet') throw new BadRequestException('Yêu cầu này đã kết thúc')
+      await tx.update(duAnGiaHan).set({ trangThai: 'da-rut' }).where(eq(duAnGiaHan.id, yc.id))
     })
   }
 
@@ -572,12 +711,14 @@ export class DuAnService {
    * Mở dự án (RLS: không thấy → 404), kiểm quyền trên CHÍNH dự án, làm việc, tính lại
    * hạn, trả hồ sơ. Dùng chung cho mọi thao tác ghi của hồ sơ (cả HoSoDuAnService).
    */
-  voiDuAn(
+  async voiDuAn(
     nd: NguoiDungPhien,
     id: string,
     can: keyof HoSoDuAn['quyen'],
     viec: (tx: GiaoDich, da: DongDuAn) => Promise<unknown>,
   ): Promise<HoSoDuAn> {
+    const ng = await this.nguongSapHan()
+    const luong = await this.luongGiaHan()
     return trongPhamVi(this.db, nd.nguCanh, async (tx) => {
       const [da] = await docDuAn(tx, eq(duAn.id, id))
       if (!da) throw new NotFoundException('Không tìm thấy dự án')
@@ -585,8 +726,10 @@ export class DuAnService {
       if (!quyenTren(nd, da, tv)[can]) throw new ForbiddenException('Không có quyền thao tác này trên dự án')
       await viec(tx, da)
       await tinhLaiHan(tx, id)
-      if (can !== 'gui') await tx.update(duAn).set({ capNhatNgay: homNay() }).where(eq(duAn.id, id))
-      return docHoSo(tx, nd, id)
+      // Gửi cập nhật, xin gia hạn chưa phải là "đơn vị đã cập nhật dự án" (và nhà thầu không sửa được dự án).
+      if (can !== 'gui' && can !== 'xinGiaHan')
+        await tx.update(duAn).set({ capNhatNgay: homNay() }).where(eq(duAn.id, id))
+      return docHoSo(tx, nd, id, ng, luong)
     })
   }
 
@@ -656,15 +799,23 @@ function quyenTren(
 ): HoSoDuAn['quyen'] {
   const trong = nd.donViIds.includes(da.donViId)
   const sua = trong && nd.quyen.has('DU_AN.UPDATE')
+  const gui = !trong && nd.quyen.has('DU_AN.READ') && vaiTro.some((v) => v === 'nha-thau' || v === 'tu-van')
   return {
     sua,
     xacNhan: trong && (nd.quyen.has('DU_AN.UPDATE') || nd.quyen.has('DU_AN.APPROVE')),
     thanhVien: sua,
-    gui: !trong && nd.quyen.has('DU_AN.READ') && vaiTro.some((v) => v === 'nha-thau' || v === 'tu-van'),
+    gui,
+    xinGiaHan: sua || gui,
   }
 }
 
-async function docHoSo(tx: GiaoDich, nd: NguoiDungPhien, id: string): Promise<HoSoDuAn> {
+async function docHoSo(
+  tx: GiaoDich,
+  nd: NguoiDungPhien,
+  id: string,
+  nguongSapHan: number,
+  luongGiaHan: LuongDuyet,
+): Promise<HoSoDuAn> {
   const [da] = await docDuAn(tx, eq(duAn.id, id))
   if (!da) throw new NotFoundException('Không tìm thấy dự án')
   const buoc = await docBuoc(tx, [id])
@@ -709,7 +860,7 @@ async function docHoSo(tx: GiaoDich, nd: NguoiDungPhien, id: string): Promise<Ho
   const anh = (pb[0]?.anhChup ?? []) as { id: string; han: string | null }[]
   const phienBan: PhienBanKeHoach[] = pb.map(({ anhChup: _bo, ...p }) => p)
   return {
-    ...chuyenDuAn(da, buoc, homNay()),
+    ...chuyenDuAn(da, buoc, homNay(), nguongSapHan),
     canCu: da.canCu,
     tienDoMoTa: da.tienDoMoTa,
     diaDiem: da.diaDiem,
@@ -718,8 +869,65 @@ async function docHoSo(tx: GiaoDich, nd: NguoiDungPhien, id: string): Promise<Ho
     phienBan,
     hanDaChot: Object.fromEntries(anh.map((a) => [a.id, a.han])),
     ...(await docHoSoPhu(tx, id, Number(da.tongMuc))),
+    giaHan: await docGiaHan(tx, nd, id, da.donViId, luongGiaHan),
+    luongGiaHan: { bat: luongGiaHan.bat, cap: luongGiaHan.cap },
     quyen: quyenTren(nd, da, vaiToi),
   }
+}
+
+/** Yêu cầu gia hạn của một dự án + người đang xem được làm gì với từng yêu cầu. */
+async function docGiaHan(
+  tx: GiaoDich,
+  nd: NguoiDungPhien,
+  duAnId: string,
+  donViId: string,
+  luong: LuongDuyet,
+): Promise<YeuCauGiaHan[]> {
+  const ds = await tx
+    .select()
+    .from(duAnGiaHan)
+    .where(and(eq(duAnGiaHan.duAnId, duAnId), isNull(duAnGiaHan.deletedAt)))
+    .orderBy(desc(duAnGiaHan.createdAt))
+  const ten = new Map<string, string | null>()
+  const tenCua = async (tk: string) => {
+    if (!ten.has(tk)) {
+      const [r] = await truyVan<{ ten: string | null }>(tx, sql`select ten_tai_khoan(${tk}::uuid) as ten`)
+      ten.set(tk, r?.ten ?? null)
+    }
+    return ten.get(tk) ?? null
+  }
+  const trong = nd.donViIds.includes(donViId)
+  const kq: YeuCauGiaHan[] = []
+  for (const y of ds) {
+    const cacCap = y.cacCap as CapDuyet[]
+    const choDuyet = y.trangThai === 'cho-duyet'
+    const cap = choDuyet ? cacCap[y.capHienTai - 1] : undefined
+    const daQua: BuocDuyetDaQua[] = []
+    for (const d of y.daQua as Omit<BuocDuyetDaQua, 'nguoiTen'>[])
+      daQua.push({ ...d, nguoiTen: await tenCua(d.nguoiId) })
+    kq.push({
+      id: y.id,
+      buocId: y.buocId,
+      hanCu: y.hanCu,
+      hanMoi: y.hanMoi,
+      lyDo: y.lyDo,
+      canCu: y.canCu,
+      trangThai: y.trangThai as TrangThaiYeuCau,
+      nguoiXinId: y.nguoiXin,
+      nguoiXinTen: await tenCua(y.nguoiXin),
+      ngayXin: y.ngayXin,
+      cacCap,
+      capHienTai: choDuyet ? y.capHienTai : null,
+      daQua,
+      duocDuyet:
+        !!cap &&
+        trong &&
+        nd.quyen.has(VAI_DUYET[cap.vai].quyen) &&
+        (y.nguoiXin !== nd.taiKhoanId || luong.choTuDuyet),
+      duocRut: choDuyet && y.nguoiXin === nd.taiKhoanId,
+    })
+  }
+  return kq
 }
 
 function chuyenBuoc(b: DongBuoc, tenNguoi: Record<string, string | null> = {}): BuocDuAn {
@@ -733,7 +941,7 @@ function chuyenBuoc(b: DongBuoc, tenNguoi: Record<string, string | null> = {}): 
   }
 }
 
-function chuyenDuAn(d: DongDuAn, buoc: DongBuoc[], hn: string): DuAnDong {
+function chuyenDuAn(d: DongDuAn, buoc: DongBuoc[], hn: string, nguongSapHan: number): DuAnDong {
   return {
     id: d.id,
     ma: d.ma,
@@ -756,6 +964,7 @@ function chuyenDuAn(d: DongDuAn, buoc: DongBuoc[], hn: string): DuAnDong {
     thongKe: thongKeTienDo(
       buoc.map((b) => ({ ...b, giaiDoan: b.giaiDoan as BuocDuAn['giaiDoan'] })),
       hn,
+      nguongSapHan,
     ),
   }
 }
@@ -821,6 +1030,12 @@ async function docHoSoPhu(tx: GiaoDich, id: string, tongMuc: number) {
         ngayGiaiQuyet: duAnVuongMac.ngayGiaiQuyet,
         ketQua: duAnVuongMac.ketQua,
         nguoiNeu: sql<string | null>`ten_tai_khoan(${duAnVuongMac.nguoiNeu})`,
+        nhomNguyenNhan: duAnVuongMac.nhomNguyenNhan,
+        nguyenNhan: duAnVuongMac.nguyenNhan,
+        giaiPhap: duAnVuongMac.giaiPhap,
+        donViXuLy: duAnVuongMac.donViXuLy,
+        hanXuLy: duAnVuongMac.hanXuLy,
+        mucDo: duAnVuongMac.mucDo,
       })
       .from(duAnVuongMac)
       .where(and(eq(duAnVuongMac.duAnId, id), isNull(duAnVuongMac.deletedAt)))
@@ -832,7 +1047,11 @@ async function docHoSoPhu(tx: GiaoDich, id: string, tongMuc: number) {
     vanBan: vanBan.map((v) => ({ ...v, taiLuc: v.taiLuc.toISOString() })),
     von: vonSo,
     giaiNgan: dotSo,
-    vuongMac,
+    vuongMac: vuongMac.map((v) => ({
+      ...v,
+      nhomNguyenNhan: v.nhomNguyenNhan as VuongMacDuAn['nhomNguyenNhan'],
+      mucDo: v.mucDo as VuongMacDuAn['mucDo'],
+    })),
     taiChinh: tinhTaiChinh(tongMuc, vonSo, dotSo, Number(homNay().slice(0, 4))),
   }
 }

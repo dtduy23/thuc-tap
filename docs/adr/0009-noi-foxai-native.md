@@ -14,15 +14,15 @@ câu trả lời — ADR-0003 cấm tự chọn.
 ## Quyết định
 
 1. **Chỉ máy chủ GDOS gọi Native.** Trình duyệt không bao giờ gọi thẳng, không giữ token Native.
-   Mọi nghiệp vụ gọi qua MỘT giao diện `KetNoiNative` (`apps/api/src/native/ket-noi-native.ts`),
-   không module nào tự gọi HTTP sang Native.
+   Hồ sơ văn bản gọi qua MỘT giao diện `KetNoiNative` (`apps/api/src/native/ket-noi-native.ts`);
+   công cụ của Native đi qua cổng chuyển tiếp (mục 8). Không module nào khác tự gọi HTTP sang Native.
 2. **Hồ sơ nằm ở Postgres của GDOS, Native chỉ xử lý.** Bảng `van_ban` (RLS theo đơn vị, nhật
    ký, xóa mềm như mọi bảng nghiệp vụ) giữ tên, loại, trạng thái, nội dung gốc, bản tóm tắt; tệp
    gốc ở kho tệp của GDOS. Native tạm ngừng thì văn bản cũ vẫn xem được; lỗi gọi Native được ghi
    vào văn bản để gửi lại, không làm mất văn bản.
 3. **Gọi Native ngoài giao dịch database** — Native chậm không giữ khóa bảng. Văn bản đang chạy
    được đọc lại trạng thái khi có người xem (tối đa 20 văn bản mỗi lần), thay mặt người tạo.
-4. **Gọi Native bằng danh tính CỦA CHÍNH người dùng — như GDOS cũ ở gdos.fox.ai.vn.** Mỗi người
+4. **Gọi Native bằng danh tính CỦA CHÍNH người dùng — như GDOS cũ.** Mỗi người
    liên kết tài khoản FOXAI Native của mình một lần (Cài đặt cá nhân): gõ tên đăng nhập + mật
    khẩu Native, máy chủ GDOS gọi `POST {NATIVE_URL}/api/auth/login` (cổng v3 nhận `/api/auth/*`,
    không phải `/api/v2`). **Không lưu mật khẩu**; refresh token lưu **mã hóa AES-256-GCM** (khóa
@@ -37,12 +37,49 @@ câu trả lời — ADR-0003 cấm tự chọn.
 6. **Chỉ tài khoản đã liên kết mới gửi được sang Native** (ADR-0003 mục 2).
    Người chưa liên kết vẫn xem được văn bản của đơn vị mình.
 7. **Cấu hình kết nối ở biến môi trường máy chủ, không nhập qua màn hình.** Quản trị › Kết nối
-   › Dịch vụ nền tảng chỉ XEM chế độ, địa chỉ và KIỂM TRA kết nối.
+   › Dịch vụ nền tảng chỉ XEM chế độ, địa chỉ và KIỂM TRA kết nối. (Riêng nguồn API của khách
+   ở "Nguồn dữ liệu vào" được cấu hình qua màn hình — xem ADR-0010.)
+8. **Công cụ của Native — mẫu văn bản, soạn thảo, phân công, đơn vị nhận việc, NHIỆM VỤ (`/tasks`)
+   và danh bạ (`/api/directory`, chọn người / đơn vị khi giao việc) — đi qua
+   CỔNG CHUYỂN TIẾP `/api/native/document/*`** (`native/chuyen-tiep.ts`). Đây là dữ liệu và
+   công cụ CỦA Native, dùng chung với các ứng dụng khác trên Native; GDOS không chép sang bảng riêng
+   (khác văn bản — mục 2). Cổng chỉ cho đi đường dẫn trong DANH SÁCH CHO PHÉP (mã bản ghi phải đúng
+   dạng UUID, tham số truy vấn lọc theo danh sách), mỗi đường gắn một quyền GDOS (`VAN_BAN.*`: xem →
+   READ, tạo/soạn → CREATE, sửa mẫu/đơn vị → UPDATE, xóa mẫu → DELETE, phân công → ASSIGN), gọi
+   bằng token của chính người dùng. Native trả 401 → làm mới token một lần rồi gửi lại; vẫn 401 →
+   trả 403 "liên kết hết hạn" (không trả 401 — web hiểu là hết phiên GDOS). Lỗi Native dịch sang câu
+   tiếng Việt; lỗi 5xx không để lộ chi tiết. Chỉ chạy với Native thật (bản giả chỉ có tóm tắt).
+   Lưu ý khi soạn thảo: thể thức nhập ở màn Soạn thảo được Native **ghi đè và lưu** vào
+   `default_meta` của mẫu — đó là hành vi của Native, như GDOS cũ.
+9. **Kết quả nhận dạng chứng từ (OCR Service, `/api/ocr`) được LẤY VỀ kho của GDOS, giữ dạng ĐỘNG.**
+   Khác mục 8: kết quả OCR là đầu vào cho nghiệp vụ của GDOS nên chép về (`ocr_chung_tu`, RLS theo
+   đơn vị), không đọc trực tiếp mỗi lần xem. GDOS không khai cứng trường nào: mỗi loại chứng từ có
+   bản chụp ĐỊNH NGHĨA trường + bảng từ Native (`ocr_loai.dinh_nghia`), mỗi chứng từ giữ nguyên
+   `du_lieu` (trường → giá trị) và `bang` (bảng → các dòng). Native dùng chung nhiều khách nên chỉ
+   lấy loại quản trị đã BẬT. GDOS chỉ ĐỌC Native (`/schemas`, `/documents`, `/documents/{id}/result`)
+   — không tải lên, không xác nhận, không sửa bên đó; chỉ lấy chứng từ đã nhận dạng xong hoặc đã
+   xác nhận; lấy lại thì cập nhật đúng dòng cũ (khóa: đơn vị + mã Native). Việc lấy về do quản trị
+   bấm (Tầng 2 › Kết nối › Nhận dạng chứng từ), bằng token của chính người bấm. **Tầng 2 chỉ đưa dữ
+   liệu về; trực quan hóa và dùng là việc của phân hệ tác nghiệp** — gọi `GET /api/ocr/chung-tu?loai=`
+   hoặc thành phần `<BangChungTuOcr loai="…" />`; phân hệ nào dùng thì thêm quyền READ của mình vào
+   `QUYEN_DOC_OCR` (@gdos/shared).
+10. **Trợ lý AI (chatbot) là công cụ của Native, đi qua cùng cổng chuyển tiếp** — ba dịch vụ:
+    `/api/native/context/*` (chatbot, đoạn chat, nguồn, quyền trên nguồn), `/api/native/assistant/*`
+    (hỏi, giọng đọc — phần duy nhất gọi mô hình) và `/api/native/index/*` (danh sách bộ tri thức).
+    GDOS không giữ bản sao bot hay đoạn chat. Quyền GDOS `TRO_LY.*`: trò chuyện, xem bot, đoạn chat
+    của mình → READ; tạo / sửa / xóa bot, xoay khóa nhúng → CREATE / UPDATE / DELETE. Ngoài danh
+    sách (không chuyển tiếp): sửa phân quyền nguồn, công cụ API, nguồn dữ liệu, quản lý tri thức —
+    các việc đó vẫn làm ở Native. Câu trả lời về theo DÒNG SỰ KIỆN (SSE): cổng chuyển NGAY từng
+    mẩu thay vì gom cả phản hồi, và cắt lời gọi sang Native khi người dùng đóng kết nối. Trình duyệt
+    không bao giờ cầm token Native. Riêng ĐOẠN MÃ NHÚNG bot ra trang ngoài thì trang đó gọi thẳng
+    Native bằng khóa nhúng — GDOS chỉ in địa chỉ Native vào đoạn mã (`GET /api/native/dia-chi`,
+    cần `TRO_LY.UPDATE`).
 
 ## Bật bản thật
 
-`.env` máy chủ: bỏ `NATIVE_GIA`, đặt `NATIVE_URL=https://gdos.fox.ai.vn` (hoặc
-`https://nativev3.foxai.com.vn` — cùng cổng API) rồi khởi động lại API. Mỗi người vào Cài đặt cá
+`.env` máy chủ: bỏ `NATIVE_GIA`, đặt `NATIVE_URL=https://nativev3.foxai.com.vn` rồi khởi động lại API.
+**Chỉ một địa chỉ Native: nativev3** (anh Toàn chốt 01/10/2026) — tên miền gdos.fox.ai.vn của GDOS cũ
+sẽ bỏ; GDOS mới và GDOS cũ là hai hệ thống độc lập, không trỏ sang nhau. Mỗi người vào Cài đặt cá
 nhân › Liên kết FOXAI Native. Máy chủ gọi máy chủ nên chạy được cả trên localhost.
 
 Còn để sau: Văn bản đến qua tích hợp đối tác của Native (`POST /inbound` + webhook, khóa API cấp
@@ -53,8 +90,10 @@ cho GDOS — 06_TichHop-Webhook) khi GDOS có tên miền công khai.
 - Làm xong: Tóm tắt văn bản (danh sách theo chuẩn lưới, tải lên, xem gốc — tóm tắt song
   song, sửa tóm tắt, gửi/tóm tắt lại, tải tệp gốc) và Dịch vụ nền tảng (danh sách, kiểm tra) —
   liên kết tài khoản Native theo từng người.
-- Còn phác: Văn bản đến, Soạn thảo, Phân công từ văn bản, Mẫu văn bản — cùng khung này, theo
-  đặc tả 03–06.
+- Làm xong (30/09, bước D): Văn bản đến (hồ sơ `van_ban` nguồn QLVB / Cổng DVC / Email kéo về
+  từ Native), Soạn thảo văn bản, Phân công từ văn bản, Mẫu văn bản, Đơn vị nhận việc — qua cổng
+  chuyển tiếp (mục 8). HTML Native trả về đi qua DOMPurify (ADR-0005) trước khi vào trang.
+- Văn bản đến thật sự đổ về khi đối tác gửi vào `/inbound` của Native — xem "Còn để sau".
 
 ## Phương án đã loại
 

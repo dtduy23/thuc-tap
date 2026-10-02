@@ -6,6 +6,7 @@
  * Ngày luôn là chuỗi 'YYYY-MM-DD' theo giờ Việt Nam — không dùng Date cho ngày
  * nghiệp vụ, tránh lệch một ngày vì múi giờ.
  */
+import type { BuocDuyetDaQua, CapDuyet, TrangThaiYeuCau } from './phe-duyet.js'
 
 /** Ba giai đoạn đầu tư (Điều 8 NĐ 45) — danh sách theo luật, nằm trong mã. */
 export const GIAI_DOAN = { I: 'Chuẩn bị đầu tư', II: 'Thực hiện đầu tư', III: 'Kết thúc đầu tư' } as const
@@ -294,6 +295,10 @@ export interface HoSoDuAn extends DuAnDong {
   von: VonDuAn[]
   giaiNgan: DotGiaiNgan[]
   vuongMac: VuongMacDuAn[]
+  /** Yêu cầu xin gia hạn bước — mới nhất trước. */
+  giaHan: YeuCauGiaHan[]
+  /** Luồng duyệt gia hạn đang áp dụng (để màn hình nói rõ sẽ qua những cấp nào). */
+  luongGiaHan: { bat: boolean; cap: CapDuyet[] }
   taiChinh: TaiChinhDuAn
   /** Người xem được làm gì trên CHÍNH dự án này — API tính, web chỉ để ẩn/hiện nút. */
   quyen: {
@@ -305,6 +310,8 @@ export interface HoSoDuAn extends DuAnDong {
     gui: boolean
     /** Thêm / bớt thành viên. */
     thanhVien: boolean
+    /** Gửi yêu cầu xin gia hạn bước — cán bộ chủ đầu tư, nhà thầu, tư vấn của dự án. */
+    xinGiaHan: boolean
   }
 }
 
@@ -366,6 +373,58 @@ export function khoangBuoc(
     hienTai = b.hanGhiDe ?? congNgay(hienTai, b.soNgay)
     return { tu: hienTai < tu ? hienTai : tu, den: hienTai }
   })
+}
+
+// ── Cộng dồn / lũy kế ngày (PMS có, từng bị ẩn bằng cờ HIDE_TIME) ───────────
+
+export interface LuyKeBuoc {
+  /** Số ngày từ ngày bắt đầu dự án tới HẠN của bước (lũy kế kế hoạch). null: nhóm, bước nháp. */
+  keHoach: number | null
+  /** Số ngày từ ngày bắt đầu dự án tới ngày HOÀN THÀNH thực tế. null: chưa xong. */
+  thucTe: number | null
+  /** thực tế − kế hoạch: dương = chậm, âm = sớm. null: chưa xong. */
+  chenh: number | null
+}
+
+/** Lũy kế ngày của từng bước, tính từ ngày bắt đầu dự án. */
+export function luyKeNgay(
+  buoc: readonly { han: string | null; ngayHoanThanh: string | null; laNhom: boolean; laNhap: boolean }[],
+  batDau: string,
+): LuyKeBuoc[] {
+  return buoc.map((b) => {
+    if (b.laNhom || b.laNhap || !b.han) return { keHoach: null, thucTe: null, chenh: null }
+    const keHoach = soNgayGiua(batDau, b.han)
+    const thucTe = b.ngayHoanThanh ? soNgayGiua(batDau, b.ngayHoanThanh) : null
+    return { keHoach, thucTe, chenh: thucTe === null ? null : thucTe - keHoach }
+  })
+}
+
+/**
+ * Cộng dồn số ngày của từng NHÓM = tổng số ngày chuẩn của mọi bước con (mọi cấp), không tính
+ * bước nháp và bước bỏ qua. Trả về id nhóm → số ngày.
+ */
+export function congDonNhom(
+  buoc: readonly {
+    id: string
+    chaId: string | null
+    laNhom: boolean
+    laNhap: boolean
+    boQua: boolean
+    soNgay: number
+  }[],
+): Map<string, number> {
+  const cha = new Map(buoc.map((b) => [b.id, b.chaId]))
+  const tong = new Map<string, number>(buoc.filter((b) => b.laNhom).map((b) => [b.id, 0]))
+  for (const b of buoc) {
+    if (b.laNhom || b.laNhap || b.boQua) continue
+    // Đi ngược lên các nhóm tổ tiên; chặn vòng lặp nếu dữ liệu cha–con hỏng.
+    let p = b.chaId
+    for (let sau = 0; p && sau < 20; sau++) {
+      if (tong.has(p)) tong.set(p, tong.get(p)! + b.soNgay)
+      p = cha.get(p) ?? null
+    }
+  }
+  return tong
 }
 
 /** Ngày kết thúc dự kiến = hạn muộn nhất của các bước chính thức. */
@@ -433,6 +492,24 @@ export interface DotGiaiNgan {
   ghiChu: string | null
 }
 
+/** Nhóm nguyên nhân vướng mắc — để gom và so giữa các dự án. */
+export const NHOM_NGUYEN_NHAN = {
+  'phap-ly': 'Cơ chế, chính sách, pháp lý',
+  'thu-tuc': 'Thủ tục, thẩm định, phê duyệt',
+  von: 'Vốn, kinh phí, giải ngân',
+  'mat-bang': 'Mặt bằng, địa điểm, hạ tầng',
+  'nha-thau': 'Năng lực nhà thầu, tư vấn',
+  'phoi-hop': 'Phối hợp giữa các đơn vị',
+  'ky-thuat': 'Kỹ thuật, công nghệ, thiết kế',
+  'nhan-luc': 'Nhân lực, tổ chức thực hiện',
+  'khach-quan': 'Khách quan (thiên tai, thị trường…)',
+  khac: 'Khác',
+} as const
+export type NhomNguyenNhan = keyof typeof NHOM_NGUYEN_NHAN
+
+export const MUC_DO_VUONG_MAC = { thap: 'Thấp', 'trung-binh': 'Trung bình', cao: 'Cao' } as const
+export type MucDoVuongMac = keyof typeof MUC_DO_VUONG_MAC
+
 export interface VuongMacDuAn {
   id: string
   buocId: string | null
@@ -441,6 +518,81 @@ export interface VuongMacDuAn {
   ngayGiaiQuyet: string | null
   ketQua: string | null
   nguoiNeu: string | null
+  // ── Phân tích nguyên nhân và giải pháp ──
+  /** null: chưa phân tích. */
+  nhomNguyenNhan: NhomNguyenNhan | null
+  nguyenNhan: string | null
+  giaiPhap: string | null
+  /** Đơn vị / người chịu trách nhiệm xử lý. */
+  donViXuLy: string | null
+  /** Hạn xử lý theo giải pháp. */
+  hanXuLy: string | null
+  mucDo: MucDoVuongMac
+}
+
+export interface PhanTichVuongMac {
+  tong: number
+  dangMo: number
+  daGiaiQuyet: number
+  /** Đang mở và đã quá hạn xử lý. */
+  quaHanXuLy: number
+  /** Đang mở mà chưa có nguyên nhân hoặc giải pháp. */
+  chuaPhanTich: number
+  /** Số ngày xử lý bình quân của các vướng mắc đã giải quyết; null: chưa có. */
+  ngayXuLyBinhQuan: number | null
+  /** Theo nhóm nguyên nhân, nhiều nhất trước. */
+  theoNhom: { nhom: NhomNguyenNhan | null; ten: string; tong: number; dangMo: number }[]
+}
+
+/** Tổng hợp vướng mắc theo nguyên nhân — dùng cho một dự án hoặc gom nhiều dự án. */
+export function phanTichVuongMac(ds: readonly VuongMacDuAn[], hn: string): PhanTichVuongMac {
+  const mo = ds.filter((v) => !v.ngayGiaiQuyet)
+  const xong = ds.filter((v) => v.ngayGiaiQuyet)
+  const nhom = new Map<NhomNguyenNhan | null, { tong: number; dangMo: number }>()
+  for (const v of ds) {
+    const d = nhom.get(v.nhomNguyenNhan) ?? { tong: 0, dangMo: 0 }
+    d.tong++
+    if (!v.ngayGiaiQuyet) d.dangMo++
+    nhom.set(v.nhomNguyenNhan, d)
+  }
+  const ngay = xong.map((v) => Math.max(0, soNgayGiua(v.ngayNeu, v.ngayGiaiQuyet!)))
+  return {
+    tong: ds.length,
+    dangMo: mo.length,
+    daGiaiQuyet: xong.length,
+    quaHanXuLy: mo.filter((v) => v.hanXuLy && v.hanXuLy < hn).length,
+    chuaPhanTich: mo.filter((v) => !v.nguyenNhan?.trim() || !v.giaiPhap?.trim()).length,
+    ngayXuLyBinhQuan: ngay.length ? Math.round(ngay.reduce((a, b) => a + b, 0) / ngay.length) : null,
+    theoNhom: [...nhom.entries()]
+      .map(([k, d]) => ({ nhom: k, ten: k ? NHOM_NGUYEN_NHAN[k] : 'Chưa phân loại', ...d }))
+      .sort((a, b) => b.tong - a.tong || a.ten.localeCompare(b.ten, 'vi')),
+  }
+}
+
+// ── Xin gia hạn bước ────────────────────────────────────────────────────────
+
+/** Một yêu cầu xin lùi hạn một bước, đi qua luồng phê duyệt (Tầng 2 › Luồng phê duyệt). */
+export interface YeuCauGiaHan {
+  id: string
+  buocId: string
+  /** Hạn của bước lúc gửi yêu cầu. */
+  hanCu: string | null
+  hanMoi: string
+  lyDo: string
+  canCu: string | null
+  trangThai: TrangThaiYeuCau
+  nguoiXinId: string
+  nguoiXinTen: string | null
+  ngayXin: string
+  /** Các cấp duyệt chụp lại lúc gửi — sửa luồng sau đó không đổi yêu cầu đang chạy. */
+  cacCap: CapDuyet[]
+  /** Cấp đang chờ (từ 1); null khi đã kết thúc. */
+  capHienTai: number | null
+  daQua: BuocDuyetDaQua[]
+  /** Người đang xem có được ra quyết định ở cấp hiện tại không. */
+  duocDuyet: boolean
+  /** Người đang xem có được rút yêu cầu không (người gửi, khi còn chờ duyệt). */
+  duocRut: boolean
 }
 
 export interface TaiChinhDuAn {

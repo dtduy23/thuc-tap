@@ -33,6 +33,40 @@ bỏ — cán bộ CNTT chỉ cần cờ quản trị (ADR-0006).
 
 Trước khi đẩy mã: `pnpm kiem-tra` phải xanh.
 
+## Triển khai (Mốc 2)
+
+Máy thử phục vụ ở **https://gdosfox.fox.ai.vn**. CI/CD chạy ở nhánh **`develop`** và chỉ ở đó
+(`.gitlab-ci.yml`):
+
+| Chặng    | Làm gì                                                                            |
+| -------- | --------------------------------------------------------------------------------- |
+| `build`  | dựng image `api` + `web`, đẩy lên registry GitLab, thẻ = SHA ngắn                 |
+| `deploy` | **bấm tay**, chạy ngay trên máy thử: pull, chạy migration, `up -d`, kiểm sức khỏe |
+
+CI **không chạy kiểm tra gì** (người dùng chốt 30/09/2026): không lint, không test, không quét bí
+mật. `pnpm kiem-tra` ở máy là cửa duy nhất — phải xanh trước khi đẩy.
+
+Dựng image tại máy (bối cảnh build là **gốc repo**, vì image cần `packages/shared`):
+
+```bash
+docker build -f apps/api/Dockerfile -t gdos-api .
+docker build -f apps/web/Dockerfile -t gdos-web .
+```
+
+`build` chạy bằng runner `foxai-build`; `deploy` bằng runner **`deploy-gdos` nằm ngay trên máy
+thử**, nên không cần khóa SSH và không cần đặt biến CI/CD nào.
+
+Máy thử chuẩn bị một lần: thư mục `/opt/foxai/gdos`, `.du-lieu/tep` thuộc uid 1000 (API chạy
+non-root), và `.env` chmod 600 — danh sách biến ghi ở đầu `compose.trien-khai.yaml`. Bí mật **không**
+đi qua CI. `compose.yaml` thì CI tự chép sang.
+
+TLS và tên miền do nginx **của máy chủ** lo (máy thử dùng aaPanel: Website → SSL → Reverse proxy tới
+`http://127.0.0.1:8080`), container web chỉ nghe cổng nội bộ. Cần những gì thì xem
+[nginx.may-thu.conf](nginx.may-thu.conf).
+
+Lệnh `di-tru` chỉ chạy migration; `khoi-tao` (tạo đơn vị gốc + quản trị viên đầu tiên) vẫn là việc
+làm tay đúng một lần, vì có nhập mật khẩu.
+
 ## Tài liệu
 
 |                                                    |                                                 |

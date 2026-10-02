@@ -1,5 +1,8 @@
+import { drizzle } from 'drizzle-orm/node-postgres'
+import { migrate } from 'drizzle-orm/node-postgres/migrator'
 import { mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import postgres from 'pg'
 import type { CoSo } from './pham-vi.js'
 import * as schema from './schema/index.js'
 
@@ -32,4 +35,16 @@ export async function moDbNhung(thuMuc: string): Promise<KetNoiDb> {
     kiem: () => pg.query('select 1'),
     dong: () => pg.close(),
   }
+}
+
+/**
+ * Postgres thật bằng CHỦ BẢNG, chạy đủ migration (idempotent). Dùng bởi lệnh
+ * `khoi-tao` và `di-tru` — API không bao giờ gọi (ADR-0004: API chạy dưới
+ * `gdos_app`, role đó không có quyền đổi lược đồ).
+ */
+export async function moPostgresVaDiTru(url: string): Promise<KetNoiDb> {
+  const pool = new postgres.Pool({ connectionString: url, max: 1 })
+  const db = drizzle(pool, { schema })
+  await migrate(db, { migrationsFolder: THU_MUC_MIGRATION })
+  return { db, kiem: () => pool.query('select 1'), dong: () => pool.end() }
 }

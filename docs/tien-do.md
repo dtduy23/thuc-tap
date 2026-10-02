@@ -8,12 +8,291 @@
 | ----- | ------------------------------------------------------------------------------------ | ------------------------------------------------------ |
 | **0** | Khởi tạo repo, CI, ADR, khung dùng chung                                             | ✅ Xong — **CI/CD giao kỹ thuật FOXAI** (xem dưới)     |
 | **1** | Nền móng: tài khoản, đơn vị, vai trò & quyền, RLS, nhật ký, khung portal + cây 4 cấp | ✅ Xong — nhánh `moc-1-nen-mong`, chưa đẩy             |
-| **2** | Đưa lên máy thử (image, nginx, CI/CD)                                                | Chưa bắt đầu                                           |
+| **2** | Đưa lên máy thử (image, nginx, CI/CD)                                                | 🔄 Đường ống xong — chờ máy thử                        |
 | **3** | Module Dự án (từ PMS)                                                                | ✅ Xong 30/09/2026 — đủ chức năng PMS, chưa đẩy        |
 | **4** | Module Khiếu nại đất đai                                                             | Chưa bắt đầu                                           |
 | **5** | Nối FOXAI Native (văn bản, tóm tắt, hỏi đáp)                                         | 🔄 Tóm tắt văn bản + liên kết Native theo người — xong |
 | **6** | Điều hành: dashboard, báo cáo                                                        | 🔄 Khung chung xong (Mốc 3) — chờ nghiệp vụ khác       |
 | **7** | Thiết lập: bật/tắt module theo đơn vị, cảnh báo, luồng duyệt                         | Chưa bắt đầu                                           |
+
+## Mốc 2 — Đưa lên máy thử (30/09/2026)
+
+**Đã làm**
+
+- `.gitlab-ci.yml`: hai chặng `build` → `deploy`. **Chỉ chạy ở nhánh `develop`**
+  (`workflow.rules`) — người dùng chốt; `main` và nhánh mốc không nổ pipeline.
+- **Bỏ cả `bao-mat` lẫn `kiem-tra`** — người dùng chốt 30/09/2026, pipeline đi thẳng từ mã nguồn
+  sang image. Hệ quả phải nhớ: **CI không còn chạy test quyền và RLS**, và **không còn ai quét bí
+  mật lọt vào lịch sử git**. `pnpm kiem-tra` ở máy là cửa duy nhất (CLAUDE.md §3).
+- `apps/api/Dockerfile`, `apps/web/Dockerfile` — hai chặng, bối cảnh build là **gốc repo** (image cần
+  `packages/shared`). Bản chạy không mang tsc, drizzle-kit, PGlite. API chạy non-root, có HEALTHCHECK
+  gọi `/api/health` (không chạm DB — Postgres chậm một nhịp không làm Docker giết container).
+- **Máy thử: `160.30.252.37`, thư mục `/opt/foxai/gdos`** (cùng lệ với các dự án khác ở
+  `/opt/foxai/*`), phục vụ ở **https://gdosfox.fox.ai.vn**. Máy quản bằng aaPanel — nginx do panel
+  sinh, đừng chép tay vhost vào.
+- **Deploy KHÔNG dùng SSH**: runner `deploy-gdos` (tên `SRV04 GDOS`, shell executor) ký ngay trên
+  máy thử, job chạy tại chỗ.
+  Không có khóa SSH nào phải giữ, không phải đặt biến CI/CD nào. (`build` vẫn ở `foxai-build`.)
+- Máy thử phục vụ ở **https://gdosfox.fox.ai.vn** (người dùng chốt 30/09/2026). TLS + tên miền do
+  nginx CỦA MÁY CHỦ lo — mẫu vhost ở `nginx.may-thu.conf`, còn trống đường dẫn chứng thư; container
+  web chỉ nghe `127.0.0.1:8080`.
+- `apps/web/nginx.conf` — phục vụ bản tĩnh, `try_files` cho SPA, chuyển tiếp đúng một tiền tố `/api`,
+  cache dài cho `/assets/` và `no-cache` cho `index.html`, kèm CSP + `X-Frame-Options: DENY`.
+- `compose.trien-khai.yaml` — api · web · postgres, cộng `di-tru` (profile `cong-cu`) và `minio`
+  (profile `kho-tep`, CHƯA chạy: mã không có dòng nào gọi MinIO, kho tệp đang là bản thư mục).
+  **Không chứa bí mật**: đọc `.env` do kỹ thuật đặt một lần trên máy thử, và `.the-anh` do CI ghi.
+- Lệnh `di-tru` (`apps/api/src/cli/di-tru.ts`) — CHỈ chạy migration, để đường triển khai tự động
+  không phải gọi `khoi-tao` (lệnh đó còn tạo quản trị viên và có nhập mật khẩu).
+  Phần mở Postgres + migration gom về `moPostgresVaDiTru()` trong `db/migration.ts`.
+- **`TIN_PROXY`** (`cau-hinh.ts`): trước đây `trust proxy` đóng cứng `loopback`. Trong Docker nginx là
+  container KHÁC nên X-Forwarded-For không được tin → nhật ký phiên đăng nhập sẽ ghi IP của container
+  nginx thay vì IP người dùng. Mặc định vẫn `loopback`; compose khai dải `172.31.0.0/16`.
+
+**Chưa kiểm được**
+
+- **Máy thử từ chối `docker pull minio/minio`** ("pull access denied … may require 'docker login'"),
+  trong khi image official như `postgres:16-alpine` kéo về bình thường. Chưa rõ vì mirror registry
+  hay vì Docker Hub chặn ảnh không thuộc `library/`. Chưa chặn gì — MinIO đã cho ra khỏi `up`. Đến
+  Mốc 4 phải giải quyết, hoặc đẩy bản sao MinIO lên registry của FOXAI.
+- Không dựng được image ở máy này (không có Docker) và **không chạy được `pnpm kiem-tra` đầy đủ**:
+  máy đang có **Node 22**, repo cần **Node 24** — 16 tệp test API chết ngay ở `crypto.argon2`
+  (`undefined` trên Node 22), không liên quan thay đổi nào. Đã xanh: `lint`, `format:check`,
+  `typecheck`, `build`, test `cau-hinh` (16) và shared (60).
+- `pnpm` toàn cục ở máy (`/usr/local/bin/pnpm`, 11.12.0) hỏng — `pnpm --version` cũng lỗi
+  `Cannot use 'in' operator to search for 'integrity' in undefined`. Chạy qua
+  `npx --yes pnpm@11.12.0` thì bình thường. npm cảnh báo **pnpm 11.12.0 là bản lỗi, nên lên 11.13.1+**
+  — chưa đổi, vì đổi `packageManager` ảnh hưởng cả đội (CLAUDE.md §7).
+
+**Chờ quyết định**
+
+- Nhánh `develop` **chưa tồn tại** trên remote. Pipeline chỉ nổ khi có nhánh đó.
+- CSP trong `nginx.conf` chưa mở trên trình duyệt thật; màn nào trắng thì nới ở đúng chỉ thị đó.
+
+## Trợ lý AI — chatbot qua FOXAI Native (02/10/2026)
+
+Module **Trợ lý AI** ở Tác nghiệp (mã quyền `TRO_LY`), hai màn chép nguyên từ GDOS cũ
+(`apps/web/src/dieu-hanh/modules/{tro-chuyen-chatbot,cau-hinh-chatbot}`):
+
+- **Trò chuyện với Chatbot** (`tl-tro-chuyen`): chọn bot đang bật, hỏi đáp, câu trả lời hiện dần,
+  đoạn chat lưu theo người ở Native.
+- **Cấu hình Chatbot** (`tl-cau-hinh`, cần UPDATE): mục đích, lời dặn, bộ tri thức, nguồn dữ liệu,
+  câu hỏi thường gặp, kịch bản, giọng đọc, mã nhúng.
+- **Nút trợ lý nổi** góc dưới phải ở MỌI trang (`khung/nut-tro-ly.tsx`) — mở ngăn chat gọn, đổi
+  bot, "Mở rộng" sang màn đầy đủ. Chỉ hiện với người có `TRO_LY.READ`.
+
+Mọi lời gọi đi qua cổng chuyển tiếp của máy chủ GDOS bằng token Native của chính người dùng
+(ADR-0009 mục 10). Lớp nối của mã cũ viết lại: `dieu-hanh/lib/http.ts` (đổi `/api/<dịch vụ>` →
+`/api/native/<dịch vụ>`, không token ở trình duyệt), `hooks/use-quyen.ts` (quyền GDOS). Cổng
+chuyển tiếp nay truyền thẳng dòng sự kiện SSE. Vai Lãnh đạo / Thanh tra: chỉ trò chuyện; Chuyên
+viên được phân công Trợ lý AI: cấu hình được bot.
+
+**Đã kiểm với nativev3 thật:** danh sách bot, mở đoạn chat, tiến trình trả lời từng chặng, màn cấu
+hình (bộ tri thức, nguồn, quyền hiệu lực). **Chưa thấy câu trả lời trọn vẹn:** Native trả sự kiện
+`LLM_ERROR` — nhà cung cấp mô hình của Native từ chối (403, liên quan thanh toán của dự án mô
+hình). Việc của phía Native, không phải GDOS; bật lại xong thì thử lại một câu.
+
+**Chưa làm:** Hỏi đáp AI trên số liệu, Nguồn dữ liệu, Quản lý tri thức (bước 3); thử ghi cấu hình
+bot và giọng đọc trên trình duyệt (mới có test tự động cho cổng).
+
+## Sắp lại cây Điều hành: mỗi chủ đề một chỗ (02/10/2026)
+
+Sau khi chép nguyên menu GDOS cũ, Điều hành có 6 module / 27 màn và trùng nhiều (3 màn tổng quan, 3 màn KPI,
+2 màn TTHC, 2 màn phản ánh, 2 màn kinh tế – xã hội, 2 màn y tế – giáo dục). Anh Toàn chốt cây mới:
+
+- **Nguyên tắc.** Điều hành là nơi NẮM TÌNH HÌNH, sắp theo bốn câu hỏi, đi từ chung tới riêng; mỗi chủ đề một
+  mục trên menu; các góc nhìn của cùng chủ đề là **thẻ trong trang** (`man/gop-man.tsx`), không lên menu.
+  Việc có hồ sơ, có hạn xử lý nằm ở Tác nghiệp; công cụ nằm ở Quản trị.
+- **Điều hành còn 4 module / 18 màn:**
+  1. _Tổng quan_ — Bảng điều hành (thẻ: Tổng quan · Bộ chỉ tiêu xã/phường · Tình hình dự án), KPI điều hành
+     (thẻ: KPI cấp trên giao · Bộ chỉ số điều hành · Chấm điểm dự án).
+  2. _Theo lĩnh vực_ — TTHC – Một cửa · Phản ánh – Kiến nghị · Kinh tế – Dân cư – Xã hội (thẻ: Dashboard · Chỉ
+     tiêu kế hoạch năm) · Nông nghiệp số · An ninh – Trật tự · Hạ tầng – Đô thị · Đất đai · Y tế – Giáo dục
+     (thẻ: Chỉ tiêu · Trường học & cơ sở y tế) · Di tích & Địa chỉ đỏ · Khu phố thông minh. "Quản lý địa bàn"
+     và "Phân hệ mở rộng" gộp vào đây — cùng trả lời "lĩnh vực này đang thế nào".
+  3. _Theo dõi thực hiện_ — Theo đơn vị · Theo lĩnh vực · Xếp hạng đơn vị.
+  4. _Báo cáo_ — như cũ.
+- **Chuyển khỏi Điều hành:** Hồ sơ TTHC → Tác nghiệp (module mới `ho-so-tthc`); Phản ánh kiến nghị → Tác
+  nghiệp, chung module với Đơn thư ("Phản ánh – Kiến nghị – Đơn thư"; bốn mục đơn thư vẫn là màn phác);
+  Thiết kế Dashboard → Quản trị › Hiển thị.
+- Mã chức năng bỏ: `dh-tong-quan`, `dh-dashboard-tong-quan`, `dh-bo-chi-so-kpi`, `dh-bo-chi-so`,
+  `dh-chi-tieu-ktxh`, `dh-giao-duc-y-te`, `tq-toan`, `bcs-tat-ca` (thành thẻ trong trang). Mã mới:
+  `dh-bang-dieu-hanh`, `dh-kpi`. Trang mặc định theo vai đang trỏ mã đã bỏ thì tự về trang chủ.
+- **Bỏ nội dung gắn với một địa phương** khỏi dữ liệu mẫu của các màn Điều hành (tên tỉnh, phường, di tích,
+  đặc sản, số văn bản dẫn tên tỉnh; ảnh / video / tra cứu Wikipedia của di tích thật). Tọa độ bản đồ giữ nguyên.
+
+## Dự án: bố cục theo PMS · lũy kế ngày · phân tích vướng mắc · xin gia hạn (01/10/2026)
+
+Anh Toàn chốt: màn dự án tổ chức như PMS (PMS "tương đối chuẩn"), mở lại phần thời gian mà PMS đang ẩn,
+thêm phân tích vướng mắc và xin gia hạn có luồng duyệt.
+
+- **Bố cục như PMS.** Vào một dự án thì cột trái đổi thành **Không gian dự án** (Quay lại danh mục · Tổng quan
+  dự án · Checklist & timeline · Biểu đồ Gantt · Kế hoạch & điều chỉnh · Văn bản dự án · Kinh phí & giải ngân ·
+  Vướng mắc & giải pháp · Thành viên · Nhật ký) — `khung/khong-gian-du-an.tsx`; màn hẹp hiện thành dải thẻ.
+  Đầu hồ sơ là dải thông tin (tên, mã, trạng thái, chủ đầu tư, cán bộ phụ trách; bên phải: điểm KPI, số ngày
+  chậm, % tiến độ). **Tổng quan** theo mẫu báo cáo tiến độ: I. Tiến độ đã thực hiện (dòng thời gian) · ba thẻ
+  giai đoạn · II. Các bước tiếp theo theo tháng · Kinh phí · Lịch sử điều chỉnh · Vướng mắc; "Sửa thông tin"
+  thành hộp thoại. **Checklist**: lọc giai đoạn + trạng thái, dải báo kế hoạch đã chốt / đang nháp, cột Văn
+  bản, Đơn vị, **Hiển thị tổng quan**; bấm bước mở **hộp chi tiết bước** (Ghi nhận kết quả · Xin gia hạn ·
+  Vướng mắc · Sửa bước) thay cho khối mở ngay dưới dòng.
+- **Cộng dồn / lũy kế ngày** (PMS có, đang ẩn bằng cờ `HIDE_TIME`): cột **Số ngày** (nhóm hiện cộng dồn số
+  ngày các bước con), cột **Lũy kế** = số ngày từ ngày bắt đầu dự án tới hạn; bước đã xong thêm lũy kế thực tế
+  và số ngày lệch (sớm / chậm). Tổng thời gian kế hoạch ở đầu bảng. Hàm thuần `luyKeNgay`, `congDonNhom`
+  (@gdos/shared). Điểm KPI và số ngày chậm (PMS ẩn bằng `HIDE_KPI`) hiện ở dải đầu hồ sơ.
+- **Phân tích vướng mắc**: mỗi vướng mắc có nhóm nguyên nhân (10 nhóm), nguyên nhân cụ thể, giải pháp, đơn vị
+  xử lý, hạn xử lý, mức độ. Thẻ Vướng mắc tổng hợp: đang mở, quá hạn xử lý, chưa có nguyên nhân / giải pháp,
+  thời gian xử lý bình quân, biểu đồ theo nhóm nguyên nhân (`phanTichVuongMac`).
+- **Xin gia hạn bước + luồng phê duyệt**: cán bộ chủ đầu tư hoặc nhà thầu / tư vấn gửi yêu cầu lùi hạn một
+  bước (hạn mới, lý do, căn cứ) → qua các cấp duyệt → cấp cuối đồng ý thì hạn bước đổi, các bước sau dời theo
+  và kế hoạch chốt phiên bản mới. Luồng cấu hình ở **Quản trị › Luồng phê duyệt › Luồng theo nghiệp vụ**
+  (`cau_hinh` khóa `luong-duyet`): bật / tắt, 1–4 cấp, mỗi cấp do _cán bộ_ (DU_AN.UPDATE) hoặc _lãnh đạo_
+  (DU_AN.APPROVE) đơn vị chủ đầu tư duyệt, có cho người gửi tự duyệt hay không. Mặc định một cấp lãnh đạo.
+  Yêu cầu chụp lại các cấp lúc gửi — sửa luồng không đổi yêu cầu đang chạy.
+- Migration 0030 (bảng `du_an_gia_han`, cột phân tích của `du_an_vuong_mac`), 0032 (RLS: nhà thầu chỉ gửi
+  và rút yêu cầu của mình — trigger chặn tự sửa; mở khóa cấu hình `luong-duyet`). 0031 để trống có chủ ý.
+- Guard API thêm `@CanMotTrongQuyen` (có MỘT trong các quyền là đủ). Sửa luôn bốn route trước đây viết
+  `@CanQuyen(a, b)` với ý "một trong hai" nhưng guard hiểu là "cần cả hai".
+- Test: `du-an/gia-han.e2e.test.ts` (9), `shared/du-an-luy-ke.test.ts` (7).
+- **Chưa làm**: yêu cầu chờ duyệt chưa lên "Việc của tôi" và chưa có thông báo; chưa có báo cáo tổng hợp vướng
+  mắc theo nguyên nhân trên NHIỀU dự án (mới trong từng dự án); luồng duyệt mới có cho gia hạn.
+- **Chưa thử trên trình duyệt** các thao tác GHI (gửi / duyệt gia hạn, lưu phân tích) để khỏi làm bẩn dự án
+  thử trên máy dev — mới thử qua test đầu cuối; các màn đã mở xem được.
+
+## Điều hành chép nguyên từ GDOS cũ (01/10/2026)
+
+Anh Toàn chốt: báo cáo làm **giống hệt GDOS cũ, không vẽ lại**; chỉ nâng cấp tính năng. Vì vậy 19 màn
+Điều hành được CHÉP mã từ kho GDOS cũ (`foxai-gdos`) sang `apps/web/src/dieu-hanh/`, giữ cấu trúc thư mục cũ
+(`modules/`, `components/`, `mocks/`, `lib/`, `hooks/`):
+
+- **Nguồn chép.** Màn có dữ liệu mẫu đầy đủ (bản anh Toàn đang xem) nằm ở nhánh `dev` / `toannm`: Tổng quan,
+  Hồ sơ TTHC, Phản ánh kiến nghị, Chỉ tiêu KT-XH, Bộ chỉ số điều hành, Thiết kế Dashboard, Quản lý đất đai
+  (bản đồ địa chính + địa giới), Nông nghiệp số, Giáo dục & Y tế, Di tích & Địa chỉ đỏ, Khu phố thông minh.
+  Tám dashboard xã/phường theo bộ chỉ tiêu đã thông qua nằm ở nhánh `main`. Thành phần dùng chung lấy ở
+  `main` (là tập cha của `dev`).
+- **Menu Điều hành** theo đúng menu cũ: Tổng quan điều hành · Dashboard xã/phường · Quản lý địa bàn · Phân hệ
+  mở rộng (mã chức năng `dh-<mã module cũ>`); giữ thêm Tình hình nghiệp vụ và Báo cáo của hệ thống mới.
+  "Nhiệm vụ được giao", "Văn bản đến" của menu cũ dẫn sang phân hệ thật ở Tác nghiệp.
+- **Khác bản cũ ở đâu.** Tiêu đề + đường dẫn do khung hệ thống mới vẽ (`PageHeader` chỉ còn mô tả + nút);
+  màu theo token của hệ thống mới (tông màu, sáng/tối người dùng chọn) — token chỉ bản cũ có giữ giá trị
+  gốc ở `dieu-hanh/kieu.css`; điều hướng đổi mã module cũ → mã chức năng mới (`dieu-hanh/app/modules.ts`).
+- **Nâng cấp.** Tám dashboard xã/phường ghép SỐ THẬT từ `/api/chi-tieu` (phân hệ đã xây + số nạp qua API /
+  Excel, ADR-0010) vào thẻ chỉ số và KPI, chân thẻ ghi nguồn (`dieu-hanh/lib/so-that.ts`). Các màn còn lại
+  chạy bằng dữ liệu mẫu và có dòng nói rõ "dữ liệu mẫu".
+- **Thư viện thêm** (theo ADR-0005, HeroUI là thư viện giao diện đã chọn): `@heroui/react`, `@heroui/styles`,
+  `leaflet`, `react-leaflet`, `motion`.
+- **Dữ liệu mẫu đã làm sạch:** bỏ tên, số điện thoại, email thật của đầu mối trong bảng "Đầu mối cung cấp số
+  liệu"; số định danh 12 chữ số được che. Tên địa danh của bộ dữ liệu mẫu (gắn với tọa độ bản đồ) giữ nguyên.
+- **Bỏ:** tám trang chỉ tiêu tự vẽ trước đó (`man/chi-tieu/trang.tsx`, `bieu-do.tsx`) và các mã `ct-*`.
+- **Chưa chép:** Biển số nhà thông minh (ẩn trong menu cũ); các màn thế hệ "phiếu khảo sát" của nhánh
+  `main` (Dân số & Hộ khẩu, Báo cáo lên Tỉnh, Các HTTT phân hệ, Ấp/Thôn thông minh).
+- **Chưa nối số thật** cho các biểu đồ / bảng trong dashboard (mới nối thẻ chỉ số + KPI) và cho các màn
+  Phân hệ mở rộng — chưa có phân hệ nguồn.
+
+## Nguồn dữ liệu vào — số liệu chỉ tiêu qua API và Excel (01/10/2026)
+
+Quản trị hệ thống › Kết nối › **Nguồn dữ liệu vào** (`QT_NGUON_VAO`, ADR-0010) hết là màn phác:
+
+- **Nguồn API** — khai địa chỉ, xác thực (khóa lưu mã hóa, không trả về trình duyệt), ánh xạ JSON →
+  chỉ tiêu (mảng các dòng, hoặc đối tượng mỗi trường một chỉ tiêu); "Lấy thử" (không ghi) và "Lấy ngay".
+- **Nạp từ Excel** — kênh cho khách không có API: tải mẫu (liệt kê sẵn bộ chỉ tiêu) → kiểm → nạp,
+  tất cả hoặc không.
+- **Kết quả lấy về** — "Số liệu đang dùng" (từng chỉ tiêu + kỳ, từ kênh / nguồn nào; bỏ được số nạp
+  nhầm) và "Lịch sử nạp" (từng lần: ai, lúc nào, bao nhiêu dòng, lỗi gì).
+- **Điều hành** đọc kho theo thứ tự: phân hệ đã xây › số nạp › minh họa; nhãn nguồn mới "API · T9/2026" /
+  "Excel · T9/2026"; chuỗi xu hướng lấy từ các kỳ đã nạp; KPI tính lại từ số nạp.
+- Migration 0028 (4 bảng) + 0029 (RLS, nhật ký; kho khóa không nhật ký). Test: `nguon-vao.e2e.test.ts`.
+- Chưa làm: lịch tự lấy định kỳ; quyền nạp cho cán bộ đầu mối (hiện chỉ quản trị); tổng hợp số của
+  đơn vị con lên cấp trên; nguồn cần POST / phân trang / OAuth.
+- **Chưa thử với API thật của khách nào** — mới chạy với nguồn giả trong test.
+
+## Kết nối OCR chứng từ với FOXAI Native (01/10/2026)
+
+Quản trị hệ thống › Kết nối có thêm module **Nhận dạng chứng từ (OCR)** (`QT_OCR`, ADR-0009 mục 9):
+
+- **Loại chứng từ** — "Cập nhật từ Native" chụp danh sách loại + định nghĩa trường, bảng; bật / tắt
+  loại nào được lấy về (mặc định tắt — Native dùng chung nhiều khách).
+- **Kết quả đã lấy về** — "Lấy về ngay" kéo chứng từ đã nhận dạng của các loại đang bật về bảng
+  `ocr_chung_tu`; xem theo từng loại, mở một dòng thấy trường, bảng dòng hàng và chuỗi JSON gốc.
+- Dịch vụ nền tảng có thêm dòng "FOXAI Native — OCR Service" (xem + kiểm tra).
+- **Động, dùng lại được:** cột dựng theo định nghĩa của loại, không khai cứng. Trang tác nghiệp gọi
+  `<BangChungTuOcr loai="…" />` (`man/ocr/bang-chung-tu.tsx`) hoặc `truyVanChungTuOcr(loai)`
+  (`lib/ocr.ts`) → `GET /api/ocr/chung-tu?loai=`. Nhớ thêm quyền READ của phân hệ vào `QUYEN_DOC_OCR`.
+- Migration 0026 (bảng) + 0027 (RLS, nhật ký). Test: `ocr/ocr.e2e.test.ts` (Native giả), `shared/ocr.test.ts`.
+- **Đã thử với nativev3 thật (01/10/2026)**: chụp 44 loại; bật `CHUNGTU`, duyệt 76 chứng từ, lấy về 2
+  (còn lại lỗi / chưa xong / loại chưa bật). Hai điều học được: `/schemas` KHÔNG nhận `page`/`pageSize`
+  (400), và mã bản ghi của OCR Service là CUID chứ không phải UUID.
+- Chưa làm: tự lấy về định kỳ; tải chứng từ lên Native từ GDOS; mở tệp gốc.
+
+## Sắp lại nhóm Điều hành (01/10/2026)
+
+Bốn module theo bốn câu hỏi của người điều hành, đi từ chung tới riêng — mỗi số chỉ có một chỗ ở:
+
+| Module                 | Trả lời câu hỏi                        | Chức năng                                                                       |
+| ---------------------- | -------------------------------------- | ------------------------------------------------------------------------------- |
+| Tổng quan điều hành    | Tình hình chung, KPI đạt chưa?         | Bức tranh chung · KPI điều hành                                                 |
+| Chỉ tiêu theo lĩnh vực | Từng lĩnh vực quản lý ra sao?          | TTHC · PAKN · KT–DC–XH · ANTT · Hạ tầng · Y tế–GD                               |
+| Tình hình nghiệp vụ    | Hồ sơ, dự án chạy thế nào, ai làm tốt? | Toàn cảnh · Theo đơn vị · Theo lĩnh vực · Chấm điểm thực hiện · Xếp hạng đơn vị |
+| Báo cáo                | Biểu để nộp, tra, xuất                 | Báo cáo định kỳ · Tất cả báo cáo · Xuất dữ liệu                                 |
+
+Trước đó: "Tổng quan" trùng tên với "Tổng quan lĩnh vực", "Bộ chỉ số" lẫn với "KPI điều hành" và
+"Chỉ tiêu". Mã module, mã quyền và mã chức năng GIỮ NGUYÊN (phân công đã lưu không hỏng, đường dẫn
+không đổi) — chỉ đổi nhãn và chuyển chức năng giữa các module; API nhận quyền của cả module cũ lẫn
+mới. Trang Bức tranh chung xếp lại: KPI → chỉ tiêu chính → theo lĩnh vực → số thật từ phân hệ →
+mức sẵn sàng số liệu.
+
+## Tầng 2 — vận hành, cây phân hệ, ngưỡng cảnh báo, trang mặc định (01/10/2026)
+
+- **Theo dõi vận hành** (`/api/van-hanh/*`, quyền `QT_VAN_HANH.READ`, chỉ đọc): Sức khỏe hệ thống (API,
+  cơ sở dữ liệu, kho tệp, FOXAI Native — tự kiểm 30 giây), Hàng đợi xử lý (văn bản đang chờ / đang
+  xử lý / lỗi, báo khi chờ quá 15 phút), Lưu trữ tệp (số tệp, dung lượng theo nghiệp vụ – đơn vị –
+  loại). Nhật ký hệ thống còn phác (chưa có nơi lưu nhật ký máy chủ).
+- **Khai báo module › Cây phân hệ**: bảng tra cả cây 4 cấp từ registry — tình trạng đã xây / đang
+  xây dựng, quyền cần có, nguồn dữ liệu.
+- **Quy tắc cảnh báo › Hạn & ngưỡng cảnh báo**: hai ngưỡng "sắp đến hạn" (mặc định 10 ngày) và "lâu
+  không cập nhật" (15 ngày) thành cấu hình hệ thống (khóa `canh-bao`, migration 0025). Áp dụng cho
+  tình trạng bước dự án, Giám sát › Hồ sơ quá hạn, Việc của tôi, checklist Excel, Gantt, Đôn đốc.
+  Dịch vụ đọc ngưỡng TRƯỚC khi mở giao dịch (không lồng giao dịch). Kênh gửi thông báo còn phác.
+- **Hiển thị › Trang mặc định theo vai** (khóa `trang-dau`): trang mở ra sau khi đăng nhập cho lãnh
+  đạo / chuyên viên / thanh tra / quản trị; chỉ nhận chức năng có trong cây; không có quyền mở thì
+  về trang chủ; đường dẫn cụ thể (`?tiep=`) vẫn được ưu tiên.
+- Cả hai cấu hình chỉ quản trị ở đơn vị gốc sửa được (hàm `cau_hinh_ghi`), có nhật ký. 4 + 3 test.
+
+## Điều hành › Chỉ tiêu điều hành (01/10/2026)
+
+Bộ chỉ tiêu điều hành cấp xã/phường đã thông qua (theo "Dashboard GDOS Xã/Phường" của GDOS cũ) —
+tám trang: Tổng quan lĩnh vực, KPI điều hành, TTHC – Một cửa, Kinh tế – Dân cư – Xã hội, An ninh –
+Trật tự, Hạ tầng – Đô thị, Y tế – Giáo dục, Phản ánh – Kiến nghị.
+
+- **Danh mục** `packages/shared/src/chi-tieu.ts` (mã, tên, đơn vị, lĩnh vực, mục tiêu, chiều tốt) — một chỗ duy
+  nhất. API `GET /api/chi-tieu` (quyền `CHI_TIEU.READ`) trả giá trị kèm NGUỒN từng số.
+- **Số thật** (theo quyền + RLS của người xem): KPI-04 nhiệm vụ đúng hạn ← phân hệ Nhiệm vụ (Native);
+  KT-04 giải ngân đầu tư công, HT-06 công trình đang thi công ← phân hệ Dự án; khối "Số thật từ các
+  phân hệ" (Nhiệm vụ, Dự án, Xử lý văn bản) ở trang Tổng quan. Bấm nhãn "Số thật" mở phân hệ nguồn.
+- **Số minh họa** (`apps/api/src/chi-tieu/so-lieu-minh-hoa.ts`): các lĩnh vực chưa có phân hệ nguồn. Xã giả
+  định, số tự dựng cho khớp nhau — KHÔNG chép số hay tên người của đơn vị nào từ bản GDOS cũ. Web
+  luôn gắn nhãn "Minh họa". Xây phân hệ nào thì chuyển chỉ tiêu đó sang tính thật ở chi-tieu.service.ts.
+- Biểu đồ SVG thuần (`man/chi-tieu/bieu-do.tsx`): thẻ số + đường xu hướng, vành khuyên, vòng so mục
+  tiêu, thanh ngang, đường 10 kỳ. Bảng màu `--bd-1…8` cố định thứ tự, có bản tối. 6 test.
+- Chưa làm: bảng "đầu mối liên hệ" (có tên, số điện thoại cán bộ — chờ nguồn chính thức) và nhóm GIS.
+
+## Dọn màn phác — danh bạ và tra cứu (01/10/2026)
+
+- **Danh mục › Tổ chức** (Đơn vị, Cán bộ): danh bạ CHỈ ĐỌC trong phạm vi RLS của người xem —
+  `/api/to-chuc/don-vi`, `/api/to-chuc/can-bo` (quyền `DM_TO_CHUC.READ`). Cán bộ chỉ trả họ tên, tên đăng
+  nhập, đơn vị, vai trò; tài khoản khóa/xóa không hiện. 2 test.
+- **Vai trò & quyền › Tra cứu phân công**: mỗi dòng một phân công; chọn phân hệ + thao tác để biết
+  "ai làm được việc này" — tính bằng đúng `tinhQuyen()` mà API dùng để chặn.
+- **Tác nghiệp › Nhiệm vụ** (01/10, nối FOXAI Native thật — như "Quản lý nhiệm vụ" ở GDOS cũ): cây
+  việc nhiều cấp `/tasks` qua cổng chuyển tiếp; ba chức năng là ba phạm vi của một màn (việc được giao
+  cho tôi / việc tôi đã giao / theo dõi chung). Thẻ số liệu bấm để lọc, thống kê theo đơn vị chủ trì,
+  lọc thời gian – trạng thái – đơn vị – từ khóa, ngăn chi tiết gắn `?ma=` (thông tin, người thực
+  hiện theo vai, việc con, tiến độ & trao đổi có tệp), giao việc / việc con / sửa / xóa, đổi trạng thái
+  tại dòng, AI phân rã việc con (gợi ý chưa lưu, soát rồi tạo hàng loạt), chuông thông báo. Chọn
+  người, đơn vị từ danh bạ Native `/api/directory` (cổng chuyển tiếp thêm dịch vụ thứ hai). Quyền
+  `NHIEM_VU.*`: xem / báo tiến độ = READ; giao, sửa, xóa = ASSIGN (lãnh đạo) hoặc CREATE/UPDATE/
+  DELETE (chuyên viên) — Native tự kiểm người đó có tham gia việc không. **Đã đọc dữ liệu thật** (40
+  nhiệm vụ, 6 đơn vị); thao tác GHI chưa bấm thử để không đổi dữ liệu Native đang dùng.
+- Còn phác: Đơn thư, Luồng phê duyệt, Nguồn dữ liệu vào, Tích hợp ra, Quy tắc cảnh báo,
+  Mô hình AI, Theo dõi vận hành; lẻ: SSO, Cây phân hệ, Nhãn theo khách hàng, Trang mặc định theo vai.
 
 ## Mốc 5 — Nối FOXAI Native (ADR-0009)
 
@@ -29,16 +308,26 @@
   song, tự cập nhật khi đang chạy); Quản trị › Dịch vụ nền tảng (danh sách, kiểm tra).
 - Máy dev: `.env` có `NATIVE_GIA=1`; tài khoản dev "Quản trị hệ thống" đã điền mã Native
   `thu-nghiem-dev` để thử.
-- **Bước B (30/09): liên kết tài khoản Native theo từng người** — như GDOS cũ ở gdos.fox.ai.vn
+- **Bước B (30/09): liên kết tài khoản Native theo từng người** — như GDOS cũ
   (anh Toàn chốt). `native/xac-thuc-native.ts` (đăng nhập `/api/auth/*`, mã hóa AES-GCM),
   `native/lien-ket.service.ts` (token theo người, làm mới một lần), bảng `lien_ket_native` (0022/0023),
   Cài đặt cá nhân › Liên kết FOXAI Native. Bật thật: `.env` đặt `NATIVE_URL`, bỏ `NATIVE_GIA`.
-- **Bước C (30/09): màn Tóm tắt văn bản như gdos.fox.ai.vn** — thẻ số liệu, "Thêm văn bản" (hộp thoại), bảng
+- **Bước C (30/09): màn Tóm tắt văn bản như GDOS cũ** — thẻ số liệu, "Thêm văn bản" (hộp thoại), bảng
   STT + thao tác (xem, sửa, tải tóm tắt .doc, xóa) + lọc chuẩn lưới. Văn bản đã có trong tài khoản Native
   được KÉO VỀ hồ sơ GDOS khi người liên kết xem danh sách (mỗi phút một lần, tối đa 200; đã xóa thì
   không kéo lại); mở ra thì lấy nội dung gốc + tóm tắt; tệp gốc tải từ Native (0024: cột tệp được rỗng).
   Gửi lại văn bản mang mã bản giả / Native báo 404-422 → gửi lại từ tệp gốc. **Đã chạy với Native thật.**
-  Tiếp: Văn bản đến, Soạn thảo, Phân công, Mẫu văn bản.
+- **Bước D (30/09): các công cụ văn bản còn lại, như GDOS cũ** — cổng chuyển tiếp
+  `/api/native/document/*` (`native/chuyen-tiep.ts`: danh sách cho phép + quyền `VAN_BAN.*` + token
+  theo người; 10 test). Màn: **Mẫu văn bản** (thẻ số liệu, lưới, xem — bố cục + bản minh họa AI,
+  thêm/sửa với trình soạn thân mẫu kiểu Word: chip trường bấm/kéo chèn, thể thức NĐ30), **Soạn thảo
+  văn bản** (nguồn: văn bản đã tóm tắt hoặc tệp; chọn mẫu; AI gợi ý trường; AI soạn; sửa, sao chép,
+  xuất .doc), **Phân công từ văn bản** (AI từ văn bản đã tóm tắt / từ tệp chạy nền; thêm, sửa, đổi
+  trạng thái tại bảng, xóa, tải tệp đính kèm), **Đơn vị nhận việc** (danh sách AI chọn khi giao
+  việc), **Văn bản đến** (văn bản nguồn QLVB/Cổng DVC/Email: xem, tóm tắt, soạn trả lời, giao việc).
+  Tóm tắt văn bản thêm hai thao tác: soạn văn bản từ bản tóm tắt, AI phân công. HTML thô qua
+  DOMPurify (`lib/html-sach.ts`). **Đã chạy với Native thật** (29 mẫu, 40 nhiệm vụ, 6 đơn vị) —
+  phần gọi AI soạn/phân công để người dùng tự thử vì ghi vào dữ liệu Native dùng chung.
 
 ## Mốc 3 — Dự án (từ PMS)
 
@@ -385,5 +674,8 @@ thật → GDOS dùng 5433.
 | -------------------------------------------------------------------------------------------------------- | --------------------- | ---------- |
 | Kết quả pipeline CI / runner là docker hay shell executor                                                | Người dùng xem GitLab | Trộn Mốc 0 |
 | ~~GDOS gọi Native thay mặt người dùng bằng cách nào?~~ — liên kết tài khoản Native theo người (ADR-0009) | —                     | —          |
-| Server + tên miền phụ cho máy thử                                                                        | Hạ tầng               | Mốc 2      |
+| ~~Tên miền phụ cho máy thử~~ — `gdosfox.fox.ai.vn` (chốt 30/09/2026)                                     | —                     | —          |
+| Chứng thư TLS cho `gdosfox.fox.ai.vn` — Let's Encrypt qua aaPanel hay chứng thư `*.fox.ai.vn` sẵn có     | Hạ tầng               | Mốc 2      |
+| ~~Triển khai bằng SSH hay bằng runner trên máy thử~~ — runner `deploy-gdos` tại chỗ (30/09/2026)         | —                     | —          |
+| Có lên pnpm 11.13.1 (11.12.0 là bản lỗi) không                                                           | Người dùng            | —          |
 | ~~Ngưỡng khóa tài khoản~~ — đã chỉnh được trên màn Cấu hình hệ thống (phiên 5)                           | —                     | —          |

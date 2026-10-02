@@ -1,0 +1,16 @@
+# Bối cảnh build = gốc repo (image cần cả packages/shared). Chỉ loại thứ không
+# được vào image, hoặc làm hỏng cache vì đổi liên tục.
+.git
+.gitlab-ci.yml
+node_modules
+**/node_modules
+**/dist
+**/.tsbuildinfo
+.pnpm-store
+.data
+docs
+.env
+.env.*
+!.env.example
+**/*.log
+**/*.test.ts

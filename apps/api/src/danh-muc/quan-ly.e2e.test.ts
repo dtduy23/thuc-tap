@@ -237,3 +237,58 @@ describe('quy trình mẫu', () => {
     ).toBe(403)
   })
 })
+
+describe('Danh mục › Tổ chức — danh bạ chỉ đọc', () => {
+  it('cán bộ xã chỉ thấy đơn vị và đồng nghiệp trong phạm vi; không lộ trường bảo mật', async () => {
+    const cvA = await vao('chuyenvien.a')
+    const dv = (await cvA.get('/api/to-chuc/don-vi')).body as { id: string }[]
+    expect(dv.map((d) => d.id)).toEqual([MAU.XA_A])
+    const res = await cvA.get('/api/to-chuc/can-bo')
+    expect(res.status).toBe(200)
+    const cb = res.body as Record<string, unknown>[]
+    const ten = cb.map((c) => c.tenDangNhap)
+    expect(ten).toContain('chutich.a')
+    expect(ten).not.toContain('canbo.b')
+    expect(cb.find((c) => c.tenDangNhap === 'chutich.a')!.vai).toEqual(['LANH_DAO'])
+    expect(Object.keys(cb[0]!).sort()).toEqual(
+      ['donViCap', 'donViId', 'donViTen', 'hoTen', 'id', 'tenDangNhap', 'vai'].sort(),
+    )
+  })
+
+  it('tài khoản đã khóa không nằm trong danh bạ; không ghi được qua đường này', async () => {
+    await db.coSo.update(taiKhoan).set({ trangThai: 'khoa' }).where(eq(taiKhoan.tenDangNhap, 'chutich.a'))
+    const cvA = await vao('chuyenvien.a')
+    const cb = (await cvA.get('/api/to-chuc/can-bo')).body as { tenDangNhap: string }[]
+    expect(cb.map((c) => c.tenDangNhap)).not.toContain('chutich.a')
+    expect((await cvA.post('/api/to-chuc/can-bo').set(GHI).send({})).status).toBe(404)
+    await db.coSo
+      .update(taiKhoan)
+      .set({ trangThai: 'hoat-dong' })
+      .where(eq(taiKhoan.tenDangNhap, 'chutich.a'))
+  })
+})
+
+describe('Theo dõi vận hành — chỉ quản trị, chỉ đọc', () => {
+  it('chuyên viên không vào được; quản trị xem sức khỏe, hàng đợi, lưu trữ', async () => {
+    const cvA = await vao('chuyenvien.a')
+    for (const p of ['suc-khoe', 'hang-doi', 'luu-tru'])
+      expect((await cvA.get(`/api/van-hanh/${p}`)).status, p).toBe(403)
+
+    const qt = await vao('quantri')
+    const sk = (await qt.get('/api/van-hanh/suc-khoe')).body as {
+      thanhPhan: { ma: string; trangThai: string }[]
+      boNhoMb: number
+    }
+    expect(sk.thanhPhan.map((t) => t.ma)).toEqual(['api', 'postgres', 'kho-tep', 'foxai-native'])
+    expect(sk.thanhPhan.find((t) => t.ma === 'postgres')!.trangThai).toBe('ok')
+    expect(sk.boNhoMb).toBeGreaterThan(0)
+    // Không lộ bí mật cấu hình.
+    expect(JSON.stringify(sk)).not.toMatch(/AUTH_SECRET|mat_khau|password/i)
+
+    const hd = (await qt.get('/api/van-hanh/hang-doi')).body as { dem: unknown; muc: unknown[] }
+    expect(hd.dem).toEqual({ cho: 0, dangXuLy: 0, loi: 0 })
+    const lt = await qt.get('/api/van-hanh/luu-tru')
+    expect(lt.status).toBe(200)
+    expect(lt.body).toMatchObject({ tongTep: 0, tongDungLuong: 0, tepONative: 0, dong: [] })
+  })
+})

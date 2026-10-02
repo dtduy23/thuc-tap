@@ -6,7 +6,7 @@
  * Ba bản cài:
  *   NativeGia       — máy dev / test (NATIVE_GIA=1): tóm tắt giả ngay tại chỗ.
  *   NativeThat      — HTTP theo đặc tả Document Service, token của CHÍNH người dùng
- *                     (liên kết tài khoản Native — như GDOS cũ ở gdos.fox.ai.vn).
+ *                     (liên kết tài khoản Native — như GDOS cũ).
  *   NativeChuaNoi   — chưa cấu hình: mọi lời gọi báo "chưa kết nối" (503).
  */
 import { ServiceUnavailableException } from '@nestjs/common'
