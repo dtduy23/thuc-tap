@@ -211,3 +211,80 @@ describe('/api/native/document/*', () => {
     expect(daGoi).toHaveLength(0)
   })
 })
+
+describe('Trợ lý AI: /api/native/{context,assistant,index}/*', () => {
+  const BOT = 'cmbot0123456789abcdef'
+
+  it('danh sách cho phép: trò chuyện cần READ, cấu hình bot cần CREATE / UPDATE / DELETE', () => {
+    expect(quyenCanCho('context', 'GET', '/v1/chatbots')).toEqual(['TRO_LY.READ'])
+    expect(quyenCanCho('context', 'POST', '/v1/chatbots')).toEqual(['TRO_LY.CREATE'])
+    expect(quyenCanCho('context', 'PATCH', `/v1/chatbots/${BOT}`)).toEqual(['TRO_LY.UPDATE'])
+    expect(quyenCanCho('context', 'DELETE', `/v1/chatbots/${BOT}`)).toEqual(['TRO_LY.DELETE'])
+    expect(quyenCanCho('context', 'POST', `/v1/chatbots/${BOT}/xoay-khoa-nhung`)).toEqual(['TRO_LY.UPDATE'])
+    expect(quyenCanCho('context', 'POST', `/v1/chatbots/${BOT}/conversations/${MA}/messages`)).toEqual([
+      'TRO_LY.READ',
+    ])
+    expect(quyenCanCho('assistant', 'POST', '/ask/stream')).toEqual(['TRO_LY.READ'])
+    expect(quyenCanCho('index', 'GET', '/v1/collections/collections')).toEqual(['TRO_LY.READ'])
+    // Ngoài danh sách: sửa phân quyền nguồn, công cụ API, xóa bộ tri thức, đường leo thư mục.
+    expect(quyenCanCho('context', 'PUT', '/v1/permissions/sources/abc')).toBeNull()
+    expect(quyenCanCho('context', 'GET', '/v1/sources')).toBeNull()
+    expect(quyenCanCho('context', 'GET', '/v1/chatbots/../sources')).toBeNull()
+    expect(quyenCanCho('index', 'DELETE', `/v1/collections/collections/${MA}`)).toBeNull()
+    expect(quyenCanCho('assistant', 'GET', '/models')).toBeNull()
+  })
+
+  it('chuyển tiếp danh sách bot; giữ tham số active_only', async () => {
+    hangCho = [Response.json([{ id: BOT, name: 'Bot thử' }])]
+    const cv = await vao('chuyenvien.a')
+    const res = await cv.get('/api/native/context/v1/chatbots?active_only=true&x=1')
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual([{ id: BOT, name: 'Bot thử' }])
+    expect(daGoi[0]!.url).toBe(`${NATIVE}/api/context/v1/chatbots?active_only=true`)
+  })
+
+  it('câu trả lời dạng dòng sự kiện (SSE) đi nguyên vẹn, đúng kiểu nội dung', async () => {
+    const dong =
+      'event: van\ndata: {"t":"Xin "}\n\nevent: van\ndata: {"t":"chào"}\n\nevent: done\ndata: {}\n\n'
+    hangCho = [new Response(dong, { headers: { 'content-type': 'text/event-stream; charset=utf-8' } })]
+    const cv = await vao('chuyenvien.a')
+    const res = await cv
+      .post('/api/native/assistant/ask/stream')
+      .set(GHI)
+      .send({ question: 'Xin chào', chatbotId: BOT })
+      .buffer(true)
+      .parse((r, xong) => {
+        let d = ''
+        r.on('data', (c: Buffer) => (d += c.toString('utf8')))
+        r.on('end', () => xong(null, d))
+      })
+    expect(res.status).toBe(200)
+    expect(res.headers['content-type']).toMatch(/^text\/event-stream/)
+    expect(res.headers['x-accel-buffering']).toBe('no')
+    expect(res.body).toBe(dong)
+    expect(JSON.parse(String(daGoi[0]!.body))).toEqual({ question: 'Xin chào', chatbotId: BOT })
+  })
+
+  it('lỗi bọc kiểu context-service { error: { message } } được dịch ra câu', async () => {
+    hangCho = [Response.json({ error: { code: 'BAD', message: 'Tên bot đã có' } }, { status: 409 })]
+    const cv = await vao('chuyenvien.a')
+    const res = await cv.post('/api/native/context/v1/chatbots').set(GHI).send({ name: 'Bot' })
+    expect(res.status).toBe(409)
+    expect((res.body as { message: string }).message).toMatch(/Tên bot đã có/)
+  })
+
+  it('lãnh đạo trò chuyện được nhưng không cấu hình được bot', async () => {
+    const ct = await vao('chutich.a')
+    expect((await ct.post('/api/native/context/v1/chatbots').set(GHI).send({})).status).toBe(403)
+    expect((await ct.patch(`/api/native/context/v1/chatbots/${BOT}`).set(GHI).send({})).status).toBe(403)
+    expect((await ct.get('/api/native/dia-chi')).status).toBe(403)
+    expect(daGoi).toHaveLength(0)
+  })
+
+  it('địa chỉ Native cho đoạn mã nhúng: chỉ người cấu hình bot đọc được', async () => {
+    const cv = await vao('chuyenvien.a')
+    const res = await cv.get('/api/native/dia-chi')
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ diaChi: NATIVE })
+  })
+})

@@ -147,7 +147,8 @@ const chucNang = createRoute({
   validateSearch: (s: Record<string, unknown>): { nguon?: string; ma?: string } => {
     const uuid = (v: unknown) => (typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v) ? v : undefined)
     const nguon = uuid(s.nguon)
-    const ma = uuid(s.ma)
+    // Mã bản ghi của Native (chatbot) không chắc là UUID — chỉ cho chữ, số, gạch.
+    const ma = typeof s.ma === 'string' && /^[A-Za-z0-9_-]{6,64}$/.test(s.ma) ? s.ma : undefined
     return { ...(nguon ? { nguon } : {}), ...(ma ? { ma } : {}) }
   },
   component: function ManChucNang() {

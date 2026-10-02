@@ -1,12 +1,18 @@
 import { DANH_SACH_MODULE, locTheoQuyen } from '@gdos/shared'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { Outlet, useRouterState } from '@tanstack/react-router'
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { apDungChoNguoiDung } from '@/lib/giao-dien'
 import { truyVanToi } from '@/lib/phien'
 import { CayPhanHe } from './cay-phan-he'
 import { KhongGianDuAn } from './khong-gian-du-an'
+import { NutTroLy } from './nut-tro-ly'
 import { ThanhTren } from './thanh-tren'
+
+/** Vùng thông báo nổi của các màn chép từ GDOS cũ (và ngăn trợ lý) — tải sau, không nặng trang đầu. */
+const VungThongBao = lazy(() =>
+  import('@/dieu-hanh/components/overlay/Toast').then((m) => ({ default: m.ToastRegion })),
+)
 
 /**
  * Khung portal: thanh trên + cây phân hệ + nội dung. Màn hẹp (< md): cây thành
@@ -55,6 +61,10 @@ export function KhungPortal() {
           </div>
         </main>
       </div>
+      <NutTroLy quyen={toi.quyen} an={dangXem === 'tl-tro-chuyen'} />
+      <Suspense fallback={null}>
+        <VungThongBao />
+      </Suspense>
     </div>
   )
 }

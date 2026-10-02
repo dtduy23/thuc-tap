@@ -45,6 +45,9 @@ export const MODULES: readonly ModuleDef[] = [
   m('chi-tieu-ktxh', 'ktxh', 'Chỉ tiêu Kinh tế - Xã hội', '#1B66E0', 'dh-kinh-te-dan-cu-xa-hoi'),
   m('bo-chi-so', 'chiso', 'Bộ chỉ số điều hành', '#0E9488', 'dh-kpi'),
   m('thiet-ke-dashboard', 'dashboard', 'Thiết kế Dashboard', '#C2410C'),
+  // Trợ lý AI (Tác nghiệp)
+  m('tro-chuyen-chatbot', 'trochuyen', 'Trò chuyện với Chatbot', '#4A48C4', 'tl-tro-chuyen'),
+  m('cau-hinh-chatbot', 'chatbot', 'Cấu hình Chatbot', '#4A48C4', 'tl-cau-hinh'),
   // Nhóm PHÂN HỆ MỞ RỘNG
   m('dat-dai', 'datdai', 'Quản lý đất đai', '#B7791F'),
   m('nong-nghiep', 'nongnghiep', 'Nông nghiệp số', '#12A150'),

@@ -1,10 +1,9 @@
 /**
  * Bọc một màn ĐIỀU HÀNH chép từ GDOS cũ (apps/web/src/dieu-hanh) để chạy trong khung của hệ
- * thống mới: thêm vùng thông báo nổi mà các màn đó dùng, và — với màn còn chạy bằng dữ liệu
- * mẫu — một dòng nói rõ điều đó, để người điều hành không nhầm số mẫu với số của đơn vị.
+ * thống mới: với màn còn chạy bằng dữ liệu mẫu, thêm một dòng nói rõ điều đó, để người điều
+ * hành không nhầm số mẫu với số của đơn vị. (Vùng thông báo nổi của các màn này nằm ở khung portal.)
  */
 import { lazy, type ComponentType, type LazyExoticComponent } from 'react'
-import { ToastRegion } from '@/dieu-hanh/components/overlay/Toast'
 
 function DuLieuMau() {
   return (
@@ -27,7 +26,6 @@ export function manCu(
           <>
             {mau && <DuLieuMau />}
             <Man />
-            <ToastRegion />
           </>
         )
       },

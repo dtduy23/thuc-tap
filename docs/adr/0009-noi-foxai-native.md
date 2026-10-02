@@ -63,6 +63,17 @@ câu trả lời — ADR-0003 cấm tự chọn.
    liệu về; trực quan hóa và dùng là việc của phân hệ tác nghiệp** — gọi `GET /api/ocr/chung-tu?loai=`
    hoặc thành phần `<BangChungTuOcr loai="…" />`; phân hệ nào dùng thì thêm quyền READ của mình vào
    `QUYEN_DOC_OCR` (@gdos/shared).
+10. **Trợ lý AI (chatbot) là công cụ của Native, đi qua cùng cổng chuyển tiếp** — ba dịch vụ:
+    `/api/native/context/*` (chatbot, đoạn chat, nguồn, quyền trên nguồn), `/api/native/assistant/*`
+    (hỏi, giọng đọc — phần duy nhất gọi mô hình) và `/api/native/index/*` (danh sách bộ tri thức).
+    GDOS không giữ bản sao bot hay đoạn chat. Quyền GDOS `TRO_LY.*`: trò chuyện, xem bot, đoạn chat
+    của mình → READ; tạo / sửa / xóa bot, xoay khóa nhúng → CREATE / UPDATE / DELETE. Ngoài danh
+    sách (không chuyển tiếp): sửa phân quyền nguồn, công cụ API, nguồn dữ liệu, quản lý tri thức —
+    các việc đó vẫn làm ở Native. Câu trả lời về theo DÒNG SỰ KIỆN (SSE): cổng chuyển NGAY từng
+    mẩu thay vì gom cả phản hồi, và cắt lời gọi sang Native khi người dùng đóng kết nối. Trình duyệt
+    không bao giờ cầm token Native. Riêng ĐOẠN MÃ NHÚNG bot ra trang ngoài thì trang đó gọi thẳng
+    Native bằng khóa nhúng — GDOS chỉ in địa chỉ Native vào đoạn mã (`GET /api/native/dia-chi`,
+    cần `TRO_LY.UPDATE`).
 
 ## Bật bản thật
 

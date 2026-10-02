@@ -68,6 +68,32 @@
 - Nhánh `develop` **chưa tồn tại** trên remote. Pipeline chỉ nổ khi có nhánh đó.
 - CSP trong `nginx.conf` chưa mở trên trình duyệt thật; màn nào trắng thì nới ở đúng chỉ thị đó.
 
+## Trợ lý AI — chatbot qua FOXAI Native (02/10/2026)
+
+Module **Trợ lý AI** ở Tác nghiệp (mã quyền `TRO_LY`), hai màn chép nguyên từ GDOS cũ
+(`apps/web/src/dieu-hanh/modules/{tro-chuyen-chatbot,cau-hinh-chatbot}`):
+
+- **Trò chuyện với Chatbot** (`tl-tro-chuyen`): chọn bot đang bật, hỏi đáp, câu trả lời hiện dần,
+  đoạn chat lưu theo người ở Native.
+- **Cấu hình Chatbot** (`tl-cau-hinh`, cần UPDATE): mục đích, lời dặn, bộ tri thức, nguồn dữ liệu,
+  câu hỏi thường gặp, kịch bản, giọng đọc, mã nhúng.
+- **Nút trợ lý nổi** góc dưới phải ở MỌI trang (`khung/nut-tro-ly.tsx`) — mở ngăn chat gọn, đổi
+  bot, "Mở rộng" sang màn đầy đủ. Chỉ hiện với người có `TRO_LY.READ`.
+
+Mọi lời gọi đi qua cổng chuyển tiếp của máy chủ GDOS bằng token Native của chính người dùng
+(ADR-0009 mục 10). Lớp nối của mã cũ viết lại: `dieu-hanh/lib/http.ts` (đổi `/api/<dịch vụ>` →
+`/api/native/<dịch vụ>`, không token ở trình duyệt), `hooks/use-quyen.ts` (quyền GDOS). Cổng
+chuyển tiếp nay truyền thẳng dòng sự kiện SSE. Vai Lãnh đạo / Thanh tra: chỉ trò chuyện; Chuyên
+viên được phân công Trợ lý AI: cấu hình được bot.
+
+**Đã kiểm với nativev3 thật:** danh sách bot, mở đoạn chat, tiến trình trả lời từng chặng, màn cấu
+hình (bộ tri thức, nguồn, quyền hiệu lực). **Chưa thấy câu trả lời trọn vẹn:** Native trả sự kiện
+`LLM_ERROR` — nhà cung cấp mô hình của Native từ chối (403, liên quan thanh toán của dự án mô
+hình). Việc của phía Native, không phải GDOS; bật lại xong thì thử lại một câu.
+
+**Chưa làm:** Hỏi đáp AI trên số liệu, Nguồn dữ liệu, Quản lý tri thức (bước 3); thử ghi cấu hình
+bot và giọng đọc trên trình duyệt (mới có test tự động cho cổng).
+
 ## Sắp lại cây Điều hành: mỗi chủ đề một chỗ (02/10/2026)
 
 Sau khi chép nguyên menu GDOS cũ, Điều hành có 6 module / 27 màn và trùng nhiều (3 màn tổng quan, 3 màn KPI,

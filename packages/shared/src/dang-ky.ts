@@ -243,6 +243,18 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     ],
   },
   {
+    id: 'tro-ly-ai',
+    nhan: 'Trợ lý AI',
+    nhom: 'tac-nghiep',
+    maQuyen: 'TRO_LY',
+    nguon: 'native',
+    mo: 'Chatbot chạy trên FOXAI Native: trò chuyện với bot đã cấu hình (có nút trợ lý ở mọi trang) và cấu hình bot — mục đích, lời dặn, bộ tri thức, câu hỏi thường gặp, kịch bản, mã nhúng. Mỗi người dùng tài khoản Native đã liên kết của mình.',
+    con: [
+      { id: 'tl-tro-chuyen', nhan: 'Trò chuyện với Chatbot' },
+      { id: 'tl-cau-hinh', nhan: 'Cấu hình Chatbot', hanhDong: 'UPDATE' },
+    ],
+  },
+  {
     id: 'nhiem-vu',
     nhan: 'Nhiệm vụ',
     nhom: 'tac-nghiep',

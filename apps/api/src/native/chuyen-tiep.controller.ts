@@ -1,6 +1,7 @@
 import {
   All,
   Controller,
+  Get,
   ForbiddenException,
   HttpException,
   Inject,
@@ -13,15 +14,17 @@ import {
 import { KICH_THUOC_VAN_BAN_TOI_DA } from '@gdos/shared'
 import type { Request, Response } from 'express'
 import { CAU_HINH, type CauHinh } from '../cau-hinh.js'
-import { ChiCanDangNhap, NguoiDung, type NguoiDungPhien } from '../xac-thuc/bao-ve.js'
+import { Readable } from 'node:stream'
+import type { ReadableStream as LuongWeb } from 'node:stream/web'
+import { CanQuyen, ChiCanDangNhap, NguoiDung, type NguoiDungPhien } from '../xac-thuc/bao-ve.js'
 import { locThamSo, quyenCanCho, thongDiepLoiNative, type DichVuNative } from './chuyen-tiep.js'
 import { LienKetNativeService } from './lien-ket.service.js'
 
 /** Cho test thay fetch. */
 export const GOI_NATIVE = Symbol('GOI_NATIVE')
 
-/** AI soạn thảo / phân công / phân rã có thể chạy lâu. */
-const HET_GIO_MS = 180_000
+/** AI soạn thảo / phân công / phân rã / một lượt hỏi trợ lý có thể chạy lâu. */
+const HET_GIO_MS = 300_000
 /** Tệp văn bản tối đa 20 MB + phần khung multipart. */
 const THAN_TOI_DA = KICH_THUOC_VAN_BAN_TOI_DA + 1024 * 1024
 const HET_LIEN_KET = 'Liên kết FOXAI Native đã hết hạn hoặc bị thu hồi — vào Cài đặt cá nhân để liên kết lại.'
@@ -63,6 +66,31 @@ export class ChuyenTiepNativeController {
     return this.chuyen('directory', nd, req, res)
   }
 
+  @All('context/*duongDan')
+  @ChiCanDangNhap()
+  nguCanhAi(@NguoiDung() nd: NguoiDungPhien, @Req() req: Request, @Res() res: Response): Promise<void> {
+    return this.chuyen('context', nd, req, res)
+  }
+
+  @All('assistant/*duongDan')
+  @ChiCanDangNhap()
+  troLy(@NguoiDung() nd: NguoiDungPhien, @Req() req: Request, @Res() res: Response): Promise<void> {
+    return this.chuyen('assistant', nd, req, res)
+  }
+
+  @All('index/*duongDan')
+  @ChiCanDangNhap()
+  triThuc(@NguoiDung() nd: NguoiDungPhien, @Req() req: Request, @Res() res: Response): Promise<void> {
+    return this.chuyen('index', nd, req, res)
+  }
+
+  /** Địa chỉ Native — chỉ để in vào ĐOẠN MÃ NHÚNG chatbot (trang ngoài tự gọi Native bằng khóa nhúng). */
+  @Get('dia-chi')
+  @CanQuyen('TRO_LY.UPDATE')
+  diaChi(): { diaChi: string | null } {
+    return { diaChi: this.cauHinh.native.gia ? null : (this.cauHinh.native.url ?? null) }
+  }
+
   private async chuyen(dichVu: DichVuNative, nd: NguoiDungPhien, req: Request, res: Response): Promise<void> {
     const url = new URL(req.originalUrl, 'http://gdos')
     const duongDan = url.pathname.slice(`/api/native/${dichVu}`.length)
@@ -82,6 +110,10 @@ export class ChuyenTiepNativeController {
     // JSON: body-parser đã đọc — gửi lại. Multipart: GDOS không đọc tệp, chuyển nguyên khối.
     const than = !coThan ? undefined : laMultipart ? await docThan(req) : JSON.stringify(req.body ?? {})
 
+    const ngat = new AbortController()
+    res.on('close', () => {
+      if (!res.writableEnded) ngat.abort()
+    })
     const gui = (token: string) =>
       this.goi(`${goc}/api/${dichVu}${duongDan}${locThamSo(url.searchParams)}`, {
         method: req.method,
@@ -91,7 +123,8 @@ export class ChuyenTiepNativeController {
           ...(coThan ? { 'Content-Type': laMultipart ? loaiNoiDung : 'application/json' } : {}),
         },
         body: than,
-        signal: AbortSignal.timeout(HET_GIO_MS),
+        // Khách đóng kết nối (bấm dừng, rời trang) thì cắt luôn lời gọi sang Native.
+        signal: AbortSignal.any([AbortSignal.timeout(HET_GIO_MS), ngat.signal]),
       }).catch(() => {
         throw new ServiceUnavailableException('Không tới được FOXAI Native — vui lòng thử lại sau.')
       })
@@ -118,6 +151,15 @@ export class ChuyenTiepNativeController {
     if (cd) res.setHeader('Content-Disposition', cd)
     res.setHeader('X-Content-Type-Options', 'nosniff')
     res.setHeader('Cache-Control', 'no-store')
+    // Câu trả lời của trợ lý AI về theo dòng sự kiện (SSE): chuyển NGAY từng mẩu, không gom.
+    if (kq.body && (kq.headers.get('content-type') ?? '').startsWith('text/event-stream')) {
+      res.setHeader('X-Accel-Buffering', 'no')
+      res.flushHeaders()
+      Readable.fromWeb(kq.body as LuongWeb<Uint8Array>)
+        .on('error', () => res.end())
+        .pipe(res)
+      return
+    }
     res.end(Buffer.from(await kq.arrayBuffer()))
   }
 }

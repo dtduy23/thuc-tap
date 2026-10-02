@@ -8,8 +8,12 @@
  *   - trình duyệt không bao giờ thấy token hay địa chỉ Native.
  */
 
-/** Dịch vụ phía Native: `/api/document/*` (Document Service) và `/api/directory/*` (danh bạ). */
-export const DICH_VU_NATIVE = ['document', 'directory'] as const
+/**
+ * Dịch vụ phía Native: `/api/document/*` (Document Service), `/api/directory/*` (danh bạ) và
+ * ba dịch vụ của Trợ lý AI — `/api/context/*` (chatbot, đoạn chat, nguồn), `/api/assistant/*`
+ * (phần gọi mô hình: hỏi, giọng đọc), `/api/index/*` (bộ tri thức).
+ */
+export const DICH_VU_NATIVE = ['document', 'directory', 'context', 'assistant', 'index'] as const
 export type DichVuNative = (typeof DICH_VU_NATIVE)[number]
 
 export interface LuatChuyenTiep {
@@ -37,6 +41,15 @@ const nv = (phuongThuc: PT, mau: string, ...hd: string[]): LuatChuyenTiep => ({
   phuongThuc,
   mau: re(mau),
   quyen: hd.map((h) => `NHIEM_VU.${h}`),
+})
+
+/** Mã bản ghi của các dịch vụ Trợ lý AI — không chắc là UUID, chỉ cho chữ, số, gạch. */
+const MA = '[A-Za-z0-9_-]{1,64}'
+const tl = (dichVu: DichVuNative, phuongThuc: PT, mau: string, ...hd: string[]): LuatChuyenTiep => ({
+  dichVu,
+  phuongThuc,
+  mau: re(mau),
+  quyen: hd.map((h) => `TRO_LY.${h}`),
 })
 
 /** Danh sách cho phép — thêm công cụ Native mới là thêm dòng ở đây (kèm test). */
@@ -80,6 +93,30 @@ export const LUAT_CHUYEN_TIEP: readonly LuatChuyenTiep[] = [
   nv('PATCH', `/tasks/${ID}`, 'ASSIGN', 'UPDATE'),
   nv('DELETE', `/tasks/${ID}`, 'ASSIGN', 'DELETE'),
 
+  // ── Trợ lý AI: chatbot (context-service) ──
+  // Trò chuyện: ai có quyền xem (READ) đều chọn bot, mở và ghi đoạn chat CỦA MÌNH — Native tự
+  // khóa đoạn chat theo người. Cấu hình bot: CREATE / UPDATE / DELETE.
+  tl('context', 'GET', '/v1/chatbots', 'READ'),
+  tl('context', 'GET', `/v1/chatbots/${MA}`, 'READ'),
+  tl('context', 'POST', '/v1/chatbots', 'CREATE'),
+  tl('context', 'PATCH', `/v1/chatbots/${MA}`, 'UPDATE'),
+  tl('context', 'DELETE', `/v1/chatbots/${MA}`, 'DELETE'),
+  tl('context', 'POST', `/v1/chatbots/${MA}/xoay-khoa-nhung`, 'UPDATE'),
+  tl('context', 'GET', `/v1/chatbots/${MA}/conversations`, 'READ'),
+  tl('context', 'POST', `/v1/chatbots/${MA}/conversations`, 'READ'),
+  tl('context', 'GET', `/v1/chatbots/${MA}/conversations/${MA}`, 'READ'),
+  tl('context', 'DELETE', `/v1/chatbots/${MA}/conversations/${MA}`, 'READ'),
+  tl('context', 'POST', `/v1/chatbots/${MA}/conversations/${MA}/messages`, 'READ'),
+  // Danh sách để CHỌN khi cấu hình bot: nguồn dữ liệu, vai và quyền hiệu lực trên nguồn.
+  tl('context', 'GET', '/v1/replica/sources', 'READ'),
+  tl('context', 'GET', '/v1/permissions/(accounts|effective)', 'READ'),
+  // ── Trợ lý AI: phần gọi mô hình (assistant-service) ──
+  tl('assistant', 'GET', '/health', 'READ'),
+  tl('assistant', 'POST', '/ask/stream', 'READ'),
+  tl('assistant', 'POST', '/tieng/nghe-thu', 'READ'),
+  // ── Trợ lý AI: bộ tri thức để gắn vào bot (index-service) — chỉ đọc danh sách ──
+  tl('index', 'GET', '/v1/collections/collections', 'READ'),
+
   // ── Danh bạ Native — chọn người / đơn vị khi giao việc ──
   { dichVu: 'directory', phuongThuc: 'GET', mau: re('/(users|organizations)'), quyen: ['NHIEM_VU.READ'] },
 ]
@@ -111,6 +148,8 @@ const THAM_SO_CHO_PHEP = new Set([
   'role',
   'lead_org_id',
   'limit',
+  'active_only',
+  'for_role',
 ])
 
 export function locThamSo(tv: URLSearchParams): string {
@@ -136,8 +175,10 @@ const CAU_THEO_MA: Record<number, string> = {
 export function thongDiepLoiNative(ma: number, than: string): string {
   if (ma >= 500) return 'FOXAI Native đang gặp sự cố — vui lòng thử lại sau.'
   try {
-    const j = JSON.parse(than) as { detail?: unknown; message?: unknown }
-    const d = j.detail ?? j.message
+    const j = JSON.parse(than) as { detail?: unknown; message?: unknown; error?: unknown }
+    const boc =
+      j.error && typeof j.error === 'object' ? (j.error as { message?: unknown }).message : undefined
+    const d = j.detail ?? j.message ?? boc
     if (typeof d === 'string' && d) return d.slice(0, 500)
     if (Array.isArray(d)) {
       const cau = d
