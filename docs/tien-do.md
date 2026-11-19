@@ -29,13 +29,14 @@
 
 ### Diễn tập toàn bộ yêu cầu bệnh viện
 
-Xem [báo cáo triển khai và quy trình nghiệp vụ bệnh viện](bao-cao-nghiep-vu-benh-vien.md)
-để đối chiếu từng bước, vai trò, điều kiện chuyển trạng thái và đầu ra.
+Xem [vị trí nghiệp vụ trong workbook và GDOS](bao-cao-nghiep-vu-benh-vien.md#vị-trí-nghiệp-vụ-trong-workbook-và-gdos)
+để tra ô yêu cầu, đường dẫn menu, vai trò và quy trình. Nhóm X-quang gồm TT 1–2 (`Sheet1!C2:C3`).
+Nhóm Quản trị bệnh viện và AI hỗ trợ nghiệp vụ gồm TT 3–7 (`Sheet1!C4:C8`).
 
 | TT  | Luồng diễn tập                                                                                                                                  | Chức năng                                        |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | 1   | Mô hình nguồn mở trong repo, học trên ảnh phantom tổng hợp. Nhận lô bệnh viện và xe lưu động, mã chỉ định HIS mẫu, đối chiếu sau duyệt độc lập. | `bv-phim`                                        |
-| 2   | 5.000 phim lịch sử tổng hợp. Gán nhãn, duyệt, xuất bộ nhãn, kết quả đối chiếu và bản nháp tài liệu đạo đức, phân loại, đào tạo.                 | `bv-phim`, `bv-nghien-cuu`                       |
+| 2   | 5.000 phim lịch sử tổng hợp. Gán nhãn, duyệt, xuất bộ nhãn, kết quả đối chiếu và bản nháp tài liệu đạo đức, phân loại, đào tạo.                 | `bv-phim`, `bv-nghien-cuu`, `bv-bao-cao-phim`    |
 | 3   | 5 nguồn HIS, LIS, X-quang, BHXH và VITIMES giả lập. Lưu vết nhận theo kỳ và đơn vị.                                                             | `bv-ket-noi`                                     |
 | 4   | KPI, giao ban và ba bản nháp báo cáo Excel cùng bộ số liệu.                                                                                     | `dh-bang-dieu-hanh#benh-vien`                    |
 | 5   | Phát hiện lỗi mẫu, bổ sung, duyệt bởi cán bộ và mô phỏng gửi cổng BHXH.                                                                         | `bv-bhyt`                                        |
@@ -54,12 +55,15 @@ Xem [báo cáo triển khai và quy trình nghiệp vụ bệnh viện](bao-cao-
 
 ### Rà soát ADR của phần bệnh viện
 
-- ADR-0003 và ADR-0006: báo cáo chung chặn tài khoản chờ đổi mật khẩu. Gửi BHYT và đồng bộ VITIMES
-  cần quyền cập nhật, duyệt vẫn dùng quyền duyệt và xuất báo cáo dùng quyền xuất của chủ.
-- ADR-0007: ba báo cáo giao ban và năm tài liệu nghiên cứu dùng chung danh mục, màn báo cáo và
-  bộ xuất Excel. Lối vào từ bảng điều hành hoặc phân hệ chủ mở cùng mã báo cáo với danh mục chung.
-- ADR-0009 và ADR-0010: tra cứu ca mẫu và số liệu dùng quyền của nguồn nghiệp vụ. Bảng điều hành,
-  báo cáo và tra cứu số liệu đọc cùng bộ chỉ tiêu theo kỳ. Bảng chỉ tiêu xã/phường giữ phạm vi riêng.
+- **TT 2 và TT 4 / ADR-0003, ADR-0006, ADR-0007.** Ba báo cáo giao ban và năm tài liệu nghiên cứu
+  dùng chung danh mục, màn báo cáo và bộ xuất Excel. API chặn tài khoản chờ đổi mật khẩu và kiểm
+  quyền xuất của phân hệ chủ.
+- **TT 5 và TT 7 / ADR-0006.** Gửi BHYT và đồng bộ VITIMES giả lập cần quyền cập nhật. Duyệt hồ sơ
+  và duyệt hoàn tất theo dõi cần quyền duyệt.
+- **TT 6 / ADR-0009.** Tra cứu ca mẫu nằm ở Điều trị lao – phổi. Tra cứu số liệu và dự thảo giao
+  ban nằm ở Tổng quan. Mỗi lối vào dùng quyền của nguồn nghiệp vụ tương ứng.
+- **TT 3, TT 4 và TT 6 / ADR-0010.** Excel và API nạp vào kho chỉ tiêu chung. Bảng điều hành,
+  báo cáo và tra cứu đọc cùng bộ số theo tháng và đơn vị. Bảng chỉ tiêu xã/phường giữ phạm vi riêng.
 - Đã đối chiếu cả 10 ADR trong phạm vi cấu hình localhost và thay đổi bệnh viện. Lệnh
   `VITEST_MAX_WORKERS=1 pnpm kiem-tra` đạt 390 test và build. Trên localhost đã kiểm lối vào
   báo cáo từ bảng điều hành, danh mục và phân hệ chủ, tải Excel, cùng hai màn tra cứu.
