@@ -18,6 +18,65 @@ Phiên bản được mô tả nằm trên nhánh `feat/dashboard-benh-vien-hang
 
 Trong GDOS, chuyên viên có quyền cập nhật trong phạm vi được phân công, còn lãnh đạo có quyền duyệt trong phạm vi được phân công. Cờ quản trị cấp quyền cho các chức năng quản trị như **Nguồn dữ liệu vào**. Tài khoản dev có cả hai vai nghiệp vụ và cờ quản trị nên có thể diễn tập liên tục các bước. Khi kiểm tra phân quyền, dùng các tài khoản có vai riêng. Xem [ADR-0006 về vai và phân công](adr/0006-vai-tro-khoi-chinh-phu.md).
 
+## Luồng dữ liệu đầu vào và đầu ra
+
+Có hai cách đưa **số liệu tổng hợp theo tháng** vào dashboard. Với **Giả lập**, GDOS tạo sẵn số liệu theo kỳ. Với **Đã nạp**, quản trị viên đưa số liệu từ Excel hoặc API vào kho chỉ tiêu. Ảnh X-quang, hồ sơ BHYT và ca lao trong bản diễn tập là bộ mẫu dựng sẵn. Người dùng xử lý các hồ sơ đó trên màn hình nghiệp vụ tương ứng.
+
+### Nạp số liệu chỉ tiêu từ Excel
+
+1. Mở **Quản trị hệ thống → Kết nối → Nguồn dữ liệu vào → Nạp từ Excel** và bấm **Tải tệp mẫu**. Dùng tệp `.xlsx` có trang tính **Số liệu**. Hệ thống đọc ba cột đầu gồm **Mã chỉ tiêu**, **Kỳ (MM/YYYY)** và **Giá trị**. Các cột còn lại dùng để tra cứu.
+2. Điền mỗi số liệu vào một dòng. Với bệnh viện, dùng mã `BV-01` đến `BV-11` và giá trị là số nguyên không âm. Có thể đưa nhiều tháng vào một tệp. Hàng để trống giá trị được bỏ qua, còn `0` được nạp như một số hợp lệ. Trong một tệp, mỗi cặp mã chỉ tiêu và tháng chỉ xuất hiện một lần.
+3. Chọn tệp và xem kết quả kiểm tra. GDOS báo số dòng hợp lệ và lý do của các dòng sai. Sửa tệp rồi kiểm lại nếu có lỗi. Excel được nạp theo nguyên tắc cả tệp hợp lệ mới ghi dữ liệu.
+4. Bấm **Nạp số liệu**. Xem **Kết quả lấy về** để đối soát lần nạp và số liệu đã ghi. Sau đó mở dashboard Bệnh viện, chọn **Đã nạp** và đúng tháng. Kiểm tra các giá trị, đơn vị tính và tên tệp ở bảng chi tiết trước khi tải báo cáo.
+
+Ví dụ minh họa cho tháng 11/2026.
+
+| Mã chỉ tiêu | Kỳ      | Giá trị | Ý nghĩa              |
+| ----------- | ------- | ------: | -------------------- |
+| `BV-01`     | 11/2026 |    1200 | Lượt khám ngoại trú  |
+| `BV-04`     | 11/2026 |     750 | Ngày giường sử dụng  |
+| `BV-05`     | 11/2026 |    1000 | Ngày giường khả dụng |
+| `BV-08`     | 11/2026 |       0 | Số hồ sơ BHYT gửi    |
+
+Dashboard chế độ **Đã nạp** sẽ hiện **1.200 lượt khám**, **75% công suất giường** và **0 hồ sơ BHYT gửi**. Công suất được tính từ `BV-04` và `BV-05` cùng kỳ. Các chỉ tiêu chưa có dữ liệu sẽ hiện `—`. Bản nháp Sở Y tế chứa nhóm khám và giường, còn bản nháp BHXH chứa nhóm gửi và trả hồ sơ.
+
+### Nạp số liệu chỉ tiêu từ API
+
+1. Mở [Nguồn API](http://localhost:5174/nd-api), tạo nguồn và khai địa chỉ, kiểu xác thực, đường dẫn dữ liệu trong phản hồi và cách ánh xạ. Máy chủ GDOS gọi `GET` tới nguồn và đọc JSON. Có thể ánh xạ một mảng có các trường mã, kỳ, giá trị, hoặc một đối tượng có từng trường số liệu tương ứng với từng mã chỉ tiêu.
+2. Bấm **Lấy thử** để xem mẫu phản hồi và kết quả kiểm tra trước khi ghi. Khi cấu hình đúng, lưu và bật nguồn.
+3. Bấm **Lấy ngay** để nạp. Dòng hợp lệ được ghi vào kho, dòng sai được bỏ qua và ghi lỗi trong lần nạp. Nếu cấu hình để trống trường kỳ, hệ thống dùng tháng hiện tại. Nên ánh xạ trường kỳ khi nguồn có số liệu các tháng trước. Kiểm tra kết quả ở [Kết quả lấy về](http://localhost:5174/nd-ket-qua), sau đó mở dashboard ở chế độ **Đã nạp**.
+
+Ví dụ phản hồi JSON dạng mảng cho ánh xạ theo dòng, với đường dẫn `data`.
+
+```json
+{
+  "data": [
+    { "maChiTieu": "BV-01", "ky": "2026-11", "giaTri": 1200 },
+    { "maChiTieu": "BV-04", "ky": "2026-11", "giaTri": 750 },
+    { "maChiTieu": "BV-05", "ky": "2026-11", "giaTri": 1000 }
+  ]
+}
+```
+
+Excel và API ghi vào cùng kho `chi_tieu_so_lieu`. Đơn vị được xác định từ tài khoản nạp. Mỗi bộ **đơn vị, mã chỉ tiêu, tháng** có một giá trị hiện hành. Nếu nạp lại cùng bộ khóa, lần nạp sau thay giá trị và thông tin nguồn. Kết quả lần nạp ghi kênh, thời điểm, số dòng và lỗi. Dashboard hiển thị số của đơn vị người xem.
+
+### Chạy nguồn mẫu và xuất kết quả
+
+- Để diễn tập nhanh, mở [Nguồn bệnh viện](http://localhost:5174/bv-ket-noi), chọn tháng và bấm **Nạp mẫu** ở một trong năm nguồn. Dashboard **Giả lập** có thể xem ngay trước khi nạp mẫu. Nút nạp chỉ ghi vết của nguồn và kỳ, sau đó dashboard hiện nhãn như **Giả lập · HIS**. Số mẫu vẫn thuộc chế độ **Giả lập**.
+- Từ [dashboard Bệnh viện](http://localhost:5174/dh-bang-dieu-hanh#benh-vien), chọn nguồn và kỳ rồi tải bản nháp Excel cho Sở Y tế, BHXH hoặc VITIMES. Tệp có chỉ tiêu, đơn vị tính, giá trị và nguồn. Số đã nạp đi ra từ kho chỉ tiêu, còn số giả lập đi ra từ bộ tổng hợp mẫu. Các thao tác gửi BHYT hoặc đồng bộ ca lao giả lập lưu trạng thái nghiệp vụ riêng. Chúng chưa làm tăng các chỉ tiêu tổng hợp trên dashboard.
+
+### Đầu vào và đầu ra theo từng hạng mục
+
+| TT  | Đầu vào                                                                           | GDOS lưu hoặc xử lý                                                                           | Đầu ra                                                                                    |
+| --- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| 1   | Ảnh tổng hợp, mã phim, mã chỉ định HIS mẫu, nguồn nhận và nhãn người đọc.         | Lưu vết nhận lô, trạng thái nhãn và kết quả chạy mô hình theo đơn vị.                         | Ảnh xem trên màn hình, nhãn đã duyệt, gợi ý, điểm tín hiệu và đối chiếu.                  |
+| 2   | 5.000 ảnh lịch sử tổng hợp, nhãn, các mốc nghiên cứu và lô được chọn để đánh giá. | Tổng hợp tiến độ duyệt và đếm kết quả đối chiếu ở các phim đủ điều kiện.                      | Bảng tiến độ, bộ nhãn Excel, báo cáo khoa học và bản nháp tài liệu nghiên cứu.            |
+| 3   | Nguồn và tháng đã chọn, tệp Excel hoặc phản hồi JSON.                             | Với nguồn mẫu, lưu vết theo nguồn và kỳ. Với Excel/API, ghi số liệu và lần nạp vào kho chung. | Trạng thái nhận nguồn, số dòng hợp lệ, lỗi và các chỉ tiêu đã có trong kho.               |
+| 4   | Tháng, chế độ dữ liệu và giá trị 11 chỉ tiêu.                                     | Đọc đúng kỳ, tính công suất từ hai chỉ tiêu giường và so sánh với tháng trước.                | Thẻ KPI, biểu đồ sáu tháng, bảng kèm nguồn và ba bản nháp Excel.                          |
+| 5   | Hồ sơ BHYT mẫu gồm mã hồ sơ, ngày dịch vụ, mã thẻ và mã dịch vụ.                  | Kiểm tra theo quy tắc mẫu, lưu trạng thái rà soát, bổ sung, duyệt và gửi.                     | Danh sách lỗi hoặc thông báo cổng BHXH giả lập đã nhận hồ sơ sau duyệt.                   |
+| 6   | Chủ đề và ca lao mẫu, hoặc tháng và chỉ tiêu.                                     | Đọc nguồn theo quyền người dùng rồi dựng câu trả lời theo chủ đề.                             | Mã ICD đã lưu, mốc cần xác nhận, số liệu hoặc bản nháp giao ban có thể chỉnh và sao chép. |
+| 7   | Ca lao mẫu, các ngày theo dõi và kết quả do chuyên viên ghi nhận.                 | Lưu kết quả từng mốc, trạng thái hoàn tất và vết đồng bộ mới nhất.                            | Tiến độ theo dõi, mốc cần liên hệ lại và xác nhận đồng bộ VITIMES giả lập.                |
+
 ## TT 1 Nhận phim và đối chiếu mô hình X-quang
 
 Luồng này diễn tập việc nhận phim từ hai nguồn, ghi nhận cách người đọc phân loại ảnh và so sánh kết quả với mô hình thử. Mỗi phim có mã `XQ-…`, mã chỉ định `HIS-XQ-…`, nguồn nhận và nhóm **Học**, **Đánh giá** hoặc **Chạy song song**.
