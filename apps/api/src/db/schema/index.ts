@@ -785,6 +785,28 @@ export const chiTieuLanNap = pgTable(
  * KHO SỐ LIỆU CHỈ TIÊU nạp từ ngoài — một dòng cho (đơn vị, chỉ tiêu, kỳ). Nạp lại cùng kỳ thì
  * ghi đè, lần nạp sau cùng thắng. Điều hành chỉ ĐỌC kho này; không màn nghiệp vụ nào sửa tay.
  */
+/** Lưu thao tác trong đợt thử nghiệm, dùng mã giả lập thay cho định danh người bệnh. */
+export const benhVienThu = pgTable(
+  'benh_vien_thu',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    donViId: uuid('don_vi_id')
+      .notNull()
+      .references(() => donVi.id),
+    loai: text('loai').notNull(),
+    ma: text('ma').notNull(),
+    giaTri: text('gia_tri').notNull(),
+    ...thoiDiem,
+  },
+  (t) => [
+    uniqueIndex('benh_vien_thu_ma_uq').on(t.donViId, t.loai, t.ma),
+    check(
+      'benh_vien_thu_loai_ck',
+      sql`${t.loai} in ('phim', 'goi-y', 'nguon-phim', 'nghien-cuu', 'ket-noi', 'bhyt', 'lao', 'nhac-lao', 'gui-lao')`,
+    ),
+  ],
+)
+
 export const chiTieuSoLieu = pgTable(
   'chi_tieu_so_lieu',
   {

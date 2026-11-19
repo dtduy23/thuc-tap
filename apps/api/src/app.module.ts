@@ -41,6 +41,9 @@ import { VanBanService } from './van-ban/van-ban.service.js'
 import { BaoVeGuard } from './xac-thuc/bao-ve.js'
 import { XacThucController } from './xac-thuc/xac-thuc.controller.js'
 import { XacThucService } from './xac-thuc/xac-thuc.service.js'
+import { BenhVienThuController } from './benh-vien/benh-vien.controller.js'
+import { BenhVienThuService } from './benh-vien/benh-vien.service.js'
+import { PhimThuService } from './benh-vien/phim.service.js'
 
 @Module({
   controllers: [
@@ -64,6 +67,7 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     ChuyenTiepNativeController,
     OcrController,
     NguonVaoController,
+    BenhVienThuController,
   ],
   providers: [
     { provide: CAU_HINH, useFactory: () => docCauHinh() },
@@ -83,6 +87,8 @@ import { XacThucService } from './xac-thuc/xac-thuc.service.js'
     LienKetNativeService,
     OcrService,
     NguonVaoService,
+    BenhVienThuService,
+    PhimThuService,
     {
       provide: GOI_NGUON_NGOAI,
       useFactory: (ch: CauHinh) => taoGoiNguonNgoai(ch.moiTruong === 'production'),

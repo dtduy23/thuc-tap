@@ -11,7 +11,7 @@
  * Thêm module: khai ở đây + tạo màn hình + viết test quyền. `kiemTraCay()` chạy
  * trong test nên khai sai là CI đỏ.
  */
-import type { ModuleDef } from './phan-he.js'
+import { quyenCua, type HanhDong, type ModuleDef } from './phan-he.js'
 
 /** Trục phân nhóm của các báo cáo dự án. */
 const NHOM_BAO_CAO_DU_AN = [
@@ -243,6 +243,36 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     ],
   },
   {
+    id: 'phim-x-quang',
+    nhan: 'Phim X-quang',
+    nhom: 'tac-nghiep',
+    maQuyen: 'PHIM_X_QUANG',
+    nguon: 'db',
+    mo: 'Diễn tập luồng nhận, gán nhãn, duyệt và đối chiếu ảnh X-quang tổng hợp.',
+    con: [
+      { id: 'bv-phim', nhan: 'Kho phim và gán nhãn' },
+      { id: 'bv-nghien-cuu', nhan: 'Hồ sơ nghiên cứu' },
+    ],
+  },
+  {
+    id: 'ho-so-bhyt',
+    nhan: 'Hồ sơ BHYT',
+    nhom: 'tac-nghiep',
+    maQuyen: 'HO_SO_BHYT',
+    nguon: 'db',
+    mo: 'Diễn tập rà soát và duyệt hồ sơ BHYT trước khi gửi.',
+    con: [{ id: 'bv-bhyt', nhan: 'Rà soát trước khi gửi' }],
+  },
+  {
+    id: 'dieu-tri-lao',
+    nhan: 'Điều trị lao – phổi',
+    nhom: 'tac-nghiep',
+    maQuyen: 'DIEU_TRI_LAO',
+    nguon: 'db',
+    mo: 'Theo dõi mốc diễn tập và đối soát dữ liệu VITIMES giả lập.',
+    con: [{ id: 'bv-lao', nhan: 'Theo dõi ca điều trị' }],
+  },
+  {
     id: 'tro-ly-ai',
     nhan: 'Trợ lý AI',
     nhom: 'tac-nghiep',
@@ -252,6 +282,7 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     con: [
       { id: 'tl-tro-chuyen', nhan: 'Trò chuyện với Chatbot' },
       { id: 'tl-cau-hinh', nhan: 'Cấu hình Chatbot', hanhDong: 'UPDATE' },
+      { id: 'bv-tro-ly', nhan: 'Trợ lý bệnh viện' },
     ],
   },
   {
@@ -421,6 +452,7 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
       { id: 'nd-api', nhan: 'Nguồn API' },
       { id: 'nd-excel', nhan: 'Nạp từ Excel' },
       { id: 'nd-ket-qua', nhan: 'Kết quả lấy về' },
+      { id: 'bv-ket-noi', nhan: 'Nguồn bệnh viện' },
     ],
   },
   {
@@ -510,3 +542,13 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     ],
   },
 ]
+
+type ModuleBenhVien =
+  'phim-x-quang' | 'ho-so-bhyt' | 'dieu-tri-lao' | 'tro-ly-ai' | 'qt-nguon-vao' | 'tong-quan'
+
+export function quyenBenhVien(moduleId: ModuleBenhVien, hanhDong: HanhDong): string {
+  return quyenCua(
+    DANH_SACH_MODULE.find((m) => m.id === moduleId)!,
+    { id: moduleId, nhan: '', hanhDong },
+  )
+}

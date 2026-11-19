@@ -4,6 +4,7 @@
  * THẺ TRONG TRANG, không lên menu. Thẻ đang xem nhớ theo máy.
  */
 import { lazy, Suspense, useState, type ComponentType, type LazyExoticComponent } from 'react'
+import { useLocation, useNavigate } from '@tanstack/react-router'
 import { docTam, ghiTam } from '@/lib/luu-tam'
 
 export interface PhanMan {
@@ -19,7 +20,10 @@ export function gopMan(
   const khoa = `gdos-phan-${ma}`
   function ManGop() {
     const [dang, datDang] = useState<string>(() => docTam<string>(khoa, phan[0].id))
-    const p = phan.find((x) => x.id === dang) ?? phan[0]
+    const hash = useLocation({ select: (l) => l.hash })
+    const chuyen = useNavigate()
+    const tuLienKet = phan.find((x) => x.id === hash)
+    const p = tuLienKet ?? phan.find((x) => x.id === dang) ?? phan[0]
     const Man = p.Man
     return (
       <>
@@ -37,6 +41,7 @@ export function gopMan(
               onClick={() => {
                 datDang(x.id)
                 ghiTam(khoa, x.id)
+                if (tuLienKet) void chuyen({ hash: x.id, replace: true, resetScroll: false })
               }}
               className={`rounded-[7px] px-3.5 py-1.5 text-[13px] font-semibold ${
                 x.id === p.id

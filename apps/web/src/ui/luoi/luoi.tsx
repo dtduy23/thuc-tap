@@ -60,6 +60,8 @@ export interface LuoiProps<T> {
   congCu?: ReactNode
   /** Nói gì khi CHƯA có dữ liệu (khác với lọc không ra). */
   rong?: ReactNode
+  /** Khi dữ liệu đã phân trang ở máy chủ, lọc cột và xuất Excel áp dụng trên trang đang mở. */
+  phanTrangMayChu?: ReactNode
   /** Cột chọn dòng (vd chọn dự án để đôn đốc). */
   chon?: {
     ds: ReadonlySet<string>
@@ -104,7 +106,19 @@ function docThietLap<T>(ma: string, cot: CotLuoi<T>[]): ThietLap {
   }
 }
 
-export function Luoi<T>({ ma, tieuDe, cot, dong, khoa, moDong, mauDong, congCu, rong, chon }: LuoiProps<T>) {
+export function Luoi<T>({
+  ma,
+  tieuDe,
+  cot,
+  dong,
+  khoa,
+  moDong,
+  mauDong,
+  congCu,
+  rong,
+  chon,
+  phanTrangMayChu,
+}: LuoiProps<T>) {
   const [tl, datTl] = useState(() => docThietLap(ma, cot))
   const [loc, datLoc] = useState<Record<string, LocCot>>({})
   const [tim, datTim] = useState('')
@@ -138,7 +152,7 @@ export function Luoi<T>({ ma, tieuDe, cot, dong, khoa, moDong, mauDong, congCu, 
   const soLoc = cotHien.filter((c) => dangBat(loc[c.id])).length + (tim.trim() ? 1 : 0)
   const soTrang = Math.max(1, Math.ceil(ketQua.length / tl.soDong))
   const tr = Math.min(trang, soTrang - 1)
-  const trangNay = ketQua.slice(tr * tl.soDong, (tr + 1) * tl.soDong)
+  const trangNay = phanTrangMayChu ? ketQua : ketQua.slice(tr * tl.soDong, (tr + 1) * tl.soDong)
 
   const doiLoc = (id: string, l: LocCot) => {
     datLoc((c) => ({ ...c, [id]: l }))
@@ -241,8 +255,8 @@ export function Luoi<T>({ ma, tieuDe, cot, dong, khoa, moDong, mauDong, congCu, 
           </svg>
           <input
             type="search"
-            aria-label="Tìm trong danh sách"
-            placeholder="Tìm trong mọi cột…"
+            aria-label={phanTrangMayChu ? 'Tìm trong trang hiện tại' : 'Tìm trong danh sách'}
+            placeholder={phanTrangMayChu ? 'Tìm trong trang này…' : 'Tìm trong mọi cột…'}
             value={tim}
             onChange={(e) => {
               datTim(e.target.value)
@@ -479,38 +493,39 @@ export function Luoi<T>({ ma, tieuDe, cot, dong, khoa, moDong, mauDong, congCu, 
       </div>
 
       {/* Phân trang */}
-      {ketQua.length > 0 && (
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-[12.5px] text-faint">
-          <span className="tabular-nums">
-            {tr * tl.soDong + 1}–{Math.min((tr + 1) * tl.soDong, ketQua.length)} / {ketQua.length} bản ghi
-          </span>
-          <span className="flex-1" />
-          <label className="flex items-center gap-1.5">
-            Mỗi trang
-            <select
-              value={tl.soDong}
-              onChange={(e) => {
-                datTl((t) => ({ ...t, soDong: Number(e.target.value) }))
-                datTrang(0)
-              }}
-              className="rounded-md border border-line bg-nen px-1.5 py-1 text-[12.5px] text-ink"
-            >
-              {SO_DONG.map((n) => (
-                <option key={n}>{n}</option>
-              ))}
-            </select>
-          </label>
-          <Nut aria-label="Trang trước" disabled={tr === 0} onClick={() => datTrang(tr - 1)}>
-            ‹
-          </Nut>
-          <span className="tabular-nums">
-            Trang {tr + 1}/{soTrang}
-          </span>
-          <Nut aria-label="Trang sau" disabled={tr >= soTrang - 1} onClick={() => datTrang(tr + 1)}>
-            ›
-          </Nut>
-        </div>
-      )}
+      {phanTrangMayChu ??
+        (ketQua.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-[12.5px] text-faint">
+            <span className="tabular-nums">
+              {tr * tl.soDong + 1}–{Math.min((tr + 1) * tl.soDong, ketQua.length)} / {ketQua.length} bản ghi
+            </span>
+            <span className="flex-1" />
+            <label className="flex items-center gap-1.5">
+              Mỗi trang
+              <select
+                value={tl.soDong}
+                onChange={(e) => {
+                  datTl((t) => ({ ...t, soDong: Number(e.target.value) }))
+                  datTrang(0)
+                }}
+                className="rounded-md border border-line bg-nen px-1.5 py-1 text-[12.5px] text-ink"
+              >
+                {SO_DONG.map((n) => (
+                  <option key={n}>{n}</option>
+                ))}
+              </select>
+            </label>
+            <Nut aria-label="Trang trước" disabled={tr === 0} onClick={() => datTrang(tr - 1)}>
+              ‹
+            </Nut>
+            <span className="tabular-nums">
+              Trang {tr + 1}/{soTrang}
+            </span>
+            <Nut aria-label="Trang sau" disabled={tr >= soTrang - 1} onClick={() => datTrang(tr + 1)}>
+              ›
+            </Nut>
+          </div>
+        ))}
     </div>
   )
 }

@@ -109,6 +109,7 @@ export const TEN_BANG: Record<string, string> = {
   nguon_du_lieu: 'Nguồn dữ liệu vào',
   chi_tieu_lan_nap: 'Lần nạp số liệu chỉ tiêu',
   chi_tieu_so_lieu: 'Số liệu chỉ tiêu',
+  benh_vien_thu: 'Diễn tập bệnh viện',
   danh_muc_gia_tri: 'Danh mục',
   quy_trinh_mau: 'Quy trình mẫu',
 }

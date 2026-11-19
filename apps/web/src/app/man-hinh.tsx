@@ -78,6 +78,12 @@ export const MAN_HINH: Partial<Record<string, LazyExoticComponent<ComponentType>
   // Trợ lý AI — màn chép từ GDOS cũ, gọi FOXAI Native qua cổng chuyển tiếp của máy chủ GDOS.
   'tl-tro-chuyen': manCu(() => import('@/dieu-hanh/modules/tro-chuyen-chatbot'), { mau: false }),
   'tl-cau-hinh': manCu(() => import('@/dieu-hanh/modules/cau-hinh-chatbot'), { mau: false }),
+  'bv-phim': lazy(() => import('@/man/benh-vien/phim')),
+  'bv-nghien-cuu': lazy(() => import('@/man/benh-vien/nghien-cuu')),
+  'bv-ket-noi': lazy(() => import('@/man/benh-vien/ket-noi')),
+  'bv-bhyt': lazy(() => import('@/man/benh-vien/bhyt')),
+  'bv-tro-ly': lazy(() => import('@/man/benh-vien/tro-ly')),
+  'bv-lao': lazy(() => import('@/man/benh-vien/lao')),
   'nk-tat-ca': lazy(() => import('@/man/nhat-ky-ds')),
   'nk-ho-so': lazy(() => import('@/man/nhat-ky-theo').then((m) => ({ default: m.NhatKyTheoHoSo }))),
   'nk-nguoi': lazy(() => import('@/man/nhat-ky-theo').then((m) => ({ default: m.NhatKyTheoNguoi }))),

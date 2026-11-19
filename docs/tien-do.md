@@ -27,6 +27,28 @@
 - Đã kiểm trên trình duyệt: đăng nhập, bộ lọc, bảng chi tiết, tải đủ ba tệp, bố cục màn hẹp và
   trạng thái chưa nạp dữ liệu. Test API kiểm tra phân quyền, phạm vi đơn vị và nội dung Excel.
 
+### Diễn tập toàn bộ yêu cầu bệnh viện
+
+| TT  | Luồng diễn tập                                                                                                                                  | Chức năng                     |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| 1   | Mô hình nguồn mở trong repo, học trên ảnh phantom tổng hợp. Nhận lô bệnh viện và xe lưu động, mã chỉ định HIS mẫu, đối chiếu sau duyệt độc lập. | `bv-phim`                     |
+| 2   | 5.000 phim lịch sử tổng hợp. Gán nhãn, duyệt, xuất bộ nhãn, kết quả đối chiếu và bản nháp tài liệu đạo đức, phân loại, đào tạo.                 | `bv-phim`, `bv-nghien-cuu`    |
+| 3   | 5 nguồn HIS, LIS, X-quang, BHXH và VITIMES giả lập. Lưu vết nhận theo kỳ và đơn vị.                                                             | `bv-ket-noi`                  |
+| 4   | KPI, giao ban và ba bản nháp báo cáo Excel cùng bộ số liệu.                                                                                     | `dh-bang-dieu-hanh#benh-vien` |
+| 5   | Phát hiện lỗi mẫu, bổ sung, duyệt bởi cán bộ và mô phỏng gửi cổng BHXH.                                                                         | `bv-bhyt`                     |
+| 6   | Tra lại mã ICD có sẵn, nhắc lịch, dự thảo giao ban và hỏi đáp chỉ tiêu kèm nguồn.                                                               | `bv-tro-ly`                   |
+| 7   | Ghi kết quả theo mốc ca lao mẫu, hoàn tất theo dõi và mô phỏng đồng bộ VITIMES.                                                                 | `bv-lao`                      |
+
+- PostgreSQL lưu tiến độ và vết thử nghiệm theo đơn vị bằng `benh_vien_thu`, với RLS, nhật ký và
+  quyền phân hệ. Số giả lập được tạo bằng cùng một nguồn trong mã. Luồng nạp số thật tiếp tục dùng
+  `chi_tieu_so_lieu` qua API hoặc Excel theo ADR-0010.
+- Migration `0033_benh-vien-thu` đã chạy trên PostgreSQL localhost. Chạy `pnpm --filter @gdos/api di-tru`
+  sau khi build API khi chuyển sang database dev khác.
+- `VITEST_MAX_WORKERS=1 pnpm kiem-tra` qua 389 test. Đã thử các luồng trên trình duyệt với
+  tài khoản dev và kiểm giao diện màn hẹp.
+- Phạm vi diễn tập chỉ dùng ảnh và hồ sơ tổng hợp. Hệ thống thật cần đặc tả API thiết bị và HIS/LIS,
+  BHXH, VITIMES, biểu mẫu được duyệt và bộ dữ liệu, mô hình đã thẩm định trước khi đưa vào bệnh viện.
+
 ## Mốc 2 — Đưa lên máy thử (30/09/2026)
 
 **Đã làm**

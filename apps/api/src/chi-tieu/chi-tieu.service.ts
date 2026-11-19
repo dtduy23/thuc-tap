@@ -12,6 +12,7 @@ import {
   type SoLieuPhanHe,
 } from '@gdos/shared'
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { bangGiaLap } from '../benh-vien/so-lieu-thu.js'
 import { CAU_HINH, type CauHinh } from '../cau-hinh.js'
 import { CoSoDuLieu, dbCua } from '../db/co-so-du-lieu.js'
 import { trongPhamVi } from '../db/pham-vi.js'
@@ -20,7 +21,7 @@ import { DuAnService } from '../du-an/du-an.service.js'
 import { GOI_NATIVE } from '../native/chuyen-tiep.controller.js'
 import { LienKetNativeService } from '../native/lien-ket.service.js'
 import type { NguoiDungPhien } from '../xac-thuc/bao-ve.js'
-import { cacKyBenhVien, giaLapBenhVien } from './benh-vien.js'
+import { cacKyBenhVien } from './benh-vien.js'
 import { KY_MINH_HOA, SO_LIEU_MINH_HOA, chuoiMinhHoa } from './so-lieu-minh-hoa.js'
 
 /** Số thật đọc được từ các phân hệ — null từng phần khi không có quyền / chưa lấy được. */
@@ -193,7 +194,7 @@ export class ChiTieuService {
 
   async benhVien(nd: NguoiDungPhien, ky: string, nguon: NguonBenhVien): Promise<BangDieuHanhBenhVien> {
     const cacKy = cacKyBenhVien(ky)
-    if (nguon === 'gia-lap') return giaLapBenhVien(cacKy)
+    if (nguon === 'gia-lap') return bangGiaLap(this.csdl, nd, cacKy)
 
     return trongPhamVi(dbCua(this.csdl), nd.nguCanh, async (tx) => {
       const [t] = await tx
