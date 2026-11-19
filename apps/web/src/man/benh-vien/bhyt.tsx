@@ -24,7 +24,7 @@ const NHOM_HO_SO = [
   { ma: 'da-gui', nhan: 'đã gửi giả lập', mau: 'ok' },
 ] as const
 
-function ChiTietBhyt({ h }: { h: HoSoBhytThu }) {
+function ChiTietBhyt({ h, dong }: { h: HoSoBhytThu; dong: () => void }) {
   const q = useQuyenThu()
   const ghi = useGhiThu()
   const sua = q.includes(quyenBenhVien('ho-so-bhyt', 'UPDATE'))
@@ -32,10 +32,11 @@ function ChiTietBhyt({ h }: { h: HoSoBhytThu }) {
   const thaoTac = (viec: string) => ghi.mutate({ duongDan: `/bhyt/${h.ma}/${viec}` })
   return (
     <The tieuDe={h.ma} phu={ngayVn(h.ngay)}>
-      <div className="mb-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <Chip mau={h.trangThai === 'can-sua' ? 'warn' : h.trangThai === 'da-gui' ? 'ok' : 'brand'}>
           {TRANG_THAI_BHYT_THU[h.trangThai]}
         </Chip>
+        <Nut onClick={dong}>Đóng chi tiết</Nut>
       </div>
       <dl className="mb-4 grid grid-cols-2 gap-2 text-sm">
         <div>
@@ -104,10 +105,11 @@ export default function RaSoatBhyt() {
   const [ma, datMa] = useState<string>()
   const [loc, datLoc] = useState<Record<string, LocCot>>({})
   const chiTiet = useRef<HTMLElement>(null)
+  const danhSach = useRef<HTMLElement>(null)
   const locTrangThai = loc['trang-thai']
   const trangThai = locTrangThai?.kieu === 'danh-muc' ? locTrangThai.chon : []
   const hoSoTrongNhom = (d: HoSoBhytThu) => !trangThai.length || trangThai.includes(d.trangThai)
-  const h = ds.find((d) => d.ma === ma && hoSoTrongNhom(d)) ?? ds.find(hoSoTrongNhom)
+  const h = ds.find((d) => d.ma === ma && hoSoTrongNhom(d))
 
   function moHoSo(d: HoSoBhytThu) {
     datMa(d.ma)
@@ -129,6 +131,7 @@ export default function RaSoatBhyt() {
         <button
           type="button"
           aria-controls="bv-bhyt-chi-tiet"
+          aria-expanded={h?.ma === d.ma}
           className="max-w-full truncate font-semibold text-brand hover:underline"
           onClick={(e) => {
             e.stopPropagation()
@@ -153,9 +156,14 @@ export default function RaSoatBhyt() {
             <button
               key={nhom}
               type="button"
+              aria-controls="bv-bhyt-danh-sach"
               aria-pressed={dangLoc}
               className="cursor-pointer rounded-full hover:ring-1 hover:ring-brand aria-pressed:ring-2 aria-pressed:ring-brand"
-              onClick={() => datLoc({ ...loc, 'trang-thai': { kieu: 'danh-muc', chon: nhom ? [nhom] : [] } })}
+              onClick={() => {
+                datMa(undefined)
+                datLoc({ ...loc, 'trang-thai': { kieu: 'danh-muc', chon: nhom ? [nhom] : [] } })
+                danhSach.current?.focus()
+              }}
             >
               <Chip mau={mau}>
                 {soHoSo} {nhan}
@@ -165,22 +173,41 @@ export default function RaSoatBhyt() {
         })}
       </div>
       <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.52fr)]">
-        <Luoi
-          ma="bv-bhyt"
-          tieuDe="Hồ sơ BHYT giả lập"
-          cot={cot}
-          dong={ds}
-          khoa={(d) => d.ma}
-          moDong={moHoSo}
-          dongDangMo={h?.ma}
-          boLocCot={{ giaTri: loc, doi: datLoc }}
-        />
+        <section
+          id="bv-bhyt-danh-sach"
+          ref={danhSach}
+          tabIndex={-1}
+          aria-label="Danh sách hồ sơ BHYT"
+          className="min-w-0 rounded-lg outline-none focus:ring-2 focus:ring-brand focus:ring-offset-4 focus:ring-offset-nen"
+        >
+          <Luoi
+            ma="bv-bhyt"
+            tieuDe="Hồ sơ BHYT giả lập"
+            cot={cot}
+            dong={ds}
+            khoa={(d) => d.ma}
+            moDong={moHoSo}
+            dongDangMo={h?.ma}
+            boLocCot={{ giaTri: loc, doi: datLoc }}
+          />
+        </section>
         <aside id="bv-bhyt-chi-tiet" ref={chiTiet} tabIndex={-1} aria-label="Chi tiết hồ sơ BHYT">
           {h ? (
-            <ChiTietBhyt key={`${h.ma}:${h.trangThai}`} h={h} />
+            <ChiTietBhyt
+              key={`${h.ma}:${h.trangThai}`}
+              h={h}
+              dong={() => {
+                datMa(undefined)
+                danhSach.current?.focus()
+              }}
+            />
           ) : (
             <The tieuDe="Chi tiết hồ sơ">
-              <p className="m-0 text-sm text-faint">Chưa có hồ sơ để xem trong nhóm này.</p>
+              <p className="m-0 text-sm text-faint">
+                {ds.some(hoSoTrongNhom)
+                  ? 'Chọn một hồ sơ trong bảng để xem chi tiết.'
+                  : 'Chưa có hồ sơ để xem trong nhóm này.'}
+              </p>
             </The>
           )}
         </aside>

@@ -70,9 +70,9 @@ Nhóm Quản trị bệnh viện và AI hỗ trợ nghiệp vụ gồm TT 3–7 
 
 ### Thao tác trên màn rà soát BHYT (TT 5)
 
-- Bấm mã hoặc dòng để mở hồ sơ, đánh dấu dòng đang xem và cuộn đến chi tiết trên màn hẹp. Ba ô
-  đếm dùng chung bộ lọc Trạng thái của lưới. Đã kiểm trên localhost cả thao tác bàn phím, xóa lọc
-  và tải Excel theo nhóm.
+- Khung chi tiết chỉ mở sau khi bấm mã hoặc dòng, kể cả hồ sơ đầu tiên. Dòng đang xem được đánh
+  dấu và màn hẹp cuộn đến chi tiết. Ba ô đếm dùng chung bộ lọc Trạng thái và chuyển tiêu điểm về
+  danh sách kết quả. Đã kiểm trên localhost thao tác bàn phím, xóa lọc và tải Excel theo nhóm.
 
 ## Mốc 2 — Đưa lên máy thử (30/09/2026)
 
