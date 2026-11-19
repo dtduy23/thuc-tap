@@ -1,22 +1,26 @@
 import { Inject, Injectable } from '@nestjs/common'
 import {
   BO_CHI_TIEU,
+  CHI_TIEU_BENH_VIEN,
   kyHien,
   timChiTieu,
   type BangChiTieu,
+  type BangDieuHanhBenhVien,
   type GiaTriChiTieu,
   type KenhNap,
+  type NguonBenhVien,
   type SoLieuPhanHe,
 } from '@gdos/shared'
-import { and, asc, eq, isNull, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import { CAU_HINH, type CauHinh } from '../cau-hinh.js'
 import { CoSoDuLieu, dbCua } from '../db/co-so-du-lieu.js'
 import { trongPhamVi } from '../db/pham-vi.js'
-import { chiTieuSoLieu, taiKhoan, vanBan } from '../db/schema/index.js'
+import { chiTieuSoLieu, donVi, taiKhoan, vanBan } from '../db/schema/index.js'
 import { DuAnService } from '../du-an/du-an.service.js'
 import { GOI_NATIVE } from '../native/chuyen-tiep.controller.js'
 import { LienKetNativeService } from '../native/lien-ket.service.js'
 import type { NguoiDungPhien } from '../xac-thuc/bao-ve.js'
+import { cacKyBenhVien, giaLapBenhVien } from './benh-vien.js'
 import { KY_MINH_HOA, SO_LIEU_MINH_HOA, chuoiMinhHoa } from './so-lieu-minh-hoa.js'
 
 /** Số thật đọc được từ các phân hệ — null từng phần khi không có quyền / chưa lấy được. */
@@ -185,6 +189,55 @@ export class ChiTieuService {
       this.soNap(nd),
     ])
     return ghepBangChiTieu({ nhiemVu: nv.so, lyDoNhiemVu: nv.lyDo, duAn: da, vanBan: vb }, nap)
+  }
+
+  async benhVien(nd: NguoiDungPhien, ky: string, nguon: NguonBenhVien): Promise<BangDieuHanhBenhVien> {
+    const cacKy = cacKyBenhVien(ky)
+    if (nguon === 'gia-lap') return giaLapBenhVien(cacKy)
+
+    return trongPhamVi(dbCua(this.csdl), nd.nguCanh, async (tx) => {
+      const [t] = await tx
+        .select({ id: donVi.id, ten: donVi.ten })
+        .from(taiKhoan)
+        .innerJoin(donVi, eq(taiKhoan.donViId, donVi.id))
+        .where(and(eq(taiKhoan.id, nd.taiKhoanId), isNull(donVi.deletedAt)))
+      const ds = t
+        ? await tx
+            .select({
+              ky: chiTieuSoLieu.ky,
+              ma: chiTieuSoLieu.maChiTieu,
+              giaTri: chiTieuSoLieu.giaTri,
+              kenh: chiTieuSoLieu.kenh,
+              tenNguon: chiTieuSoLieu.tenNguon,
+            })
+            .from(chiTieuSoLieu)
+            .where(
+              and(
+                eq(chiTieuSoLieu.donViId, t.id),
+                inArray(chiTieuSoLieu.ky, cacKy),
+                inArray(
+                  chiTieuSoLieu.maChiTieu,
+                  CHI_TIEU_BENH_VIEN.map((c) => c.ma),
+                ),
+                isNull(chiTieuSoLieu.deletedAt),
+              ),
+            )
+        : []
+      return {
+        donVi: t?.ten ?? 'Đơn vị của bạn',
+        nguon,
+        cacKy: cacKy.map((ky) => ({
+          ky,
+          soLieu: ds
+            .filter((d) => d.ky === ky)
+            .map((d) => ({
+              ma: d.ma,
+              giaTri: d.giaTri,
+              nguon: `${d.kenh === 'excel' ? 'Excel' : 'API'} · ${d.tenNguon}`,
+            })),
+        })),
+      }
+    })
   }
 
   /**

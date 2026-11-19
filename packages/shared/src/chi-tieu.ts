@@ -20,6 +20,7 @@ export const LINH_VUC_CHI_TIEU = {
   antt: 'An ninh – Trật tự',
   'ha-tang': 'Hạ tầng – Đô thị',
   'yt-gd': 'Y tế – Giáo dục',
+  'benh-vien': 'Bệnh viện',
 } as const
 export type LinhVucChiTieu = keyof typeof LINH_VUC_CHI_TIEU
 
@@ -179,6 +180,18 @@ export const BO_CHI_TIEU: readonly ChiTieuDef[] = [
   ct('yt-gd', 'YTGD-04', 'Trường học', 'trường'),
   ct('yt-gd', 'YTGD-05', 'Tổng số học sinh', 'học sinh'),
   ct('yt-gd', 'YTGD-06', 'Trường đạt chuẩn quốc gia', '%', { mucTieu: 100, soLe: 0 }),
+
+  ct('benh-vien', 'BV-01', 'Lượt khám ngoại trú', 'lượt'),
+  ct('benh-vien', 'BV-02', 'Ca nhập viện', 'ca'),
+  ct('benh-vien', 'BV-03', 'Ca ra viện', 'ca'),
+  ct('benh-vien', 'BV-04', 'Ngày giường sử dụng', 'ngày giường'),
+  ct('benh-vien', 'BV-05', 'Ngày giường khả dụng', 'ngày giường'),
+  ct('benh-vien', 'BV-06', 'Lượt xét nghiệm', 'lượt'),
+  ct('benh-vien', 'BV-07', 'Lượt chụp X-quang', 'lượt'),
+  ct('benh-vien', 'BV-08', 'Hồ sơ BHYT gửi', 'hồ sơ'),
+  ct('benh-vien', 'BV-09', 'Hồ sơ BHYT bị trả', 'hồ sơ'),
+  ct('benh-vien', 'BV-10', 'Ca lao ghi nhận', 'ca'),
+  ct('benh-vien', 'BV-11', 'Ca lao đang điều trị cuối kỳ', 'ca'),
 ]
 
 export type NguonGiaTri = 'that' | 'nap' | 'minh-hoa' | 'chua-co'

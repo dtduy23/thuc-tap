@@ -15,6 +15,18 @@
 | **6** | Điều hành: dashboard, báo cáo                                                        | 🔄 Khung chung xong (Mốc 3) — chờ nghiệp vụ khác       |
 | **7** | Thiết lập: bật/tắt module theo đơn vị, cảnh báo, luồng duyệt                         | Chưa bắt đầu                                           |
 
+## Bảng điều hành bệnh viện (19/11/2026)
+
+- Triển khai bảng điều hành trong nhóm hạng mục thứ hai của `YC_BenhVien.xlsx` (`Sheet1!C5`, TT 4).
+- Điều hành › Tổng quan › Bảng điều hành › Bệnh viện: chọn tháng, xem KPI, xu hướng sáu tháng,
+  bảng chi tiết kèm nguồn và tải bản nháp Excel cho Sở Y tế, BHXH hoặc VITIMES theo kỳ đang xem.
+- Mặc định dùng số giả lập tổng hợp, có nhãn trên màn hình và trong tệp xuất. Chế độ Đã nạp đọc
+  các mã `BV-01` đến `BV-11` của đơn vị đang đăng nhập qua kho chỉ tiêu chung, theo ADR-0010.
+- Báo cáo là bản nháp tạo từ số liệu trên màn hình. Workbook yêu cầu chưa cung cấp mẫu chính thức,
+  đặc tả giao tiếp hay lịch gửi cho các cơ quan nhận báo cáo.
+- Đã kiểm trên trình duyệt: đăng nhập, bộ lọc, bảng chi tiết, tải đủ ba tệp, bố cục màn hẹp và
+  trạng thái chưa nạp dữ liệu. Test API kiểm tra phân quyền, phạm vi đơn vị và nội dung Excel.
+
 ## Mốc 2 — Đưa lên máy thử (30/09/2026)
 
 **Đã làm**

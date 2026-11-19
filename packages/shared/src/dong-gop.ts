@@ -182,6 +182,8 @@ export interface CotBaoCao {
   kieu?: 'chu' | 'so' | 'ngay' | 'phan-tram'
   /** Cột số KHÔNG cộng ở dòng nhóm / tổng (điểm, số ngày trễ…). */
   khongCong?: boolean
+  /** Hiển thị một chữ số thập phân nếu giá trị số có phần lẻ. */
+  hienPhanLe?: boolean
   /** Độ rộng cột trong Excel (ký tự). */
   rong?: number
 }

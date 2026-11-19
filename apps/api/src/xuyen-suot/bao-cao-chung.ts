@@ -175,7 +175,8 @@ export async function vietExcel(kq: KetQuaBaoCao): Promise<Buffer> {
       o.value = new Date(`${v}T00:00:00Z`)
       o.numFmt = 'dd/mm/yyyy'
     } else o.value = v
-    if (c.kieu === 'so') o.numFmt = '#,##0'
+    if (c.kieu === 'so')
+      o.numFmt = c.hienPhanLe && typeof v === 'number' && !Number.isInteger(v) ? '#,##0.0' : '#,##0'
     if (c.kieu === 'phan-tram') o.numFmt = '0.0"%"'
     const laChu = !c.kieu || c.kieu === 'chu'
     o.alignment = { vertical: 'top', wrapText: laChu, horizontal: laChu ? 'left' : 'right' }

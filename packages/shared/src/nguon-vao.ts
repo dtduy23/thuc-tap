@@ -112,6 +112,8 @@ export function kiemDongNap(
     )
   else if (d?.donVi === '%' && (giaTri < 0 || giaTri > 100))
     loi.push('Chỉ tiêu tính bằng % phải từ 0 đến 100')
+  else if (d?.linhVuc === 'benh-vien' && (giaTri < 0 || !Number.isSafeInteger(giaTri)))
+    loi.push('Chỉ tiêu bệnh viện phải là số nguyên không âm')
 
   const kiem: DongKiem = {
     hang,

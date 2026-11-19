@@ -24,6 +24,7 @@ export const MAN_HINH: Partial<Record<string, LazyExoticComponent<ComponentType>
       Man: manCu(() => import('@/dieu-hanh/modules/dashboard-tong-quan'), { mau: false }),
     },
     { id: 'du-an', nhan: 'Tình hình dự án', Man: TONG_QUAN_DU_AN },
+    { id: 'benh-vien', nhan: 'Bệnh viện', Man: lazy(() => import('@/man/dieu-hanh-benh-vien')) },
   ]),
   'dh-kpi': gopMan('kpi', [
     {

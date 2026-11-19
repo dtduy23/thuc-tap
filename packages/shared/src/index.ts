@@ -1,3 +1,4 @@
+export * from './benh-vien.js'
 export * from './cau-hinh.js'
 export * from './chi-tieu.js'
 export * from './dang-ky.js'

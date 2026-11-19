@@ -4,7 +4,17 @@
  */
 import type { INestApplication } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
-import type { BangChiTieu, KetQuaKiemNap, KetQuaThuNguon, LanNap, NguonApi, SoLieuDaNap } from '@gdos/shared'
+import {
+  dongChiTieuBenhVien,
+  MA_CONG_SUAT_GIUONG,
+  type BangChiTieu,
+  type BangDieuHanhBenhVien,
+  type KetQuaKiemNap,
+  type KetQuaThuNguon,
+  type LanNap,
+  type NguonApi,
+  type SoLieuDaNap,
+} from '@gdos/shared'
 import ExcelJS from 'exceljs'
 import request from 'supertest'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
@@ -329,5 +339,82 @@ describe('kênh API', () => {
     expect(con.rows[0]!.n).toBe(0)
     expect(((await qt.get('/api/nguon-vao/so-lieu')).body as SoLieuDaNap[]).length).toBeGreaterThan(0)
     expect((await qt.post(`/api/nguon-vao/api/${n!.id}/lay`).set(GHI)).status).toBe(404)
+  })
+})
+
+describe('bảng điều hành bệnh viện', () => {
+  const url = '/api/chi-tieu/benh-vien'
+  const ky = '2026-01'
+
+  it('tách số giả lập khỏi kho và đánh dấu trong từng tệp báo cáo', async () => {
+    const khach = request(app.getHttpServer() as Parameters<typeof request>[0])
+    expect((await khach.get(url)).status).toBe(401)
+    expect((await khach.get(`${url}/bao-cao/bhxh/excel`)).status).toBe(401)
+    const lanhDao = await vao('chutich.a')
+    expect((await lanhDao.get(url).query({ ky: '2026-13' })).status).toBe(400)
+    expect((await lanhDao.get(url).query({ nguon: 'sai' })).status).toBe(400)
+    const res = await lanhDao.get(url).query({ ky, nguon: 'gia-lap' })
+    expect(res.status).toBe(200)
+    const bang = res.body as BangDieuHanhBenhVien
+    expect(bang.nguon).toBe('gia-lap')
+    expect(bang.cacKy.map((k) => k.ky)).toEqual(['2025-08', '2025-09', '2025-10', '2025-11', '2025-12', ky])
+    const moPhong = bang.cacKy.at(-1)!.soLieu
+    expect(moPhong).toHaveLength(11)
+    expect(moPhong.every((n) => n.nguon === 'Giả lập')).toBe(true)
+    const daNap = (await lanhDao.get(url).query({ ky, nguon: 'da-nap' })).body as BangDieuHanhBenhVien
+    expect(daNap.cacKy.at(-1)?.soLieu).toEqual([])
+
+    for (const [ma, chiTieu] of [
+      ['so-y-te', 'BV-01'],
+      ['bhxh', 'BV-08'],
+      ['vitimes', 'BV-10'],
+    ] as const) {
+      const tep = await lanhDao
+        .get(`${url}/bao-cao/${ma}/excel`)
+        .query({ ky, nguon: 'gia-lap' })
+        .buffer(true)
+        .parse((res, cb) => {
+          const phan: Buffer[] = []
+          res.on('data', (c: Buffer) => phan.push(c))
+          res.on('end', () => cb(null, Buffer.concat(phan)))
+        })
+      expect(tep.status).toBe(200)
+      expect(tep.headers['content-disposition']).toContain(`${ma}-${ky}-gia-lap.xlsx`)
+      const wb = new ExcelJS.Workbook()
+      const buf = tep.body as Buffer
+      await wb.xlsx.load(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer)
+      const ws = wb.getWorksheet('Báo cáo')!
+      expect(ws.getCell('A2').text).toContain('DỮ LIỆU GIẢ LẬP')
+      expect(ws.getCell('D5').value).toBe(moPhong.find((d) => d.ma === chiTieu)!.giaTri)
+    }
+  })
+
+  it('đọc số nạp đúng kỳ, giữ số không và chỉ tính công suất từ hai giá trị cùng tháng', async () => {
+    const qt = await vao('quantri')
+    const tep = await tepExcel([
+      ['BV-01', '01/2026', 0],
+      ['BV-04', '01/2026', 375],
+      ['BV-05', '01/2026', 500],
+      ['BV-04', '12/2025', 450],
+      ['BV-05', '11/2025', 500],
+    ])
+    expect(
+      (await qt.post('/api/nguon-vao/excel').set(GHI).attach('tep', tep, 'benh-vien-thu.xlsx')).status,
+    ).toBe(200)
+    const a = await vao('chutich.a')
+    const res = await a.get(url).query({ ky, nguon: 'da-nap' })
+    expect(res.status).toBe(200)
+    const { cacKy } = res.body as BangDieuHanhBenhVien
+    const hienTai = dongChiTieuBenhVien(cacKy.at(-1)!)
+    expect(hienTai.find((d) => d.ma === 'BV-01')).toMatchObject({
+      giaTri: 0,
+      nguon: 'Excel · benh-vien-thu.xlsx',
+    })
+    expect(hienTai.find((d) => d.ma === MA_CONG_SUAT_GIUONG)?.giaTri).toBe(75)
+    expect(dongChiTieuBenhVien(cacKy.at(-2)!).find((d) => d.ma === MA_CONG_SUAT_GIUONG)?.giaTri).toBeNull()
+    const b = await vao('canbo.b')
+    const khacDonVi = await b.get(url).query({ ky, nguon: 'da-nap' })
+    expect(khacDonVi.status).toBe(200)
+    expect((khacDonVi.body as BangDieuHanhBenhVien).cacKy.every((k) => k.soLieu.length === 0)).toBe(true)
   })
 })
