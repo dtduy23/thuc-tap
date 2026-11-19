@@ -58,6 +58,13 @@ describe('lọc theo cột', () => {
     expect(locVaSap(DL, COT, {}, '', { id: 'tien', tang: false }).map((d) => d.tien)).toEqual([250, 100, 50])
     expect(locVaSap(DL, COT, {}, '', { id: 'ten', tang: true })[0]!.ten).toBe('Phường Hòa Bình')
   })
+
+  it('lọc nhanh theo cột đã ẩn, còn ô tìm chỉ dùng các cột đang hiện', () => {
+    const hien = COT.filter((c) => c.id !== 'tt')
+    const loc = { tt: { kieu: 'danh-muc' as const, chon: ['dong'] } }
+    expect(locVaSap(DL, hien, loc, 'binh minh', null, COT)).toEqual([DL[1]])
+    expect(locVaSap(DL, hien, loc, 'da dong', null, COT)).toEqual([])
+  })
 })
 
 describe('thứ tự cột', () => {

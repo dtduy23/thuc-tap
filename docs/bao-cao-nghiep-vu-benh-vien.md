@@ -143,6 +143,8 @@ Nút tải tạo bản nháp theo yêu cầu. Luồng phát hành chính thức 
 
 Bản diễn tập có 8 hồ sơ `BHYT-THU-…`. Các tình huống mẫu gồm thiếu mã thẻ, thiếu mã dịch vụ, thẻ hết hiệu lực tại ngày dịch vụ và trùng lượt dịch vụ. Ví dụ, `BHYT-THU-02` có lỗi thiếu mã thẻ ở trạng thái khởi tạo.
 
+Bấm mã hồ sơ hoặc dòng trong bảng để mở chi tiết và đánh dấu hồ sơ đang xem. Trên màn hẹp, GDOS cuộn đến khung chi tiết bên dưới bảng. Bấm **Cần bổ sung** hoặc **Đã gửi giả lập** để áp trạng thái tương ứng. Bấm **Hồ sơ diễn tập** để bỏ lọc trạng thái, hoặc **Xóa lọc** để xóa cả các bộ lọc khác và ô tìm.
+
 | Bước | Người thực hiện và thao tác                                                          | Trạng thái sau bước                                             |
 | ---- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
 | 1    | Chuyên viên mở hồ sơ **Chờ rà soát** và bấm **Rà soát hồ sơ**.                       | **Cần bổ sung** nếu có lỗi mẫu, **Chờ duyệt** nếu qua kiểm tra. |

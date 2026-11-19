@@ -68,6 +68,12 @@ Nhóm Quản trị bệnh viện và AI hỗ trợ nghiệp vụ gồm TT 3–7 
   `VITEST_MAX_WORKERS=1 pnpm kiem-tra` đạt 390 test và build. Trên localhost đã kiểm lối vào
   báo cáo từ bảng điều hành, danh mục và phân hệ chủ, tải Excel, cùng hai màn tra cứu.
 
+### Thao tác trên màn rà soát BHYT (TT 5)
+
+- Bấm mã hoặc dòng để mở hồ sơ, đánh dấu dòng đang xem và cuộn đến chi tiết trên màn hẹp. Ba ô
+  đếm dùng chung bộ lọc Trạng thái của lưới. Đã kiểm trên localhost cả thao tác bàn phím, xóa lọc
+  và tải Excel theo nhóm.
+
 ## Mốc 2 — Đưa lên máy thử (30/09/2026)
 
 **Đã làm**

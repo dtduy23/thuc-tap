@@ -1,17 +1,28 @@
 import { TRANG_THAI_BHYT_THU, quyenBenhVien, type HoSoBhytThu } from '@gdos/shared'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { ngayVn } from '@/lib/ngay'
 import { Chip, Nut, The, ThongBao } from '@/ui/co-ban'
-import { Luoi, type CotLuoi } from '@/ui/luoi/luoi'
+import { Luoi, type CotLuoi, type LocCot } from '@/ui/luoi/luoi'
 import { NhacGiaLap, useGhiThu, useQuyenThu, useThu } from './chung'
 
-const COT: CotLuoi<HoSoBhytThu>[] = [
-  { id: 'ma', nhan: 'Mã hồ sơ', kieu: 'chu', giaTri: (d) => d.ma, batBuoc: true, rong: 146 },
+const COT_CHI_TIET: CotLuoi<HoSoBhytThu>[] = [
   { id: 'ngay', nhan: 'Ngày dịch vụ', kieu: 'ngay', giaTri: (d) => d.ngay },
   { id: 'the', nhan: 'Mã thẻ mẫu', kieu: 'chu', giaTri: (d) => d.maThe, rong: 138 },
   { id: 'ma-dich-vu', nhan: 'Mã dịch vụ', kieu: 'chu', giaTri: (d) => d.maDichVu, rong: 134 },
-  { id: 'trang-thai', nhan: 'Trạng thái', kieu: 'danh-muc', giaTri: (d) => TRANG_THAI_BHYT_THU[d.trangThai] },
+  {
+    id: 'trang-thai',
+    nhan: 'Trạng thái',
+    kieu: 'danh-muc',
+    giaTri: (d) => d.trangThai,
+    luaChon: Object.entries(TRANG_THAI_BHYT_THU).map(([giaTri, nhan]) => ({ giaTri, nhan })),
+  },
 ]
+
+const NHOM_HO_SO = [
+  { ma: '', nhan: 'hồ sơ diễn tập', mau: 'xam' },
+  { ma: 'can-sua', nhan: 'cần bổ sung', mau: 'warn' },
+  { ma: 'da-gui', nhan: 'đã gửi giả lập', mau: 'ok' },
+] as const
 
 function ChiTietBhyt({ h }: { h: HoSoBhytThu }) {
   const q = useQuyenThu()
@@ -90,28 +101,89 @@ function ChiTietBhyt({ h }: { h: HoSoBhytThu }) {
 
 export default function RaSoatBhyt() {
   const ds = useThu<HoSoBhytThu[]>('/bhyt')
-  const [ma, datMa] = useState(ds[0]?.ma)
-  const h = ds.find((d) => d.ma === ma)
-  const canSua = ds.filter((d) => d.trangThai === 'can-sua').length
-  const daGui = ds.filter((d) => d.trangThai === 'da-gui').length
+  const [ma, datMa] = useState<string>()
+  const [loc, datLoc] = useState<Record<string, LocCot>>({})
+  const chiTiet = useRef<HTMLElement>(null)
+  const locTrangThai = loc['trang-thai']
+  const trangThai = locTrangThai?.kieu === 'danh-muc' ? locTrangThai.chon : []
+  const hoSoTrongNhom = (d: HoSoBhytThu) => !trangThai.length || trangThai.includes(d.trangThai)
+  const h = ds.find((d) => d.ma === ma && hoSoTrongNhom(d)) ?? ds.find(hoSoTrongNhom)
+
+  function moHoSo(d: HoSoBhytThu) {
+    datMa(d.ma)
+    requestAnimationFrame(() => {
+      chiTiet.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+      chiTiet.current?.focus({ preventScroll: true })
+    })
+  }
+
+  const cot: CotLuoi<HoSoBhytThu>[] = [
+    {
+      id: 'ma',
+      nhan: 'Mã hồ sơ',
+      kieu: 'chu',
+      giaTri: (d) => d.ma,
+      batBuoc: true,
+      rong: 146,
+      hien: (d) => (
+        <button
+          type="button"
+          aria-controls="bv-bhyt-chi-tiet"
+          className="max-w-full truncate font-semibold text-brand hover:underline"
+          onClick={(e) => {
+            e.stopPropagation()
+            moHoSo(d)
+          }}
+        >
+          {d.ma}
+        </button>
+      ),
+    },
+    ...COT_CHI_TIET,
+  ]
+
   return (
     <>
       <NhacGiaLap>Rà soát theo quy tắc mẫu. Cán bộ quyết định duyệt hay trả hồ sơ.</NhacGiaLap>
-      <div className="mb-4 flex flex-wrap gap-2">
-        <Chip>{ds.length} hồ sơ diễn tập</Chip>
-        <Chip mau="warn">{canSua} cần bổ sung</Chip>
-        <Chip mau="ok">{daGui} đã gửi giả lập</Chip>
+      <div role="group" aria-label="Lọc nhanh hồ sơ BHYT" className="mb-4 flex flex-wrap gap-2">
+        {NHOM_HO_SO.map(({ ma: nhom, nhan, mau }) => {
+          const dangLoc = nhom ? trangThai.length === 1 && trangThai[0] === nhom : !trangThai.length
+          const soHoSo = nhom ? ds.filter((d) => d.trangThai === nhom).length : ds.length
+          return (
+            <button
+              key={nhom}
+              type="button"
+              aria-pressed={dangLoc}
+              className="cursor-pointer rounded-full hover:ring-1 hover:ring-brand aria-pressed:ring-2 aria-pressed:ring-brand"
+              onClick={() => datLoc({ ...loc, 'trang-thai': { kieu: 'danh-muc', chon: nhom ? [nhom] : [] } })}
+            >
+              <Chip mau={mau}>
+                {soHoSo} {nhan}
+              </Chip>
+            </button>
+          )
+        })}
       </div>
-      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.52fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.52fr)]">
         <Luoi
           ma="bv-bhyt"
           tieuDe="Hồ sơ BHYT giả lập"
-          cot={COT}
+          cot={cot}
           dong={ds}
           khoa={(d) => d.ma}
-          moDong={(d) => datMa(d.ma)}
+          moDong={moHoSo}
+          dongDangMo={h?.ma}
+          boLocCot={{ giaTri: loc, doi: datLoc }}
         />
-        {h && <ChiTietBhyt key={`${h.ma}:${h.trangThai}`} h={h} />}
+        <aside id="bv-bhyt-chi-tiet" ref={chiTiet} tabIndex={-1} aria-label="Chi tiết hồ sơ BHYT">
+          {h ? (
+            <ChiTietBhyt key={`${h.ma}:${h.trangThai}`} h={h} />
+          ) : (
+            <The tieuDe="Chi tiết hồ sơ">
+              <p className="m-0 text-sm text-faint">Chưa có hồ sơ để xem trong nhóm này.</p>
+            </The>
+          )}
+        </aside>
       </div>
     </>
   )

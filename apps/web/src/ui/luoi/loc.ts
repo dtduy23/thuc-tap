@@ -137,11 +137,12 @@ export function locVaSap<T>(
   loc: Readonly<Record<string, LocCot>>,
   tim: string,
   sap: SapXep | null,
+  cotLoc: readonly CotLuoi<T>[] = cot,
 ): T[] {
   const q = khongDau(tim.trim())
   const kq = dong.filter(
     (d) =>
-      cot.every((c) => khop(c.giaTri(d), loc[c.id] ?? locRong(c.kieu))) &&
+      cotLoc.every((c) => khop(c.giaTri(d), loc[c.id] ?? locRong(c.kieu))) &&
       (!q || cot.some((c) => khongDau(chuCua(c, d)).includes(q))),
   )
   const c = sap && cot.find((x) => x.id === sap.id)

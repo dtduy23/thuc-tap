@@ -30,7 +30,7 @@ import {
 } from './loc'
 import { OLoc } from './o-loc'
 
-export type { CotLuoi } from './loc'
+export type { CotLuoi, LocCot } from './loc'
 
 interface ThietLap {
   an: string[]
@@ -54,6 +54,10 @@ export interface LuoiProps<T> {
   dong: readonly T[]
   khoa: (d: T) => string
   moDong?: (d: T) => void
+  /** Khóa dòng có chi tiết đang mở cạnh lưới. */
+  dongDangMo?: string
+  /** Dùng chung bộ lọc cột với các nút lọc nhanh của màn. */
+  boLocCot?: { giaTri: Readonly<Record<string, LocCot>>; doi: (loc: Record<string, LocCot>) => void }
   /** Tô chữ cả dòng (vd dòng quá hạn). */
   mauDong?: (d: T) => 'danger' | 'warn' | undefined
   /** Nút riêng của màn (vd "+ Tạo dự án") — nằm cuối thanh công cụ. */
@@ -113,6 +117,8 @@ export function Luoi<T>({
   dong,
   khoa,
   moDong,
+  dongDangMo,
+  boLocCot,
   mauDong,
   congCu,
   rong,
@@ -120,7 +126,9 @@ export function Luoi<T>({
   phanTrangMayChu,
 }: LuoiProps<T>) {
   const [tl, datTl] = useState(() => docThietLap(ma, cot))
-  const [loc, datLoc] = useState<Record<string, LocCot>>({})
+  const [locNoiBo, datLocNoiBo] = useState<Record<string, LocCot>>({})
+  const loc = boLocCot?.giaTri ?? locNoiBo
+  const datLoc = boLocCot?.doi ?? datLocNoiBo
   const [tim, datTim] = useState('')
   const [sap, datSap] = useState<SapXep | null>(null)
   const [trang, datTrang] = useState(0)
@@ -148,14 +156,16 @@ export function Luoi<T>({
   const tongRong = cotHien.reduce((t, c) => t + rongCua(c), chon ? RONG_CHON : 0)
 
   const cotDuLieu = cotHien.filter((c) => !c.khongLoc)
-  const ketQua = locVaSap(dong, cotDuLieu, loc, tim, sap)
-  const soLoc = cotHien.filter((c) => dangBat(loc[c.id])).length + (tim.trim() ? 1 : 0)
+  // Nút lọc nhanh vẫn áp dụng được khi người dùng ẩn cột tương ứng.
+  const cotLoc = boLocCot ? cot.filter((c) => !c.khongLoc) : cotDuLieu
+  const ketQua = locVaSap(dong, cotDuLieu, loc, tim, sap, cotLoc)
+  const soLoc = cotLoc.filter((c) => dangBat(loc[c.id])).length + (tim.trim() ? 1 : 0)
   const soTrang = Math.max(1, Math.ceil(ketQua.length / tl.soDong))
   const tr = Math.min(trang, soTrang - 1)
   const trangNay = phanTrangMayChu ? ketQua : ketQua.slice(tr * tl.soDong, (tr + 1) * tl.soDong)
 
   const doiLoc = (id: string, l: LocCot) => {
-    datLoc((c) => ({ ...c, [id]: l }))
+    datLoc({ ...loc, [id]: l })
     datTrang(0)
   }
   const xoaLoc = () => {
@@ -405,17 +415,25 @@ export function Luoi<T>({
             {trangNay.map((d, k) => {
               const id = khoa(d)
               const mau = mauDong?.(d)
+              const dangMo = id === dongDangMo
+              const nenDong = dangMo ? 'bg-tint-brand' : 'group-hover:bg-nav-hover'
+              const nenGhim = dangMo
+                ? 'bg-nen bg-[linear-gradient(var(--tint-brand),var(--tint-brand))]'
+                : 'bg-nen group-hover:bg-nav-hover'
               return (
                 <tr
                   key={id}
                   tabIndex={moDong ? 0 : undefined}
+                  aria-current={dangMo || undefined}
                   onClick={moDong ? () => moDong(d) : undefined}
-                  onKeyDown={moDong ? (e) => e.key === 'Enter' && moDong(d) : undefined}
+                  onKeyDown={
+                    moDong ? (e) => e.key === 'Enter' && e.target === e.currentTarget && moDong(d) : undefined
+                  }
                   className={`group ${moDong ? 'cursor-pointer' : ''} ${mau === 'danger' ? 'text-danger' : mau === 'warn' ? 'text-warn' : ''}`}
                 >
                   {chon && (
                     <td
-                      className={`${td} sticky left-0 z-10 bg-nen text-center group-hover:bg-nav-hover`}
+                      className={`${td} sticky left-0 z-10 text-center ${nenGhim}`}
                       onClick={(e) => e.stopPropagation()}
                     >
                       {(chon.duocChon?.(d) ?? true) && (
@@ -430,18 +448,18 @@ export function Luoi<T>({
                     </td>
                   )}
                   {cotHien.map((c, i) => {
-                    const g = oGhim(i, 'bg-nen')
+                    const g = oGhim(i, nenGhim)
                     return (
                       <td
                         key={c.id}
                         style={g.style}
-                        className={`${td} ${g.lop} ${i < soGhim ? 'z-10' : ''} group-hover:bg-nav-hover ${c.kieu === 'so' ? 'text-right tabular-nums' : ''} ${catChu}`}
+                        className={`${td} ${g.lop} ${i < soGhim ? 'z-10' : nenDong} ${c.kieu === 'so' ? 'text-right tabular-nums' : ''} ${catChu}`}
                       >
                         {dinhDang(c, d, tr * tl.soDong + k + 1)}
                       </td>
                     )
                   })}
-                  <td className={`${td} group-hover:bg-nav-hover`} />
+                  <td className={`${td} ${nenDong}`} />
                 </tr>
               )
             })}
