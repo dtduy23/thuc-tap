@@ -1,4 +1,4 @@
-import { DANH_SACH_MODULE, dongGopCua, type BaoCaoDef } from '@gdos/shared'
+import { DANH_SACH_MODULE, baoCaoCua, type BaoCaoDef } from '@gdos/shared'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { truyVanToi } from '@/lib/phien'
 import { TheBaoCao } from '@/trang/bao-cao'
@@ -7,9 +7,9 @@ import { TheBaoCao } from '@/trang/bao-cao'
  * Danh sách báo cáo — MỘT màn cho Báo cáo điều hành (mọi nghiệp vụ) và cho "Báo cáo
  * dự án" trong module (lọc theo module chủ). Báo cáo do module khai một lần (ADR-0007).
  */
-function DanhSachBaoCao({ loai, moduleId }: { loai?: BaoCaoDef['loai']; moduleId?: string }) {
+export function DanhSachBaoCao({ loai, moduleId }: { loai?: BaoCaoDef['loai']; moduleId?: string }) {
   const { data: toi } = useSuspenseQuery(truyVanToi)
-  const ds = dongGopCua(DANH_SACH_MODULE, 'baoCao', new Set(toi.quyen)).filter(
+  const ds = baoCaoCua(DANH_SACH_MODULE, new Set(toi.quyen)).filter(
     (x) => (!loai || x.muc.loai === loai) && (!moduleId || x.module.id === moduleId),
   )
   const theoNghiepVu = new Map<string, typeof ds>()
@@ -36,3 +36,6 @@ export const TatCaBaoCao = () => <DanhSachBaoCao />
 export const BaoCaoDinhKy = () => <DanhSachBaoCao loai="dinh-ky" />
 export const XuatDuLieu = () => <DanhSachBaoCao loai="xuat" />
 export const BaoCaoDuAn = () => <DanhSachBaoCao moduleId="du-an" />
+export const BaoCaoPhim = () => <DanhSachBaoCao moduleId="phim-x-quang" />
+export const BaoCaoBHYT = () => <DanhSachBaoCao moduleId="ho-so-bhyt" />
+export const BaoCaoLao = () => <DanhSachBaoCao moduleId="dieu-tri-lao" />

@@ -6,6 +6,9 @@ import { BadRequestException } from '@nestjs/common'
 import {
   homNay,
   laNgay,
+  chuanKy,
+  kyHienTai,
+  type CheDoSoLieu,
   type BaoCaoDef,
   type CotBaoCao,
   type DongBaoCao,
@@ -15,6 +18,15 @@ import {
 import ExcelJS from 'exceljs'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export function kiemKyVaNguon(ky: unknown, nguon: unknown): { ky: string; nguon: CheDoSoLieu } {
+  const k = ky === undefined ? kyHienTai() : chuanKy(ky)
+  if (!k || (ky !== undefined && ky !== k) || k < '2000-01' || k > '2100-12')
+    throw new BadRequestException('Kỳ phải là tháng YYYY-MM trong giai đoạn 2000–2100')
+  if (nguon !== undefined && nguon !== 'tu-dong' && nguon !== 'gia-lap' && nguon !== 'da-nap')
+    throw new BadRequestException('Nguồn số liệu không hợp lệ')
+  return { ky: k, nguon: nguon ?? 'tu-dong' }
+}
 
 function namHopLe(v: unknown, ten: string, macDinh: number): number {
   if (v === undefined || v === '') return macDinh
@@ -41,7 +53,15 @@ export function kiemThamSo(def: BaoCaoDef, q: Record<string, unknown>): GiaTriTh
   const nhom = typeof q.nhom === 'string' && q.nhom ? q.nhom.split(',') : []
   if (nhom.length > 3 || new Set(nhom).size !== nhom.length || nhom.some((n) => !truc.has(n)))
     throw new BadRequestException('"nhom": tối đa 3 trục khác nhau, trong danh sách của báo cáo')
-  return { nam, tuNam, denNam, denNgay, linhVucId: typeof lv === 'string' && lv ? lv : null, nhom }
+  return {
+    nam,
+    tuNam,
+    denNam,
+    denNgay,
+    linhVucId: typeof lv === 'string' && lv ? lv : null,
+    nhom,
+    ...(def.thamSo?.includes('ky-bao-cao') ? kiemKyVaNguon(q.ky, q.nguon) : {}),
+  }
 }
 
 const laCong = (c: CotBaoCao) => c.kieu === 'so' && !c.khongCong

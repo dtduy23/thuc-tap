@@ -22,7 +22,6 @@ function ChiTietLao({ ca }: { ca: CaLaoThu }) {
   const ghi = useGhiThu()
   const sua = q.includes(quyenBenhVien('dieu-tri-lao', 'UPDATE'))
   const duyet = q.includes(quyenBenhVien('dieu-tri-lao', 'APPROVE'))
-  const xuat = q.includes(quyenBenhVien('dieu-tri-lao', 'EXPORT'))
   const coMoi = ca.lanTheoDoi.some((d) => d.ketQua)
   const daXacNhan = ca.lanTheoDoi.filter((d) => d.ketQua === 'da-xac-nhan').length
   const lam = (viec: string, body?: unknown) => ghi.mutate({ duongDan: `/lao/${ca.ma}/${viec}`, body })
@@ -74,7 +73,7 @@ function ChiTietLao({ ca }: { ca: CaLaoThu }) {
             Hoàn tất theo dõi
           </Nut>
         )}
-        {xuat && (
+        {sua && (
           <Nut kieu="chinh" disabled={ghi.isPending || !coMoi} onClick={() => lam('dong-bo')}>
             Đồng bộ VITIMES giả lập
           </Nut>

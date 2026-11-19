@@ -2,13 +2,12 @@ import {
   NHAN_PHIM,
   NGUON_PHIM,
   VIEC_NGHIEN_CUU,
+  type BAO_CAO_PHIM_THU,
   type KetQuaBaoCao,
   type NghienCuuPhimThu,
   type PhimThu,
 } from '@gdos/shared'
 import { PHIEN_BAN_MO_HINH } from './x-quang.js'
-
-export const MA_TAI_LIEU = ['bao-cao', 'phan-loai', 'bien-ban', 'dao-tao', 'bo-nhan'] as const
 
 const KHUNG = {
   coTong: false,
@@ -16,7 +15,7 @@ const KHUNG = {
 } as const
 
 export function baoCaoNghienCuu(
-  ma: Exclude<(typeof MA_TAI_LIEU)[number], 'bo-nhan'>,
+  ma: Exclude<(typeof BAO_CAO_PHIM_THU)[number]['mau'], 'bo-nhan'>,
   nc: NghienCuuPhimThu,
 ): KetQuaBaoCao {
   const kq = nc.doiChieu

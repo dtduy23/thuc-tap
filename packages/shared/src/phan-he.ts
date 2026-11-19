@@ -11,7 +11,7 @@
  * chặn bệnh "phan-he-mo-rong" của GDOS cũ bằng máy, không bằng thiện chí.
  */
 
-import type { DongGop } from './dong-gop.js'
+import type { BaoCaoDef, DongGop } from './dong-gop.js'
 
 export const TANG = [
   { so: 1, nhan: 'Nghiệp vụ', hoi: 'Màn này quan hệ với dữ liệu nghiệp vụ như thế nào?' },
@@ -80,6 +80,8 @@ export interface ModuleDef {
   con: readonly ChucNang[]
   /** Những gì module ĐÓNG GÓP cho nhóm xuyên suốt (ADR-0007) — xem dong-gop.ts. */
   dongGop?: DongGop
+  /** Báo cáo tổng hợp liên nghiệp vụ do Điều hành sở hữu (ADR-0007). */
+  baoCaoTongHop?: readonly BaoCaoDef[]
   /** Cả module là màn phác — mọi chức năng con đều chưa xây. */
   phac?: boolean
 }
@@ -149,7 +151,8 @@ export interface NhanhTang {
 export const laPhac = (m: ModuleDef, c: ChucNang): boolean => !!(m.phac || c.phac)
 
 /** Mã quyền cần để thấy một chức năng cấp 4, vd `PROJECT.READ`, `PROJECT.CREATE`. */
-export const quyenCua = (m: ModuleDef, c: ChucNang): string => `${m.maQuyen}.${c.hanhDong ?? 'READ'}`
+export const quyenCua = (m: ModuleDef, c: Pick<ChucNang, 'hanhDong'>): string =>
+  `${m.maQuyen}.${c.hanhDong ?? 'READ'}`
 
 /**
  * Lọc cây theo quyền ở CẢ BỐN cấp. Nhánh nào không còn con nào được thấy thì

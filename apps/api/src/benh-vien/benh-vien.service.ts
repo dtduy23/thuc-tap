@@ -13,10 +13,11 @@ import {
   type TraLoiBenhVienThu,
 } from '@gdos/shared'
 import { CoSoDuLieu } from '../db/co-so-du-lieu.js'
+import { ChiTieuService } from '../chi-tieu/chi-tieu.service.js'
 import type { NguoiDungPhien } from '../xac-thuc/bao-ve.js'
 import { CA_LAO_MAU, HO_SO_BHYT_MAU, hoSoBhytMau } from './ho-so-mau.js'
 import { docKho, doiTrangThai, ghiKho, trongDonVi } from './kho-thu.js'
-import { bangGiaLap, docNguonGiaLap } from './so-lieu-thu.js'
+import { docNguonGiaLap } from './so-lieu-thu.js'
 
 const PHONG_BHYT = {
   'ra-soat': ['cho-ra-soat'],
@@ -35,7 +36,10 @@ function caLao(ma: string): CaLaoThu {
 
 @Injectable()
 export class BenhVienThuService {
-  constructor(@Inject(CoSoDuLieu) private readonly csdl: CoSoDuLieu) {}
+  constructor(
+    @Inject(CoSoDuLieu) private readonly csdl: CoSoDuLieu,
+    @Inject(ChiTieuService) private readonly ct: ChiTieuService,
+  ) {}
 
   ketNoi(nd: NguoiDungPhien, ky: string): Promise<KetNoiBenhVienThu[]> {
     return trongDonVi(this.csdl, nd, async (tx, dv) => {
@@ -175,13 +179,13 @@ export class BenhVienThuService {
         : `Đã xác nhận mọi mốc theo dõi của ${ca.ma}.`
       return { noiDung, nguon: 'Lịch theo dõi lao giả lập' }
     }
-    const dong = dongChiTieuBenhVien((await bangGiaLap(this.csdl, nd, [ky])).cacKy[0]!)
+    const dong = dongChiTieuBenhVien((await this.ct.benhVien(nd, ky, 'tu-dong')).cacKy.at(-1)!)
     if (chuDe === 'so-lieu') {
       const c = dong.find((d) => d.ma === ma)
       if (!c) throw new NotFoundException('Không có chỉ tiêu được hỏi')
       return {
         noiDung: `${kyHien(ky)}\n${c.ten}: ${c.giaTri?.toLocaleString('vi-VN') ?? '—'} ${c.donVi}.`,
-        nguon: 'Bảng điều hành bệnh viện · dữ liệu giả lập',
+        nguon: `Bảng điều hành bệnh viện · ${c.nguon ?? 'chưa có số liệu'}`,
       }
     }
     const noiDung = `BẢN NHÁP GIAO BAN · ${kyHien(ky)}\n\nKính gửi: Ban điều hành bệnh viện.\n\n${CHI_TIEU_BENH_VIEN.slice(
@@ -190,9 +194,9 @@ export class BenhVienThuService {
     )
       .map((c) => {
         const d = dong.find((d) => d.ma === c.ma)!
-        return `• ${c.ten}: ${d.giaTri?.toLocaleString('vi-VN')} ${c.donVi}`
+        return `• ${c.ten}: ${d.giaTri?.toLocaleString('vi-VN') ?? '—'} ${c.donVi} (${d.nguon ?? 'chưa có số liệu'})`
       })
       .join('\n')}\n\nĐề nghị các bộ phận đối soát số liệu trước khi trình ký.\n\nNgười soạn: [điền họ tên]`
-    return { noiDung, nguon: 'Mẫu văn bản giao ban GDOS · dữ liệu giả lập' }
+    return { noiDung, nguon: 'Mẫu văn bản giao ban GDOS · Bảng điều hành bệnh viện' }
   }
 }

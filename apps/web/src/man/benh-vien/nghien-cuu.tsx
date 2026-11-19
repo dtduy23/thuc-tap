@@ -1,22 +1,13 @@
 import { VIEC_NGHIEN_CUU, quyenBenhVien, type NghienCuuPhimThu } from '@gdos/shared'
-import { Download } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
 import { ngayGio } from '@/lib/ngay'
 import { Chip, Nut, The, ThongBao } from '@/ui/co-ban'
-import { NhacGiaLap, useGhiThu, useQuyenThu, useTaiLieuThu, useThu } from './chung'
-
-const BIEU_MAU = [
-  ['bao-cao', 'Báo cáo khoa học'],
-  ['bien-ban', 'Dự thảo biên bản Hội đồng'],
-  ['phan-loai', 'Phiếu chuẩn bị phân loại thiết bị'],
-  ['dao-tao', 'Phiếu đào tạo và phản hồi'],
-  ['bo-nhan', 'Bộ nhãn lịch sử đã duyệt'],
-] as const
+import { NhacGiaLap, useGhiThu, useQuyenThu, useThu } from './chung'
 
 export default function HoSoNghienCuu() {
   const nc = useThu<NghienCuuPhimThu>('/nghien-cuu')
   const q = useQuyenThu()
   const ghi = useGhiThu()
-  const tai = useTaiLieuThu()
   const duyet = q.includes(quyenBenhVien('phim-x-quang', 'APPROVE'))
   const sua = q.includes(quyenBenhVien('phim-x-quang', 'UPDATE'))
   const xuat = q.includes(quyenBenhVien('phim-x-quang', 'EXPORT'))
@@ -32,9 +23,7 @@ export default function HoSoNghienCuu() {
   return (
     <>
       <NhacGiaLap>Mốc đạo đức, hồ sơ và kết quả trong màn này chỉ phục vụ diễn tập.</NhacGiaLap>
-      {(ghi.isError || tai.isError) && (
-        <ThongBao kieu="loi">{ghi.error?.message ?? tai.error?.message}</ThongBao>
-      )}
+      {ghi.isError && <ThongBao kieu="loi">{ghi.error.message}</ThongBao>}
       <div className="grid gap-x-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <div>
           <The tieuDe="Tiến độ 5.000 phim lịch sử">
@@ -122,14 +111,13 @@ export default function HoSoNghienCuu() {
           </The>
           {xuat && (
             <The tieuDe="Tài liệu và nhãn">
-              <div className="flex flex-wrap gap-2">
-                {BIEU_MAU.map(([ma, ten]) => (
-                  <Nut key={ma} disabled={tai.isPending} onClick={() => tai.mutate(ma)}>
-                    <Download size={15} aria-hidden="true" />
-                    {ten}
-                  </Nut>
-                ))}
-              </div>
+              <Link
+                to="/$chucNang"
+                params={{ chucNang: 'bv-bao-cao-phim' }}
+                className="text-sm font-semibold text-brand hover:underline"
+              >
+                Mở Báo cáo nghiên cứu
+              </Link>
             </The>
           )}
         </div>

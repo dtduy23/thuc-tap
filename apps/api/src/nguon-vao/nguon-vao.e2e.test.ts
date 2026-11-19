@@ -349,7 +349,7 @@ describe('bảng điều hành bệnh viện', () => {
   it('tách số giả lập khỏi kho và đánh dấu trong từng tệp báo cáo', async () => {
     const khach = request(app.getHttpServer() as Parameters<typeof request>[0])
     expect((await khach.get(url)).status).toBe(401)
-    expect((await khach.get(`${url}/bao-cao/bhxh/excel`)).status).toBe(401)
+    expect((await khach.get('/api/bao-cao/ho-so-bhyt-giao-ban/excel')).status).toBe(401)
     const lanhDao = await vao('chutich.a')
     expect((await lanhDao.get(url).query({ ky: '2026-13' })).status).toBe(400)
     expect((await lanhDao.get(url).query({ nguon: 'sai' })).status).toBe(400)
@@ -364,13 +364,13 @@ describe('bảng điều hành bệnh viện', () => {
     const daNap = (await lanhDao.get(url).query({ ky, nguon: 'da-nap' })).body as BangDieuHanhBenhVien
     expect(daNap.cacKy.at(-1)?.soLieu).toEqual([])
 
-    for (const [ma, chiTieu] of [
-      ['so-y-te', 'BV-01'],
-      ['bhxh', 'BV-08'],
-      ['vitimes', 'BV-10'],
+    for (const [ma, tenTep, chiTieu] of [
+      ['bao-cao-benh-vien-so-y-te', 'so-y-te', 'BV-01'],
+      ['ho-so-bhyt-giao-ban', 'bhxh', 'BV-08'],
+      ['dieu-tri-lao-giao-ban', 'vitimes', 'BV-10'],
     ] as const) {
       const tep = await lanhDao
-        .get(`${url}/bao-cao/${ma}/excel`)
+        .get(`/api/bao-cao/${ma}/excel`)
         .query({ ky, nguon: 'gia-lap' })
         .buffer(true)
         .parse((res, cb) => {
@@ -379,7 +379,7 @@ describe('bảng điều hành bệnh viện', () => {
           res.on('end', () => cb(null, Buffer.concat(phan)))
         })
       expect(tep.status).toBe(200)
-      expect(tep.headers['content-disposition']).toContain(`${ma}-${ky}-gia-lap.xlsx`)
+      expect(tep.headers['content-disposition']).toContain(`${tenTep}-${ky}-gia-lap.xlsx`)
       const wb = new ExcelJS.Workbook()
       const buf = tep.body as Buffer
       await wb.xlsx.load(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer)
@@ -402,6 +402,7 @@ describe('bảng điều hành bệnh viện', () => {
       (await qt.post('/api/nguon-vao/excel').set(GHI).attach('tep', tep, 'benh-vien-thu.xlsx')).status,
     ).toBe(200)
     const a = await vao('chutich.a')
+    expect(((await a.get('/api/chi-tieu')).body as BangChiTieu).giaTri['BV-01']).toBeUndefined()
     const res = await a.get(url).query({ ky, nguon: 'da-nap' })
     expect(res.status).toBe(200)
     const { cacKy } = res.body as BangDieuHanhBenhVien
@@ -409,9 +410,29 @@ describe('bảng điều hành bệnh viện', () => {
     expect(hienTai.find((d) => d.ma === 'BV-01')).toMatchObject({
       giaTri: 0,
       nguon: 'Excel · benh-vien-thu.xlsx',
+      capNhatLuc: expect.any(String) as string,
     })
     expect(hienTai.find((d) => d.ma === MA_CONG_SUAT_GIUONG)?.giaTri).toBe(75)
     expect(dongChiTieuBenhVien(cacKy.at(-2)!).find((d) => d.ma === MA_CONG_SUAT_GIUONG)?.giaTri).toBeNull()
+    const tuDong = (await a.get(url).query({ ky })).body as BangDieuHanhBenhVien
+    const kyTruoc = dongChiTieuBenhVien(tuDong.cacKy.at(-2)!)
+    expect(tuDong.nguon).toBe('tu-dong')
+    expect(tuDong.cacKy.at(-1)?.soLieu.find((d) => d.ma === 'BV-01')).toMatchObject({
+      giaTri: 0,
+      loaiNguon: 'da-nap',
+    })
+    expect(kyTruoc.find((d) => d.ma === 'BV-04')).toMatchObject({ giaTri: 450, loaiNguon: 'da-nap' })
+    expect(kyTruoc.find((d) => d.ma === MA_CONG_SUAT_GIUONG)).toMatchObject({ loaiNguon: 'gia-lap' })
+    const giaLap = (await a.get(url).query({ ky, nguon: 'gia-lap' })).body as BangDieuHanhBenhVien
+    expect(kyTruoc.find((d) => d.ma === MA_CONG_SUAT_GIUONG)?.giaTri).toBe(
+      dongChiTieuBenhVien(giaLap.cacKy.at(-2)!).find((d) => d.ma === MA_CONG_SUAT_GIUONG)?.giaTri,
+    )
+    const xuat = await a.get('/api/bao-cao/bao-cao-benh-vien-so-y-te').query({ ky })
+    expect(xuat.status).toBe(200)
+    expect(xuat.body).toMatchObject({
+      tenTep: `ban-nhap-so-y-te-${ky}-co-gia-lap`,
+      phuDe: expect.stringContaining('CÓ DỮ LIỆU GIẢ LẬP') as string,
+    })
     const b = await vao('canbo.b')
     const khacDonVi = await b.get(url).query({ ky, nguon: 'da-nap' })
     expect(khacDonVi.status).toBe(200)

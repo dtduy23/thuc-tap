@@ -9,7 +9,6 @@ import {
   Param,
   Post,
   Query,
-  Res,
 } from '@nestjs/common'
 import {
   CHU_DE_TRO_LY_BENH_VIEN,
@@ -27,13 +26,10 @@ import {
   type NhanPhim,
   type ChuDeTroLyBenhVien,
 } from '@gdos/shared'
-import type { Response } from 'express'
 import { coKhong, chuoi, chuoiTuyChon, motTrong } from '../chung/kiem-than.js'
-import { CanQuyen, NguoiDung, type NguoiDungPhien } from '../xac-thuc/bao-ve.js'
-import { headerTaiExcel, vietExcel } from '../xuyen-suot/bao-cao-chung.js'
+import { CanMotTrongQuyen, CanQuyen, NguoiDung, type NguoiDungPhien } from '../xac-thuc/bao-ve.js'
 import { BenhVienThuService, type ThaoTacBhyt } from './benh-vien.service.js'
 import { PhimThuService } from './phim.service.js'
-import { MA_TAI_LIEU, baoCaoBoNhan, baoCaoNghienCuu } from './tai-lieu.js'
 
 const phim = (h: HanhDong) => quyenBenhVien('phim-x-quang', h)
 const bhyt = (h: HanhDong) => quyenBenhVien('ho-so-bhyt', h)
@@ -131,22 +127,6 @@ export class BenhVienThuController {
     return { ok: true }
   }
 
-  @Get('nghien-cuu/:ma/excel')
-  @CanQuyen(phim('EXPORT'))
-  async taiLieu(
-    @NguoiDung() nd: NguoiDungPhien,
-    @Param('ma') ma: string,
-    @Res() res: Response,
-  ): Promise<void> {
-    const mau = MA_TAI_LIEU.find((m) => m === ma)
-    if (!mau) throw new NotFoundException('Không có tài liệu thử nghiệm này')
-    const baoCao =
-      mau === 'bo-nhan'
-        ? baoCaoBoNhan(await this.p.xuatNhan(nd))
-        : baoCaoNghienCuu(mau, await this.p.nghienCuu(nd))
-    res.set(headerTaiExcel(baoCao.tenTep)).send(await vietExcel(baoCao))
-  }
-
   @Get('ket-noi')
   @CanQuyen(nguon('READ'))
   ketNoi(@NguoiDung() nd: NguoiDungPhien, @Query('ky') ky: unknown) {
@@ -172,7 +152,7 @@ export class BenhVienThuController {
   async doiBhyt(@NguoiDung() nd: NguoiDungPhien, @Param('ma') ma: string, @Param('viec') viec: string) {
     const v = VIEC_BHYT.find((x) => x === viec)
     if (!v) throw new NotFoundException('Không có thao tác BHYT này')
-    const h = v === 'duyet' || v === 'tra-lai' ? 'APPROVE' : v === 'gui' ? 'EXPORT' : 'UPDATE'
+    const h = v === 'duyet' || v === 'tra-lai' ? 'APPROVE' : 'UPDATE'
     if (!nd.quyen.has(bhyt(h)))
       throw new ForbiddenException('Tài khoản không có quyền thực hiện thao tác BHYT này')
     await this.bv.doiBhyt(nd, ma, v)
@@ -201,14 +181,14 @@ export class BenhVienThuController {
   }
 
   @Post('lao/:ma/dong-bo')
-  @CanQuyen(lao('EXPORT'))
+  @CanQuyen(lao('UPDATE'))
   async guiLao(@NguoiDung() nd: NguoiDungPhien, @Param('ma') ma: string) {
     await this.bv.guiLao(nd, ma)
     return { ok: true }
   }
 
   @Post('tro-ly')
-  @CanQuyen(quyenBenhVien('tro-ly-ai', 'READ'))
+  @CanMotTrongQuyen(lao('READ'), quyenBenhVien('tong-quan', 'READ'))
   troLy(@NguoiDung() nd: NguoiDungPhien, @Body() than: unknown) {
     const chuDe = batBuoc(
       motTrong(than, 'chuDe', Object.keys(CHU_DE_TRO_LY_BENH_VIEN) as ChuDeTroLyBenhVien[]),

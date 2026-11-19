@@ -12,6 +12,7 @@
  * trong test nên khai sai là CI đỏ.
  */
 import { quyenCua, type HanhDong, type ModuleDef } from './phan-he.js'
+import { BAO_CAO_BENH_VIEN, BAO_CAO_PHIM_THU, dinhNghiaBaoCaoBenhVien } from './benh-vien.js'
 
 /** Trục phân nhóm của các báo cáo dự án. */
 const NHOM_BAO_CAO_DU_AN = [
@@ -84,6 +85,7 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     nhom: 'dieu-hanh',
     maQuyen: 'BAO_CAO',
     nguon: 'db',
+    baoCaoTongHop: [dinhNghiaBaoCaoBenhVien(BAO_CAO_BENH_VIEN[0])],
     mo: 'Mọi biểu báo cáo của các nghiệp vụ ở một nơi — cũng mở được ngay trong từng nghiệp vụ.',
     con: [
       { id: 'bc-dinh-ky', nhan: 'Báo cáo định kỳ' },
@@ -252,7 +254,17 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     con: [
       { id: 'bv-phim', nhan: 'Kho phim và gán nhãn' },
       { id: 'bv-nghien-cuu', nhan: 'Hồ sơ nghiên cứu' },
+      { id: 'bv-bao-cao-phim', nhan: 'Báo cáo nghiên cứu', hanhDong: 'EXPORT' },
     ],
+    dongGop: {
+      baoCao: BAO_CAO_PHIM_THU.map(({ id, ten }) => ({
+        id,
+        ten,
+        mo: 'Tài liệu nghiên cứu từ dữ liệu giả lập.',
+        loai: 'xuat',
+        hanhDong: 'EXPORT',
+      })),
+    },
   },
   {
     id: 'ho-so-bhyt',
@@ -261,7 +273,11 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     maQuyen: 'HO_SO_BHYT',
     nguon: 'db',
     mo: 'Diễn tập rà soát và duyệt hồ sơ BHYT trước khi gửi.',
-    con: [{ id: 'bv-bhyt', nhan: 'Rà soát trước khi gửi' }],
+    con: [
+      { id: 'bv-bhyt', nhan: 'Rà soát trước khi gửi' },
+      { id: 'bv-bao-cao-bhyt', nhan: 'Báo cáo BHYT', hanhDong: 'EXPORT' },
+    ],
+    dongGop: { baoCao: [dinhNghiaBaoCaoBenhVien(BAO_CAO_BENH_VIEN[1])] },
   },
   {
     id: 'dieu-tri-lao',
@@ -270,7 +286,12 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     maQuyen: 'DIEU_TRI_LAO',
     nguon: 'db',
     mo: 'Theo dõi mốc diễn tập và đối soát dữ liệu VITIMES giả lập.',
-    con: [{ id: 'bv-lao', nhan: 'Theo dõi ca điều trị' }],
+    con: [
+      { id: 'bv-lao', nhan: 'Theo dõi ca điều trị' },
+      { id: 'bv-tro-ly', nhan: 'Tra cứu ca mẫu' },
+      { id: 'bv-bao-cao-lao', nhan: 'Báo cáo theo dõi lao', hanhDong: 'EXPORT' },
+    ],
+    dongGop: { baoCao: [dinhNghiaBaoCaoBenhVien(BAO_CAO_BENH_VIEN[2])] },
   },
   {
     id: 'tro-ly-ai',
@@ -282,7 +303,6 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
     con: [
       { id: 'tl-tro-chuyen', nhan: 'Trò chuyện với Chatbot' },
       { id: 'tl-cau-hinh', nhan: 'Cấu hình Chatbot', hanhDong: 'UPDATE' },
-      { id: 'bv-tro-ly', nhan: 'Trợ lý bệnh viện' },
     ],
   },
   {
@@ -543,12 +563,11 @@ export const DANH_SACH_MODULE: readonly ModuleDef[] = [
   },
 ]
 
-type ModuleBenhVien =
-  'phim-x-quang' | 'ho-so-bhyt' | 'dieu-tri-lao' | 'tro-ly-ai' | 'qt-nguon-vao' | 'tong-quan'
+type ModuleBenhVien = 'phim-x-quang' | 'ho-so-bhyt' | 'dieu-tri-lao' | 'qt-nguon-vao' | 'tong-quan'
 
 export function quyenBenhVien(moduleId: ModuleBenhVien, hanhDong: HanhDong): string {
   return quyenCua(
     DANH_SACH_MODULE.find((m) => m.id === moduleId)!,
-    { id: moduleId, nhan: '', hanhDong },
+    { hanhDong },
   )
 }

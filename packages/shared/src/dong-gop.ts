@@ -8,7 +8,7 @@
  * Quyền xem một đóng góp là quyền của CHỦ (vd DU_AN.READ): ai thấy ở module thì
  * thấy ở trung tâm, và ngược lại.
  */
-import type { HanhDong, ModuleDef } from './phan-he.js'
+import { quyenCua, type HanhDong, type ModuleDef } from './phan-he.js'
 
 export interface BaoCaoDef {
   id: string
@@ -61,6 +61,15 @@ export function kiemTraDongGop(modules: readonly (ModuleDef & { dongGop?: DongGo
   const loi: string[] = []
   const daCo = new Set<string>()
   for (const m of modules) {
+    if (m.baoCaoTongHop) {
+      if (m.nhom !== 'dieu-hanh' || m.id !== 'bao-cao')
+        loi.push(`module ${m.id}: báo cáo liên nghiệp vụ thuộc Báo cáo điều hành (ADR-0007)`)
+      for (const d of m.baoCaoTongHop) {
+        if (daCo.has(d.id)) loi.push(`module ${m.id}: mã báo cáo "${d.id}" bị trùng`)
+        daCo.add(d.id)
+        if (!d.id.startsWith(`${m.id}-`)) loi.push(`module ${m.id}: mã báo cáo "${d.id}" thiếu tiền tố`)
+      }
+    }
     if (!m.dongGop) continue
     if (!NHOM_CHU.has(m.nhom))
       loi.push(
@@ -91,10 +100,23 @@ export function dongGopCua<L extends LoaiDongGop>(
   const kq: MucDongGop<NonNullable<DongGop[L]>[number]>[] = []
   for (const m of modules)
     for (const muc of m.dongGop?.[loai] ?? []) {
-      const hanhDong = (muc as { hanhDong?: HanhDong }).hanhDong ?? 'READ'
-      if (quyen.has(`${m.maQuyen}.${hanhDong}`)) kq.push({ module: m, muc })
+      if (quyen.has(quyenCua(m, muc as { hanhDong?: HanhDong }))) kq.push({ module: m, muc })
     }
   return kq
+}
+
+export function baoCaoCua(
+  modules: readonly ModuleDef[],
+  quyen: ReadonlySet<string>,
+): MucDongGop<BaoCaoDef>[] {
+  return [
+    ...dongGopCua(modules, 'baoCao', quyen),
+    ...modules.flatMap((module) =>
+      (module.baoCaoTongHop ?? [])
+        .filter((muc) => quyen.has(quyenCua(module, muc)))
+        .map((muc) => ({ module, muc })),
+    ),
+  ]
 }
 
 // ── Dữ liệu các nhóm xuyên suốt nhận từ đóng góp ────────────────────────────
@@ -162,8 +184,12 @@ export const THAM_SO_BAO_CAO = {
   'giai-doan': 'Giai đoạn (từ năm — đến năm)',
   'den-ngay': 'Số liệu đến ngày',
   'linh-vuc': 'Lĩnh vực',
+  'ky-bao-cao': 'Kỳ báo cáo',
+  'nguon-so-lieu': 'Nguồn số liệu',
 } as const
 export type ThamSoBaoCao = keyof typeof THAM_SO_BAO_CAO
+export const NHAN_CHE_DO_SO_LIEU = { 'tu-dong': 'Tự động', 'da-nap': 'Đã nạp', 'gia-lap': 'Giả lập' } as const
+export type CheDoSoLieu = keyof typeof NHAN_CHE_DO_SO_LIEU
 
 /** Giá trị tham số đã kiểm (API điền mặc định cho tham số vắng). */
 export interface GiaTriThamSo {
@@ -174,6 +200,8 @@ export interface GiaTriThamSo {
   linhVucId: string | null
   /** Mã trục phân nhóm theo thứ tự cấp, lấy từ BaoCaoDef.nhomTheo. */
   nhom: string[]
+  ky?: string
+  nguon?: CheDoSoLieu
 }
 
 export interface CotBaoCao {
@@ -217,7 +245,7 @@ export function timBaoCao(
   id: string,
 ): { module: ModuleDef & { dongGop?: DongGop }; muc: BaoCaoDef } | null {
   for (const m of modules) {
-    const muc = m.dongGop?.baoCao?.find((b) => b.id === id)
+    const muc = m.dongGop?.baoCao?.find((b) => b.id === id) ?? m.baoCaoTongHop?.find((b) => b.id === id)
     if (muc) return { module: m, muc }
   }
   return null

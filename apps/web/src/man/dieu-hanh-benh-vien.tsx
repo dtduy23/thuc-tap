@@ -1,17 +1,21 @@
 import {
   BAO_CAO_BENH_VIEN,
+  DANH_SACH_MODULE,
   MA_CONG_SUAT_GIUONG,
+  NHAN_CHE_DO_SO_LIEU,
+  baoCaoCua,
   dongChiTieuBenhVien,
   kyHien,
   kyHienTai,
   type BangDieuHanhBenhVien,
   type NguonBenhVien,
 } from '@gdos/shared'
-import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Activity, BedDouble, ClipboardList, Download, Hospital, RefreshCw } from 'lucide-react'
+import { Activity, BedDouble, ClipboardList, Hospital, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
-import { goiApi, taiVeTep } from '@/lib/http'
+import { goiApi } from '@/lib/http'
+import { ngayGio } from '@/lib/ngay'
 import { truyVanToi } from '@/lib/phien'
 import { Chip, Nut, OChon, ONhap, The, ThongBao } from '@/ui/co-ban'
 import { Luoi, type CotLuoi } from '@/ui/luoi/luoi'
@@ -31,10 +35,18 @@ const COT: CotLuoi<Dong>[] = [
   { id: 'gia-tri', nhan: 'Giá trị', kieu: 'so', giaTri: (d) => d.giaTri },
   { id: 'don-vi', nhan: 'Đơn vị', kieu: 'danh-muc', giaTri: (d) => d.donVi },
   { id: 'nguon', nhan: 'Nguồn số liệu', kieu: 'chu', giaTri: (d) => d.nguon ?? 'Chưa có số liệu', rong: 275 },
+  {
+    id: 'luc',
+    nhan: 'Cập nhật lúc',
+    kieu: 'chu',
+    giaTri: (d) => (d.capNhatLuc ? ngayGio(d.capNhatLuc) : null),
+    rong: 145,
+  },
 ]
 
 function SoSanh({ nay, truoc }: { nay: Dong; truoc: Dong | undefined }) {
   if (nay.giaTri === null || truoc?.giaTri == null) return <span>Chưa đủ số liệu để so sánh</span>
+  if (nay.loaiNguon !== truoc.loaiNguon) return <span>Hai kỳ khác loại nguồn</span>
   const lech = nay.giaTri - truoc.giaTri
   const donVi = nay.donVi === '%' ? 'điểm %' : nay.donVi
   return (
@@ -78,6 +90,9 @@ function BieuDo({ bang }: { bang: BangDieuHanhBenhVien }) {
               aria-label={d.giaTri === null ? 'Chưa có số liệu' : undefined}
             >
               {hienSo(d.giaTri)}
+              {bang.nguon === 'tu-dong' && d.loaiNguon === 'gia-lap' && (
+                <small className="ml-1 text-warn">Mẫu</small>
+              )}
             </span>
           </li>
         ))}
@@ -86,15 +101,13 @@ function BieuDo({ bang }: { bang: BangDieuHanhBenhVien }) {
   )
 }
 
-function NoiDung({ bang, thamSo }: { bang: BangDieuHanhBenhVien; thamSo: string }) {
+function NoiDung({ bang, quyen }: { bang: BangDieuHanhBenhVien; quyen: string[] }) {
   const hienTai = bang.cacKy.at(-1)!
   const dong = dongChiTieuBenhVien(hienTai)
   const kyTruoc = dongChiTieuBenhVien(bang.cacKy.at(-2)!)
   const [hienChiTiet, datHienChiTiet] = useState(false)
-  const xuat = useMutation({
-    mutationFn: (ma: string) =>
-      taiVeTep(`/chi-tieu/benh-vien/bao-cao/${ma}/excel?${thamSo}`, `ban-nhap-${ma}.xlsx`),
-  })
+  const duocXem = new Set(baoCaoCua(DANH_SACH_MODULE, new Set(quyen)).map((b) => b.muc.id))
+  const cacBieu = BAO_CAO_BENH_VIEN.filter((b) => duocXem.has(b.maBaoCao))
   const coSoLieu = hienTai.soLieu.length > 0
   return (
     <>
@@ -117,6 +130,7 @@ function NoiDung({ bang, thamSo }: { bang: BangDieuHanhBenhVien; thamSo: string 
               <p className="mt-2 text-xs text-faint">
                 <SoSanh nay={d} truoc={kyTruoc.find((c) => c.ma === ma)} />
               </p>
+              {d.nguon && <p className="mt-2 text-xs text-faint">{d.nguon}</p>}
             </article>
           )
         })}
@@ -127,9 +141,11 @@ function NoiDung({ bang, thamSo }: { bang: BangDieuHanhBenhVien; thamSo: string 
           <p className="mb-3 text-xs text-faint">
             Bản nháp tổng hợp để đối soát trước khi lập báo cáo chính thức.
           </p>
-          {xuat.isError && <ThongBao kieu="loi">{xuat.error.message}</ThongBao>}
+          {!cacBieu.length && (
+            <p className="text-xs text-faint">Chưa có báo cáo trong phạm vi quyền của bạn.</p>
+          )}
           <ul className="divide-y divide-line">
-            {BAO_CAO_BENH_VIEN.map((m) => {
+            {cacBieu.map((m) => {
               const coSo = dong.filter((d) => m.chiTieu.some((ma) => ma === d.ma) && d.giaTri !== null).length
               return (
                 <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
@@ -139,14 +155,15 @@ function NoiDung({ bang, thamSo }: { bang: BangDieuHanhBenhVien; thamSo: string 
                       {m.mo} · {coSo}/{m.chiTieu.length} chỉ tiêu có số
                     </p>
                   </div>
-                  <Nut
-                    aria-label={`Tải Excel báo cáo ${m.ten}`}
-                    disabled={xuat.isPending || !coSo}
-                    onClick={() => xuat.mutate(m.id)}
+                  <Link
+                    to="/bao-cao/$ma"
+                    params={{ ma: m.maBaoCao }}
+                    search={{ ky: hienTai.ky, nguon: bang.nguon }}
+                    aria-label={`Xem báo cáo ${m.ten}`}
+                    className="rounded-lg border border-line px-3 py-2 text-xs font-semibold text-brand hover:underline"
                   >
-                    <Download size={15} aria-hidden="true" />
-                    {xuat.isPending && xuat.variables === m.id ? 'Đang tạo…' : 'Tải Excel'}
-                  </Nut>
+                    Xem báo cáo
+                  </Link>
                 </li>
               )
             })}
@@ -172,7 +189,7 @@ function NoiDung({ bang, thamSo }: { bang: BangDieuHanhBenhVien; thamSo: string 
 export default function DieuHanhBenhVien() {
   const { data: toi } = useSuspenseQuery(truyVanToi)
   const [ky, datKy] = useState(kyHienTai)
-  const [nguon, datNguon] = useState<NguonBenhVien>('gia-lap')
+  const [nguon, datNguon] = useState<NguonBenhVien>('tu-dong')
   const thamSo = new URLSearchParams({ ky, nguon }).toString()
   const bang = useQuery({
     queryKey: ['dieu-hanh-benh-vien', ky, nguon],
@@ -184,9 +201,7 @@ export default function DieuHanhBenhVien() {
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-xl font-bold text-ink">Điều hành bệnh viện</h2>
-            <Chip mau={nguon === 'gia-lap' ? 'warn' : 'brand'}>
-              {nguon === 'gia-lap' ? 'Dữ liệu giả lập' : 'Số liệu đã nạp'}
-            </Chip>
+            <Chip mau={nguon === 'gia-lap' ? 'warn' : 'brand'}>{NHAN_CHE_DO_SO_LIEU[nguon]}</Chip>
           </div>
           <p className="mt-1 text-sm text-faint">
             {bang.data?.donVi ?? toi.donVi.ten} · {kyHien(ky)}
@@ -208,10 +223,13 @@ export default function DieuHanhBenhVien() {
             id="bv-nguon"
             nhan="Nguồn dữ liệu"
             value={nguon}
-            onChange={(e) => datNguon(e.target.value === 'da-nap' ? 'da-nap' : 'gia-lap')}
+            onChange={(e) => datNguon(e.target.value as NguonBenhVien)}
           >
-            <option value="gia-lap">Giả lập</option>
-            <option value="da-nap">Đã nạp</option>
+            {Object.entries(NHAN_CHE_DO_SO_LIEU).map(([ma, ten]) => (
+              <option key={ma} value={ma}>
+                {ten}
+              </option>
+            ))}
           </OChon>
           <Nut
             className="mt-5"
@@ -242,7 +260,7 @@ export default function DieuHanhBenhVien() {
         </p>
       )}
       {bang.isError && <ThongBao kieu="loi">{bang.error.message}</ThongBao>}
-      {bang.data && <NoiDung key={nguon} bang={bang.data} thamSo={thamSo} />}
+      {bang.data && <NoiDung key={nguon} bang={bang.data} quyen={toi.quyen} />}
     </>
   )
 }

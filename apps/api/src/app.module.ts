@@ -43,6 +43,7 @@ import { XacThucController } from './xac-thuc/xac-thuc.controller.js'
 import { XacThucService } from './xac-thuc/xac-thuc.service.js'
 import { BenhVienThuController } from './benh-vien/benh-vien.controller.js'
 import { BenhVienThuService } from './benh-vien/benh-vien.service.js'
+import { DongGopBenhVienService } from './benh-vien/dong-gop.service.js'
 import { PhimThuService } from './benh-vien/phim.service.js'
 
 @Module({
@@ -88,6 +89,7 @@ import { PhimThuService } from './benh-vien/phim.service.js'
     OcrService,
     NguonVaoService,
     BenhVienThuService,
+    DongGopBenhVienService,
     PhimThuService,
     {
       provide: GOI_NGUON_NGOAI,
@@ -97,8 +99,11 @@ import { PhimThuService } from './benh-vien/phim.service.js'
     // Nguồn đóng góp cho nhóm xuyên suốt (ADR-0007). Module nghiệp vụ mới: thêm vào đây.
     {
       provide: NGUON_DONG_GOP,
-      useFactory: (duAn: DongGopDuAnService) => [duAn],
-      inject: [DongGopDuAnService],
+      useFactory: (duAn: DongGopDuAnService, benhVien: DongGopBenhVienService) => [
+        duAn,
+        ...benhVien.cacNguon(),
+      ],
+      inject: [DongGopDuAnService, DongGopBenhVienService],
     },
     // FOXAI Native (ADR-0009): bản giả / thật / chưa nối — theo cấu hình.
     {

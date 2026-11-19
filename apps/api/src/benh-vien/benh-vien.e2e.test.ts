@@ -7,13 +7,14 @@ import type {
   HoSoBhytThu,
   NghienCuuPhimThu,
 } from '@gdos/shared'
+import { eq } from 'drizzle-orm'
 import request from 'supertest'
 import { afterAll, beforeAll, expect, it } from 'vitest'
 import { AppModule } from '../app.module.js'
 import { CAU_HINH, docCauHinh } from '../cau-hinh.js'
 import { CoSoDuLieu } from '../db/co-so-du-lieu.js'
 import { trongPhamVi } from '../db/pham-vi.js'
-import { benhVienThu } from '../db/schema/index.js'
+import { benhVienThu, phanCong, taiKhoan } from '../db/schema/index.js'
 import { MAU, napMau, taoCoSoThu, type CoSoThu } from '../test/co-so-thu.js'
 
 const GHI = { 'X-GDOS': '1' }
@@ -49,6 +50,35 @@ async function vao(ten: string) {
   return a
 }
 
+it('tra cứu theo quyền nguồn và chỉ mở báo cáo cho người có quyền của phân hệ chủ', async () => {
+  const [tk] = await db.chuBang
+    .select({ id: taiKhoan.id, donViId: taiKhoan.donViId })
+    .from(taiKhoan)
+    .where(eq(taiKhoan.tenDangNhap, 'khoa.thu'))
+  await db.chuBang
+    .insert(phanCong)
+    .values({ taiKhoanId: tk!.id, donViId: tk!.donViId, vai: 'LANH_DAO', phamVi: ['tong-quan'] })
+  const a = await vao('khoa.thu')
+  expect((await a.get('/api/chi-tieu/benh-vien?ky=2026-11')).status).toBe(200)
+  const hoi = (chuDe: string, ma: string) =>
+    a.post(`${GOC}/tro-ly`).set(GHI).send({ chuDe, ma, ky: '2026-11' })
+  expect((await hoi('so-lieu', 'BV-01')).status).toBe(201)
+  expect((await hoi('ma-icd', 'LAO-THU-01')).status).toBe(403)
+
+  const baoCao = '/api/bao-cao/bao-cao-benh-vien-so-y-te'
+  expect((await a.get(baoCao)).status).toBe(403)
+  expect((await a.get(`${baoCao}/excel`)).status).toBe(403)
+  await db.chuBang
+    .update(phanCong)
+    .set({ phamVi: ['bao-cao'] })
+    .where(eq(phanCong.taiKhoanId, tk!.id))
+  expect((await (await vao('khoa.thu')).get(baoCao)).status).toBe(200)
+  await db.chuBang.update(taiKhoan).set({ phaiDoiMatKhau: true }).where(eq(taiKhoan.id, tk!.id))
+  const choDoiMatKhau = await vao('khoa.thu')
+  expect((await choDoiMatKhau.get(baoCao)).status).toBe(403)
+  expect((await choDoiMatKhau.get(`${baoCao}/excel`)).status).toBe(403)
+})
+
 it('duyệt đạo đức, nhận lô cả hai nguồn, đọc phantom, gán nhãn độc lập rồi mới đối chiếu', async () => {
   const cv = await vao('chuyenvien.a')
   const ld = await vao('chutich.a')
@@ -83,7 +113,7 @@ it('duyệt đạo đức, nhận lô cả hai nguồn, đọc phantom, gán nh�
   const nc = (await cv.get(`${GOC}/nghien-cuu`)).body as NghienCuuPhimThu
   expect(nc.daChaySongSong).toBe(1)
   expect(Object.values(nc.doiChieu).reduce((a, b) => a + b, 0)).toBe(26)
-  expect((await cv.get(`${GOC}/nghien-cuu/bao-cao/excel`)).headers['content-disposition']).toContain(
+  expect((await cv.get('/api/bao-cao/phim-x-quang-bao-cao/excel')).headers['content-disposition']).toContain(
     'gia-lap.xlsx',
   )
 })
@@ -136,6 +166,7 @@ it('BHYT có lỗi, sửa, duyệt và chỉ mô phỏng gửi sau khi cán bộ
   expect((await cv.post(`${url}/ra-soat`).set(GHI)).status).toBe(201)
   expect((await cv.post(`${url}/duyet`).set(GHI)).status).toBe(403)
   expect((await ld.post(`${url}/duyet`).set(GHI)).status).toBe(201)
+  expect((await ld.post(`${url}/gui`).set(GHI)).status).toBe(403)
   expect((await cv.post(`${url}/gui`).set(GHI)).status).toBe(201)
   expect(await doc()).toMatchObject({ trangThai: 'da-gui', loi: [] })
 })
@@ -158,9 +189,10 @@ it('trợ lý đọc đúng nguồn và nhận thay đổi theo dõi lao, VITIME
     noiDung: `Đã xác nhận mọi mốc theo dõi của ${ma}.`,
   })
   expect((await ld.post(`${url}/hoan-tat`).set(GHI)).status).toBe(201)
+  expect((await ld.post(`${url}/dong-bo`).set(GHI)).status).toBe(403)
   expect((await cv.post(`${url}/dong-bo`).set(GHI)).status).toBe(201)
   expect((await doc()).dongBoLuc).not.toBeNull()
-  expect((await hoi('du-thao')).body).toMatchObject({ nguon: expect.stringContaining('giả lập') as string })
+  expect((await hoi('du-thao')).body).toMatchObject({ noiDung: expect.stringContaining('Giả lập') as string })
   expect((await hoi('so-lieu', 'BV-01')).body).toMatchObject({
     noiDung: expect.stringContaining('Lượt khám ngoại trú') as string,
   })

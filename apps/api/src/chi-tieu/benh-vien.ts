@@ -39,7 +39,12 @@ export function giaLapBenhVien(cacKy: string[]): BangDieuHanhBenhVien {
           15 + ((bienDong * 3) % 25),
           14 + (bienDong % 8),
           90 + bienDong * 2,
-        ].map((giaTri, i) => ({ ma: `BV-${String(i + 1).padStart(2, '0')}`, giaTri, nguon: 'Giả lập' })),
+        ].map((giaTri, i) => ({
+          ma: `BV-${String(i + 1).padStart(2, '0')}`,
+          giaTri,
+          nguon: 'Giả lập',
+          loaiNguon: 'gia-lap',
+        })),
       }
     }),
   }
@@ -50,14 +55,18 @@ export function baoCaoBenhVien(
   ky: KyBenhVien,
   mau: (typeof BAO_CAO_BENH_VIEN)[number],
 ): KetQuaBaoCao {
-  const dong = dongChiTieuBenhVien(ky)
+  const chiTieu = dongChiTieuBenhVien(ky)
+  const dong = mau.chiTieu.map((ma) => chiTieu.find((d) => d.ma === ma)!)
+  const coMau = dong.some((d) => d.loaiNguon === 'gia-lap')
+  const coSoNap = dong.some((d) => d.loaiNguon === 'da-nap')
   const tieuDe = `Bản nháp báo cáo ${mau.ten}`
-  const nhanNguon = bang.nguon === 'gia-lap' ? 'DỮ LIỆU GIẢ LẬP' : 'Số liệu đã nạp'
+  let nhanNguon = coSoNap ? 'Số liệu đã nạp' : 'Chưa có số liệu'
+  if (coMau) nhanNguon = coSoNap ? 'CÓ DỮ LIỆU GIẢ LẬP' : 'DỮ LIỆU GIẢ LẬP'
   return {
-    ma: mau.id,
+    ma: mau.maBaoCao,
     tieuDe,
     phuDe: `${bang.donVi} · ${kyHien(ky.ky)} · ${nhanNguon}`,
-    tenTep: `ban-nhap-${mau.id}-${ky.ky}${bang.nguon === 'gia-lap' ? '-gia-lap' : ''}`,
+    tenTep: `ban-nhap-${mau.id}-${ky.ky}${coMau ? (coSoNap ? '-co-gia-lap' : '-gia-lap') : ''}`,
     coTong: false,
     ghiChu: 'Bản nháp tổng hợp phục vụ đối soát. Cần đối chiếu với biểu mẫu chính thức trước khi gửi.',
     cot: [
@@ -65,10 +74,11 @@ export function baoCaoBenhVien(
       { nhan: 'Đơn vị tính', kieu: 'chu' },
       { nhan: 'Giá trị', kieu: 'so', khongCong: true, hienPhanLe: true },
       { nhan: 'Nguồn số liệu', kieu: 'chu', rong: 38 },
+      { nhan: 'Cập nhật lúc', kieu: 'chu', rong: 23 },
     ],
-    dong: mau.chiTieu.map((ma) => {
-      const c = dong.find((d) => d.ma === ma)!
-      return { cap: 0, o: [c.ten, c.donVi, c.giaTri, c.nguon ?? 'Chưa có số liệu'] }
-    }),
+    dong: dong.map((c) => ({
+      cap: 0,
+      o: [c.ten, c.donVi, c.giaTri, c.nguon ?? 'Chưa có số liệu', c.capNhatLuc],
+    })),
   }
 }

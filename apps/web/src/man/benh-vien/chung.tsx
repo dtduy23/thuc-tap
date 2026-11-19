@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { goiApi, taiVeTep } from '@/lib/http'
+import { goiApi } from '@/lib/http'
 import { truyVanToi } from '@/lib/phien'
 import { ThongBao } from '@/ui/co-ban'
 
@@ -20,12 +20,6 @@ export function useGhiThu() {
     mutationFn: ({ duongDan, body }: { duongDan: string; body?: unknown }) =>
       goiApi(`/benh-vien${duongDan}`, { method: 'POST', body }),
     onSuccess: () => qc.invalidateQueries({ queryKey: KHOA }),
-  })
-}
-
-export function useTaiLieuThu() {
-  return useMutation({
-    mutationFn: (ma: string) => taiVeTep(`/benh-vien/nghien-cuu/${ma}/excel`, `${ma}-gia-lap.xlsx`),
   })
 }
 

@@ -18,7 +18,6 @@ function ChiTietBhyt({ h }: { h: HoSoBhytThu }) {
   const ghi = useGhiThu()
   const sua = q.includes(quyenBenhVien('ho-so-bhyt', 'UPDATE'))
   const duyet = q.includes(quyenBenhVien('ho-so-bhyt', 'APPROVE'))
-  const gui = q.includes(quyenBenhVien('ho-so-bhyt', 'EXPORT'))
   const thaoTac = (viec: string) => ghi.mutate({ duongDan: `/bhyt/${h.ma}/${viec}` })
   return (
     <The tieuDe={h.ma} phu={ngayVn(h.ngay)}>
@@ -79,7 +78,7 @@ function ChiTietBhyt({ h }: { h: HoSoBhytThu }) {
             </Nut>
           </>
         )}
-        {h.trangThai === 'da-duyet' && gui && (
+        {h.trangThai === 'da-duyet' && sua && (
           <Nut kieu="chinh" disabled={ghi.isPending} onClick={() => thaoTac('gui')}>
             Gửi cổng BHXH giả lập
           </Nut>

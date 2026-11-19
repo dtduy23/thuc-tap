@@ -20,8 +20,8 @@
 - Triển khai bảng điều hành trong nhóm hạng mục thứ hai của `YC_BenhVien.xlsx` (`Sheet1!C5`, TT 4).
 - Điều hành › Tổng quan › Bảng điều hành › Bệnh viện: chọn tháng, xem KPI, xu hướng sáu tháng,
   bảng chi tiết kèm nguồn và tải bản nháp Excel cho Sở Y tế, BHXH hoặc VITIMES theo kỳ đang xem.
-- Mặc định dùng số giả lập tổng hợp, có nhãn trên màn hình và trong tệp xuất. Chế độ Đã nạp đọc
-  các mã `BV-01` đến `BV-11` của đơn vị đang đăng nhập qua kho chỉ tiêu chung, theo ADR-0010.
+- Chế độ Tự động ưu tiên số đã nạp của đúng tháng và đơn vị, rồi dùng số giả lập có nhãn cho chỉ
+  tiêu còn thiếu. Chế độ Đã nạp đọc các mã `BV-01` đến `BV-11` từ kho chỉ tiêu chung theo ADR-0010.
 - Báo cáo là bản nháp tạo từ số liệu trên màn hình. Workbook yêu cầu chưa cung cấp mẫu chính thức,
   đặc tả giao tiếp hay lịch gửi cho các cơ quan nhận báo cáo.
 - Đã kiểm trên trình duyệt: đăng nhập, bộ lọc, bảng chi tiết, tải đủ ba tệp, bố cục màn hẹp và
@@ -32,15 +32,15 @@
 Xem [báo cáo triển khai và quy trình nghiệp vụ bệnh viện](bao-cao-nghiep-vu-benh-vien.md)
 để đối chiếu từng bước, vai trò, điều kiện chuyển trạng thái và đầu ra.
 
-| TT  | Luồng diễn tập                                                                                                                                  | Chức năng                     |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| 1   | Mô hình nguồn mở trong repo, học trên ảnh phantom tổng hợp. Nhận lô bệnh viện và xe lưu động, mã chỉ định HIS mẫu, đối chiếu sau duyệt độc lập. | `bv-phim`                     |
-| 2   | 5.000 phim lịch sử tổng hợp. Gán nhãn, duyệt, xuất bộ nhãn, kết quả đối chiếu và bản nháp tài liệu đạo đức, phân loại, đào tạo.                 | `bv-phim`, `bv-nghien-cuu`    |
-| 3   | 5 nguồn HIS, LIS, X-quang, BHXH và VITIMES giả lập. Lưu vết nhận theo kỳ và đơn vị.                                                             | `bv-ket-noi`                  |
-| 4   | KPI, giao ban và ba bản nháp báo cáo Excel cùng bộ số liệu.                                                                                     | `dh-bang-dieu-hanh#benh-vien` |
-| 5   | Phát hiện lỗi mẫu, bổ sung, duyệt bởi cán bộ và mô phỏng gửi cổng BHXH.                                                                         | `bv-bhyt`                     |
-| 6   | Tra lại mã ICD có sẵn, nhắc lịch, dự thảo giao ban và hỏi đáp chỉ tiêu kèm nguồn.                                                               | `bv-tro-ly`                   |
-| 7   | Ghi kết quả theo mốc ca lao mẫu, hoàn tất theo dõi và mô phỏng đồng bộ VITIMES.                                                                 | `bv-lao`                      |
+| TT  | Luồng diễn tập                                                                                                                                  | Chức năng                                        |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| 1   | Mô hình nguồn mở trong repo, học trên ảnh phantom tổng hợp. Nhận lô bệnh viện và xe lưu động, mã chỉ định HIS mẫu, đối chiếu sau duyệt độc lập. | `bv-phim`                                        |
+| 2   | 5.000 phim lịch sử tổng hợp. Gán nhãn, duyệt, xuất bộ nhãn, kết quả đối chiếu và bản nháp tài liệu đạo đức, phân loại, đào tạo.                 | `bv-phim`, `bv-nghien-cuu`                       |
+| 3   | 5 nguồn HIS, LIS, X-quang, BHXH và VITIMES giả lập. Lưu vết nhận theo kỳ và đơn vị.                                                             | `bv-ket-noi`                                     |
+| 4   | KPI, giao ban và ba bản nháp báo cáo Excel cùng bộ số liệu.                                                                                     | `dh-bang-dieu-hanh#benh-vien`                    |
+| 5   | Phát hiện lỗi mẫu, bổ sung, duyệt bởi cán bộ và mô phỏng gửi cổng BHXH.                                                                         | `bv-bhyt`                                        |
+| 6   | Tra mã ICD và mốc theo dõi trong Điều trị lao – phổi. Tra số liệu và soạn bản nháp giao ban trong Tổng quan.                                    | `bv-tro-ly`, `dh-bang-dieu-hanh#tra-cuu-so-lieu` |
+| 7   | Ghi kết quả theo mốc ca lao mẫu, hoàn tất theo dõi và mô phỏng đồng bộ VITIMES.                                                                 | `bv-lao`                                         |
 
 - PostgreSQL lưu tiến độ và vết thử nghiệm theo đơn vị bằng `benh_vien_thu`, với RLS, nhật ký và
   quyền phân hệ. Số giả lập được tạo bằng cùng một nguồn trong mã. Luồng nạp số thật tiếp tục dùng
@@ -51,6 +51,18 @@ Xem [báo cáo triển khai và quy trình nghiệp vụ bệnh viện](bao-cao-
   tài khoản dev và kiểm giao diện màn hẹp.
 - Phạm vi diễn tập chỉ dùng ảnh và hồ sơ tổng hợp. Hệ thống thật cần đặc tả API thiết bị và HIS/LIS,
   BHXH, VITIMES, biểu mẫu được duyệt và bộ dữ liệu, mô hình đã thẩm định trước khi đưa vào bệnh viện.
+
+### Rà soát ADR của phần bệnh viện
+
+- ADR-0003 và ADR-0006: báo cáo chung chặn tài khoản chờ đổi mật khẩu. Gửi BHYT và đồng bộ VITIMES
+  cần quyền cập nhật, duyệt vẫn dùng quyền duyệt và xuất báo cáo dùng quyền xuất của chủ.
+- ADR-0007: ba báo cáo giao ban và năm tài liệu nghiên cứu dùng chung danh mục, màn báo cáo và
+  bộ xuất Excel. Lối vào từ bảng điều hành hoặc phân hệ chủ mở cùng mã báo cáo với danh mục chung.
+- ADR-0009 và ADR-0010: tra cứu ca mẫu và số liệu dùng quyền của nguồn nghiệp vụ. Bảng điều hành,
+  báo cáo và tra cứu số liệu đọc cùng bộ chỉ tiêu theo kỳ. Bảng chỉ tiêu xã/phường giữ phạm vi riêng.
+- Đã đối chiếu cả 10 ADR trong phạm vi cấu hình localhost và thay đổi bệnh viện. Lệnh
+  `VITEST_MAX_WORKERS=1 pnpm kiem-tra` đạt 390 test và build. Trên localhost đã kiểm lối vào
+  báo cáo từ bảng điều hành, danh mục và phân hệ chủ, tải Excel, cùng hai màn tra cứu.
 
 ## Mốc 2 — Đưa lên máy thử (30/09/2026)
 

@@ -1,11 +1,15 @@
 import {
   DANH_SACH_MODULE,
   homNay,
+  kyHienTai,
+  NHAN_CHE_DO_SO_LIEU,
+  quyenCua,
   THAM_SO_BAO_CAO,
   timBaoCao,
   type BaoCaoDef,
   type CotBaoCao,
   type KetQuaBaoCao,
+  type CheDoSoLieu,
 } from '@gdos/shared'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useRouter } from '@tanstack/react-router'
@@ -29,6 +33,8 @@ export function docThamSoUrl(s: Record<string, unknown>): ThamSoUrl {
     denNgay: chu(s.denNgay),
     linhVucId: chu(s.linhVucId),
     nhom: chu(s.nhom),
+    ky: chu(s.ky),
+    nguon: s.nguon === 'tu-dong' || s.nguon === 'da-nap' || s.nguon === 'gia-lap' ? s.nguon : undefined,
   }
 }
 
@@ -42,7 +48,7 @@ export function TrangBaoCao({ ma, ts }: { ma: string; ts: ThamSoUrl }) {
   const tim = timBaoCao(DANH_SACH_MODULE, ma)
   if (!tim) return <ThongBao kieu="loi">Không có báo cáo này.</ThongBao>
   const { module: m, muc } = tim
-  if (!toi.quyen.includes(`${m.maQuyen}.${muc.hanhDong ?? 'READ'}`))
+  if (!toi.quyen.includes(quyenCua(m, muc)))
     return <ThongBao kieu="loi">Tài khoản không có quyền xem báo cáo “{muc.ten}”.</ThongBao>
 
   return (
@@ -75,6 +81,8 @@ function ThamSo({ ma, muc, ts }: { ma: string; muc: BaoCaoDef; ts: ThamSoUrl }) 
     denNgay: ts.denNgay ?? homNay(),
     linhVucId: ts.linhVucId ?? '',
     nhom: (ts.nhom ?? '').split(',').filter(Boolean),
+    ky: ts.ky ?? kyHienTai(),
+    nguon: ts.nguon ?? 'tu-dong',
   })
   const { data: linhVuc = [] } = useQuery({ ...truyVanDanhMuc('linh-vuc'), enabled: ds.includes('linh-vuc') })
   const [loi, datLoi] = useState<string>()
@@ -86,6 +94,8 @@ function ThamSo({ ma, muc, ts }: { ma: string; muc: BaoCaoDef; ts: ThamSoUrl }) 
     ...(ds.includes('den-ngay') ? { denNgay: f.denNgay } : {}),
     ...(ds.includes('linh-vuc') && f.linhVucId ? { linhVucId: f.linhVucId } : {}),
     ...(f.nhom.length ? { nhom: f.nhom.join(',') } : {}),
+    ...(ds.includes('ky-bao-cao') ? { ky: f.ky } : {}),
+    ...(ds.includes('nguon-so-lieu') ? { nguon: f.nguon } : {}),
   })
   const xem = (e: FormEvent) => {
     e.preventDefault()
@@ -120,6 +130,40 @@ function ThamSo({ ma, muc, ts }: { ma: string; muc: BaoCaoDef; ts: ThamSoUrl }) 
       onSubmit={xem}
       className="mb-4 flex flex-wrap items-end gap-3 rounded-[10px] border border-line bg-nen px-4 py-3"
     >
+      {ds.includes('ky-bao-cao') && (
+        <div>
+          {nhan('bc-ky', THAM_SO_BAO_CAO['ky-bao-cao'])}
+          <input
+            id="bc-ky"
+            type="month"
+            min="2000-01"
+            max="2100-12"
+            required
+            value={f.ky}
+            className={lop}
+            onChange={(e) => {
+              if (e.target.value && e.target.validity.valid) datF({ ...f, ky: e.target.value })
+            }}
+          />
+        </div>
+      )}
+      {ds.includes('nguon-so-lieu') && (
+        <div>
+          {nhan('bc-nguon', THAM_SO_BAO_CAO['nguon-so-lieu'])}
+          <select
+            id="bc-nguon"
+            value={f.nguon}
+            className={lop}
+            onChange={(e) => datF({ ...f, nguon: e.target.value as CheDoSoLieu })}
+          >
+            {Object.entries(NHAN_CHE_DO_SO_LIEU).map(([ma, ten]) => (
+              <option key={ma} value={ma}>
+                {ten}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       {ds.includes('nam') && (
         <div>
           {nhan('bc-nam', THAM_SO_BAO_CAO.nam)}

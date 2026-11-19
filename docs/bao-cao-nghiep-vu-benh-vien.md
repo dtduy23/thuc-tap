@@ -2,25 +2,25 @@
 
 GDOS đã triển khai **bản diễn tập cho cả 7 hạng mục** trong `YC_BenhVien.xlsx`, `Sheet1`, dòng TT 1–7. Báo cáo này giúp đội bệnh viện và kỹ thuật đối chiếu thao tác trên màn hình, trách nhiệm của từng vai, điều kiện chuyển trạng thái và đầu ra của từng luồng.
 
-Phiên bản được mô tả nằm trên nhánh `feat/dashboard-benh-vien-hang-muc-2`, commit `4141abc`. Bản diễn tập sử dụng ảnh do phần mềm tạo, mã hồ sơ mẫu và kết nối giả lập. Các kết quả X-quang phản ánh khả năng xử lý ảnh tổng hợp của mô hình thử. Báo cáo xuất ra là bản nháp để đối soát.
+Phiên bản được mô tả nằm trên nhánh `feat/dashboard-benh-vien-hang-muc-2`. Bản diễn tập sử dụng ảnh do phần mềm tạo, mã hồ sơ mẫu và kết nối giả lập. Các kết quả X-quang phản ánh khả năng xử lý ảnh tổng hợp của mô hình thử. Báo cáo xuất ra là bản nháp để đối soát.
 
 ## Màn hình và người thực hiện
 
-| TT  | Nghiệp vụ                         | Màn hình trên localhost                                             | Người thực hiện chính                                  |
-| --- | --------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------ |
-| 1   | Nhận và đọc thử phim X-quang      | [Kho phim và gán nhãn](http://localhost:5174/bv-phim)               | Chuyên viên đọc phim, người duyệt nhãn                 |
-| 2   | Gán nhãn và lập hồ sơ nghiên cứu  | [Hồ sơ nghiên cứu](http://localhost:5174/bv-nghien-cuu)             | Chuyên viên nghiên cứu, người duyệt, người xuất hồ sơ  |
-| 3   | Tiếp nhận nguồn dữ liệu bệnh viện | [Nguồn bệnh viện](http://localhost:5174/bv-ket-noi)                 | Quản trị viên có quyền cập nhật nguồn                  |
-| 4   | Điều hành, giao ban và báo cáo    | [Bảng điều hành](http://localhost:5174/dh-bang-dieu-hanh#benh-vien) | Người có quyền xem Tổng quan                           |
-| 5   | Rà soát BHYT trước khi gửi        | [Rà soát trước khi gửi](http://localhost:5174/bv-bhyt)              | Chuyên viên rà soát, người duyệt, người có quyền xuất  |
-| 6   | Tra cứu và soạn thảo              | [Trợ lý bệnh viện](http://localhost:5174/bv-tro-ly)                 | Người có quyền dùng trợ lý và đọc nguồn liên quan      |
-| 7   | Theo dõi ca lao và đồng bộ        | [Theo dõi ca điều trị](http://localhost:5174/bv-lao)                | Chuyên viên theo dõi, người duyệt, người có quyền xuất |
+| TT  | Nghiệp vụ                         | Màn hình trên localhost                                                                                                       | Người thực hiện chính                                                |
+| --- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| 1   | Nhận và đọc thử phim X-quang      | [Kho phim và gán nhãn](http://localhost:5174/bv-phim)                                                                         | Chuyên viên đọc phim, người duyệt nhãn                               |
+| 2   | Gán nhãn và lập hồ sơ nghiên cứu  | [Hồ sơ nghiên cứu](http://localhost:5174/bv-nghien-cuu)                                                                       | Chuyên viên nghiên cứu, người duyệt, người xuất hồ sơ                |
+| 3   | Tiếp nhận nguồn dữ liệu bệnh viện | [Nguồn bệnh viện](http://localhost:5174/bv-ket-noi)                                                                           | Quản trị viên có quyền cập nhật nguồn                                |
+| 4   | Điều hành, giao ban và báo cáo    | [Bảng điều hành](http://localhost:5174/dh-bang-dieu-hanh#benh-vien)                                                           | Người có quyền xem Tổng quan                                         |
+| 5   | Rà soát BHYT trước khi gửi        | [Rà soát trước khi gửi](http://localhost:5174/bv-bhyt)                                                                        | Người có quyền cập nhật để rà soát và gửi, người có quyền duyệt      |
+| 6   | Tra cứu và soạn thảo              | [Tra cứu ca mẫu](http://localhost:5174/bv-tro-ly), [Tra cứu số liệu](http://localhost:5174/dh-bang-dieu-hanh#tra-cuu-so-lieu) | Người có quyền xem Điều trị lao – phổi hoặc Tổng quan, tùy chủ đề    |
+| 7   | Theo dõi ca lao và đồng bộ        | [Theo dõi ca điều trị](http://localhost:5174/bv-lao)                                                                          | Người có quyền cập nhật để theo dõi và đồng bộ, người có quyền duyệt |
 
 Trong GDOS, chuyên viên có quyền cập nhật trong phạm vi được phân công, còn lãnh đạo có quyền duyệt trong phạm vi được phân công. Cờ quản trị cấp quyền cho các chức năng quản trị như **Nguồn dữ liệu vào**. Tài khoản dev có cả hai vai nghiệp vụ và cờ quản trị nên có thể diễn tập liên tục các bước. Khi kiểm tra phân quyền, dùng các tài khoản có vai riêng. Xem [ADR-0006 về vai và phân công](adr/0006-vai-tro-khoi-chinh-phu.md).
 
 ## Luồng dữ liệu đầu vào và đầu ra
 
-Có hai cách đưa **số liệu tổng hợp theo tháng** vào dashboard. Với **Giả lập**, GDOS tạo sẵn số liệu theo kỳ. Với **Đã nạp**, quản trị viên đưa số liệu từ Excel hoặc API vào kho chỉ tiêu. Ảnh X-quang, hồ sơ BHYT và ca lao trong bản diễn tập là bộ mẫu dựng sẵn. Người dùng xử lý các hồ sơ đó trên màn hình nghiệp vụ tương ứng.
+GDOS đọc **số liệu tổng hợp theo tháng** từ kho chỉ tiêu được nạp qua Excel hoặc API và từ bộ số liệu giả lập. Chế độ **Tự động** ưu tiên số đã nạp cho từng chỉ tiêu, tháng và đơn vị. Chỉ tiêu còn thiếu dùng số giả lập và được ghi rõ nguồn. Hai chế độ **Đã nạp** và **Giả lập** cho phép xem riêng từng nguồn. Ảnh X-quang, hồ sơ BHYT và ca lao trong bản diễn tập là bộ mẫu dựng sẵn. Người dùng xử lý các hồ sơ đó trên màn hình nghiệp vụ tương ứng.
 
 ### Nạp số liệu chỉ tiêu từ Excel
 
@@ -63,7 +63,7 @@ Excel và API ghi vào cùng kho `chi_tieu_so_lieu`. Đơn vị được xác đ
 ### Chạy nguồn mẫu và xuất kết quả
 
 - Để diễn tập nhanh, mở [Nguồn bệnh viện](http://localhost:5174/bv-ket-noi), chọn tháng và bấm **Nạp mẫu** ở một trong năm nguồn. Dashboard **Giả lập** có thể xem ngay trước khi nạp mẫu. Nút nạp chỉ ghi vết của nguồn và kỳ, sau đó dashboard hiện nhãn như **Giả lập · HIS**. Số mẫu vẫn thuộc chế độ **Giả lập**.
-- Từ [dashboard Bệnh viện](http://localhost:5174/dh-bang-dieu-hanh#benh-vien), chọn nguồn và kỳ rồi tải bản nháp Excel cho Sở Y tế, BHXH hoặc VITIMES. Tệp có chỉ tiêu, đơn vị tính, giá trị và nguồn. Số đã nạp đi ra từ kho chỉ tiêu, còn số giả lập đi ra từ bộ tổng hợp mẫu. Các thao tác gửi BHYT hoặc đồng bộ ca lao giả lập lưu trạng thái nghiệp vụ riêng. Chúng chưa làm tăng các chỉ tiêu tổng hợp trên dashboard.
+- Từ [dashboard Bệnh viện](http://localhost:5174/dh-bang-dieu-hanh#benh-vien), chọn nguồn và kỳ, mở bản nháp báo cáo Sở Y tế, BHXH hoặc VITIMES rồi bấm **Xuất Excel**. Tệp có chỉ tiêu, đơn vị tính, giá trị, nguồn và thời điểm cập nhật nếu có. Số đã nạp đi ra từ kho chỉ tiêu, còn số giả lập đi ra từ bộ tổng hợp mẫu. Các thao tác gửi BHYT hoặc đồng bộ ca lao giả lập lưu trạng thái nghiệp vụ riêng. Chúng chưa làm tăng các chỉ tiêu tổng hợp trên dashboard.
 
 ### Đầu vào và đầu ra theo từng hạng mục
 
@@ -97,7 +97,7 @@ Kho lịch sử gồm **5.000 ảnh tổng hợp**. Bộ khởi tạo có 4.960 
 2. **Hoàn thiện nhãn.** Từ các hàng chờ, chuyên viên ghi nhãn và người duyệt chốt hoặc trả lại theo luồng TT 1. Thanh tiến độ dùng số phim lịch sử đã duyệt trên tổng 5.000. Phim chạy song song có chỉ số theo dõi riêng.
 3. **Chạy đánh giá.** Nút **Chạy tối đa 25 phim đánh giá** lấy các phim thuộc nhóm **Đánh giá** đã duyệt, đủ chất lượng trong bài tập và chưa có gợi ý. Có thể chạy tiếp để lấy lô kế tiếp. Bảng đối chiếu chỉ tính phim thuộc nhóm **Đánh giá** hoặc **Chạy song song** có cả nhãn đã duyệt và kết quả mô hình.
 4. **Đọc kết quả.** Hai ô **Đúng có dấu** và **Đúng không dấu** đếm các kết quả trùng nhãn tương ứng. **Báo dư** là mô hình báo có dấu khi nhãn đã duyệt ghi không có dấu. **Bỏ sót** là tình huống ngược lại. Các số đếm dùng để soát lỗi trên ảnh tổng hợp.
-5. **Xuất tài liệu.** Người có quyền xuất tải được báo cáo khoa học, dự thảo biên bản Hội đồng, phiếu chuẩn bị phân loại thiết bị, phiếu đào tạo và phản hồi, hoặc bộ nhãn lịch sử đã duyệt. Bộ nhãn gồm mã phim, nguồn, nhóm và nhãn. Phim bị loại vì chất lượng có thể xuất hiện với nhãn đã duyệt tương ứng để người nhận nhận biết. Các trường ký, kết luận Hội đồng và kết luận phân loại dành cho đơn vị có thẩm quyền hoàn thiện.
+5. **Xuất tài liệu.** Mở **Báo cáo nghiên cứu** trong phân hệ Phim X-quang để xem và xuất báo cáo khoa học, dự thảo biên bản Hội đồng, phiếu chuẩn bị phân loại thiết bị, phiếu đào tạo và phản hồi, hoặc bộ nhãn lịch sử đã duyệt. Mục này cần quyền xuất. Bộ nhãn gồm mã phim, nguồn, nhóm và nhãn. Phim bị loại vì chất lượng có thể xuất hiện với nhãn đã duyệt tương ứng để người nhận nhận biết. Các trường ký, kết luận Hội đồng và kết luận phân loại dành cho đơn vị có thẩm quyền hoàn thiện.
 
 ## TT 3 Tiếp nhận dữ liệu HIS, LIS, X-quang, BHXH và VITIMES
 
@@ -117,10 +117,10 @@ Quản trị viên mở **Nguồn bệnh viện**, chọn kỳ tháng và bấm 
 
 ## TT 4 Điều hành, giao ban và xuất báo cáo
 
-1. Mở **Điều hành → Tổng quan → Bảng điều hành → Bệnh viện**. Chọn tháng và nguồn **Giả lập** hoặc **Đã nạp**. Ở chế độ Đã nạp, hệ thống đọc số của đơn vị người xem theo đúng kỳ. Chỉ tiêu chưa có số hiện dấu `—`. Giá trị đã nạp bằng `0` vẫn hiển thị là `0`.
-2. Đọc bốn thẻ chính gồm lượt khám ngoại trú, ca nhập viện, công suất sử dụng giường và hồ sơ BHYT gửi. Hệ thống so sánh với tháng trước khi cả hai tháng có số. Công suất giường bằng **ngày giường sử dụng ÷ ngày giường khả dụng × 100**, làm tròn một chữ số thập phân. Phép tính cần đủ hai số cùng tháng và ngày giường khả dụng phải lớn hơn 0.
-3. Chọn chỉ tiêu để xem sáu tháng lịch liên tiếp đến kỳ đang xem. Mở **Xem bảng chỉ tiêu và nguồn số liệu** để kiểm tra giá trị, đơn vị tính và nguồn trước khi xuất báo cáo.
-4. Trong **Báo cáo giao ban**, chọn biểu cần tải. Mỗi biểu hiển thị số chỉ tiêu đã có số. Khi có dữ liệu cho biểu, hệ thống tạo tệp Excel theo tháng và nguồn đang chọn. Tệp giả lập mang nhãn **DỮ LIỆU GIẢ LẬP** và tên tệp có hậu tố `-gia-lap`.
+1. Mở **Điều hành → Tổng quan → Bảng điều hành → Bệnh viện**. Chọn tháng và nguồn **Tự động**, **Đã nạp** hoặc **Giả lập**. Ở chế độ Đã nạp, hệ thống đọc số của đơn vị người xem theo đúng kỳ. Chỉ tiêu chưa có số hiện dấu `—`. Giá trị đã nạp bằng `0` vẫn hiển thị là `0`.
+2. Đọc bốn thẻ chính gồm lượt khám ngoại trú, ca nhập viện, công suất sử dụng giường và hồ sơ BHYT gửi. So sánh hai kỳ khi cả hai có số cùng loại nguồn. Công suất giường bằng **ngày giường sử dụng ÷ ngày giường khả dụng × 100**, làm tròn một chữ số thập phân. Phép tính cần hai số cùng tháng và cùng loại nguồn, với ngày giường khả dụng lớn hơn 0. Khi chỉ có một trong hai số giường đã nạp, chế độ Tự động dùng công suất tính từ hai số giả lập và ghi nhãn nguồn.
+3. Chọn chỉ tiêu để xem sáu tháng lịch liên tiếp đến kỳ đang xem. Mở **Xem bảng chỉ tiêu và nguồn số liệu** để kiểm tra giá trị, đơn vị tính, nguồn và thời điểm cập nhật trước khi xuất báo cáo.
+4. Trong **Báo cáo giao ban**, chọn biểu để mở màn báo cáo chung theo tháng và nguồn đang xem. Các báo cáo cũng xuất hiện ở **Điều hành → Báo cáo** theo quyền của phân hệ chủ. Báo cáo Sở Y tế thuộc Báo cáo điều hành, báo cáo BHXH thuộc Hồ sơ BHYT, báo cáo VITIMES thuộc Điều trị lao – phổi. Bấm **Xuất Excel** để lấy dữ liệu đang xem. Tệp toàn số giả lập mang nhãn **DỮ LIỆU GIẢ LẬP** và hậu tố `-gia-lap`. Tệp có cả số đã nạp và giả lập mang nhãn **CÓ DỮ LIỆU GIẢ LẬP** và hậu tố `-co-gia-lap`. Xem [ADR-0007 về đầu mối báo cáo](adr/0007-mot-chu-nhieu-loi-vao.md).
 
 | Nơi nhận | Nội dung bản nháp                                                                 |
 | -------- | --------------------------------------------------------------------------------- |
@@ -139,36 +139,36 @@ Bản diễn tập có 8 hồ sơ `BHYT-THU-…`. Các tình huống mẫu gồm
 | 1    | Chuyên viên mở hồ sơ **Chờ rà soát** và bấm **Rà soát hồ sơ**.                       | **Cần bổ sung** nếu có lỗi mẫu, **Chờ duyệt** nếu qua kiểm tra. |
 | 2    | Với hồ sơ **Cần bổ sung**, chuyên viên đọc lý do và **Áp dụng bản bổ sung mẫu**.     | Quay về **Chờ rà soát** để kiểm tra lại.                        |
 | 3    | Người có quyền duyệt xem hồ sơ **Chờ duyệt**, chọn **Duyệt hồ sơ** hoặc **Trả lại**. | **Đã duyệt** hoặc **Cần bổ sung**.                              |
-| 4    | Người có quyền xuất chọn **Gửi cổng BHXH giả lập** từ hồ sơ **Đã duyệt**.            | **Đã gửi giả lập** và có thông báo nhận.                        |
+| 4    | Người có quyền cập nhật chọn **Gửi cổng BHXH giả lập** từ hồ sơ **Đã duyệt**.        | **Đã gửi giả lập** và có thông báo nhận.                        |
 
 Rà soát chạy theo quy tắc và lỗi được cài trong bộ mẫu. Nút bổ sung áp dụng bản sửa mẫu đã định sẵn. Cán bộ vẫn là người quyết định duyệt hoặc trả lại. Hồ sơ chưa duyệt bị chặn ở bước gửi.
 
-## TT 6 Tra cứu với trợ lý bệnh viện
+## TT 6 Tra cứu ca mẫu và soạn thảo giao ban
 
 Người dùng chọn chủ đề, chọn ca mẫu hoặc kỳ báo cáo và bấm **Gửi câu hỏi**. Hệ thống trả kết quả kèm tên nguồn. Người dùng có thể chỉnh nội dung trong ô trả lời rồi bấm **Sao chép nội dung** để sử dụng trong bản nháp.
 
-| Chủ đề                     | Đầu vào           | Kết quả trả về                                                        |
-| -------------------------- | ----------------- | --------------------------------------------------------------------- |
-| Tra mã ICD                 | Ca lao mẫu        | Mã ICD đã lưu trong ca được chọn.                                     |
-| Nhắc theo dõi điều trị lao | Ca lao mẫu        | Các ngày còn cần xác nhận và đầu mối theo dõi.                        |
-| Dự thảo văn bản giao ban   | Tháng báo cáo     | Bản nháp gửi ban điều hành, có lượt khám, ca nhập viện và ca ra viện. |
-| Hỏi đáp số liệu điều hành  | Tháng và chỉ tiêu | Giá trị và đơn vị tính từ cùng bộ dữ liệu giả lập của dashboard.      |
+| Chủ đề                     | Đầu vào           | Kết quả trả về                                                                       |
+| -------------------------- | ----------------- | ------------------------------------------------------------------------------------ |
+| Tra mã ICD                 | Ca lao mẫu        | Mã ICD đã lưu trong ca được chọn.                                                    |
+| Nhắc theo dõi điều trị lao | Ca lao mẫu        | Các ngày còn cần xác nhận và đầu mối theo dõi.                                       |
+| Dự thảo văn bản giao ban   | Tháng báo cáo     | Bản nháp gửi ban điều hành, có lượt khám, ca nhập viện, ca ra viện và nguồn từng số. |
+| Hỏi đáp số liệu điều hành  | Tháng và chỉ tiêu | Giá trị, đơn vị tính và nguồn từ bảng điều hành ở chế độ Tự động.                    |
 
-Hai chủ đề về ca lao yêu cầu quyền xem **Điều trị lao – phổi**. Hai chủ đề về giao ban và số liệu yêu cầu quyền xem **Tổng quan**. Trợ lý bản diễn tập trả lời theo bốn chủ đề định sẵn. Mốc theo dõi là lời nhắc nghiệp vụ để cán bộ kiểm tra hồ sơ. Phần kê đơn và văn bản theo biểu mẫu Bộ Y tế cần yêu cầu và mẫu được duyệt cho triển khai thực tế.
+Hai chủ đề về ca lao nằm ở **Điều trị lao – phổi → Tra cứu ca mẫu** và yêu cầu quyền xem của phân hệ đó. Hai chủ đề về giao ban và số liệu nằm ở **Tổng quan → Bảng điều hành → Tra cứu số liệu** và yêu cầu quyền xem Tổng quan. Hệ thống trả lời theo bốn chủ đề định sẵn. Mốc theo dõi là lời nhắc nghiệp vụ để cán bộ kiểm tra hồ sơ. Phần kê đơn và văn bản theo biểu mẫu Bộ Y tế cần yêu cầu và mẫu được duyệt cho triển khai thực tế.
 
 ## TT 7 Theo dõi ca lao và đồng bộ VITIMES
 
 Danh sách có 6 ca `LAO-THU-…` với ngày bắt đầu, mã ICD đã có trong hồ sơ, tổ theo dõi và 3 mốc theo dõi mẫu cho mỗi ca.
 
 1. Chuyên viên mở ca đang theo dõi và ghi nhận từng mốc **Đã xác nhận** hoặc **Cần liên hệ lại**. Mốc chưa ghi nhận và mốc cần liên hệ lại xuất hiện trong kết quả hỏi trợ lý về ca đó.
-2. Sau khi đã lưu ít nhất một mốc, người có quyền xuất có thể bấm **Đồng bộ VITIMES giả lập**. Hệ thống lưu trạng thái, số mốc đã ghi nhận và thời điểm đồng bộ. Nếu sau đó có thay đổi ở ca, lần gửi cũ không còn được hiển thị là bản mới nhất. Người dùng có thể đồng bộ lại.
+2. Sau khi đã lưu ít nhất một mốc, người có quyền cập nhật có thể bấm **Đồng bộ VITIMES giả lập**. Hệ thống lưu trạng thái, số mốc đã ghi nhận và thời điểm đồng bộ. Nếu sau đó có thay đổi ở ca, lần gửi cũ không còn được hiển thị là bản mới nhất. Người dùng có thể đồng bộ lại.
 3. Khi cả ba mốc đều **Đã xác nhận**, người có quyền duyệt bấm **Hoàn tất theo dõi**. Ca chuyển sang **Hoàn tất theo dõi** và khóa cập nhật các mốc. Vẫn có thể đồng bộ trạng thái hoàn tất sang VITIMES giả lập.
 
 ## Điểm kiểm soát và kết quả kiểm thử
 
 - **Quyền và phạm vi.** Các thao tác đọc, sửa, duyệt và xuất được kiểm ở API theo quyền phân hệ. Bảng `benh_vien_thu` lưu trạng thái theo đơn vị, áp dụng RLS và ghi nhật ký. Kiểm thử đã xác nhận đơn vị khác không đọc được vết của đơn vị đang diễn tập và vai ứng dụng không có quyền xóa cứng. Xem [ADR-0004](adr/0004-postgres-rls-nhat-ky.md).
 - **Kiểm thử nghiệp vụ.** Đã kiểm các tình huống chặn nhận phim khi chưa ghi nhận mốc đạo đức, chặn đối chiếu trước khi duyệt nhãn, chặn gửi BHYT trước khi duyệt, và chặn hoàn tất theo dõi khi còn mốc chưa xác nhận. Xem [kiểm thử tích hợp bệnh viện](../apps/api/src/benh-vien/benh-vien.e2e.test.ts).
-- **Kiểm thử trên localhost.** Đã áp dụng migration `0033_benh-vien-thu`, thao tác các luồng chính trên trình duyệt và kiểm tra tải báo cáo Excel. Lần chạy `VITEST_MAX_WORKERS=1 pnpm kiem-tra` của bản triển khai đạt 389 bài test. Xem [ghi nhận tiến độ](tien-do.md).
+- **Kiểm thử trên localhost.** Đã áp dụng migration `0033_benh-vien-thu`, thao tác các luồng chính trên trình duyệt và kiểm tra tải báo cáo Excel. Sau đợt rà soát ADR, `VITEST_MAX_WORKERS=1 pnpm kiem-tra` đạt 390 bài test và build. Xem [ghi nhận tiến độ](tien-do.md).
 
 ## Điều kiện chuyển sang triển khai thực tế
 

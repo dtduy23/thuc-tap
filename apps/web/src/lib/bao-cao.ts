@@ -1,5 +1,5 @@
 /** Báo cáo qua điểm gom /api/bao-cao (ADR-0007) — không biết nghiệp vụ cụ thể nào. */
-import type { KetQuaBaoCao } from '@gdos/shared'
+import type { CheDoSoLieu, KetQuaBaoCao } from '@gdos/shared'
 import { queryOptions } from '@tanstack/react-query'
 import { goiApi, taiVeTep } from './http'
 
@@ -12,6 +12,8 @@ export interface ThamSoUrl {
   linhVucId?: string
   /** Trục phân nhóm, cách nhau dấu phẩy. */
   nhom?: string
+  ky?: string
+  nguon?: CheDoSoLieu
 }
 
 export const chuoiThamSo = (ts: ThamSoUrl): string =>

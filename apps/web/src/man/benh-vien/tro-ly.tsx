@@ -20,11 +20,11 @@ interface CauHoi {
   ma?: string
 }
 
-export default function TroLyBenhVien() {
+function TraCuuBenhVien({ theo }: { theo: 'lao' | 'so-lieu' }) {
   const q = useQuyenThu()
-  const coLao = q.includes(quyenBenhVien('dieu-tri-lao', 'READ'))
-  const coSoLieu = q.includes(quyenBenhVien('tong-quan', 'READ'))
-  const [chuDe, datChuDe] = useState<ChuDeTroLyBenhVien>(coSoLieu ? 'so-lieu' : 'ma-icd')
+  const coLao = theo === 'lao' && q.includes(quyenBenhVien('dieu-tri-lao', 'READ'))
+  const coSoLieu = theo === 'so-lieu' && q.includes(quyenBenhVien('tong-quan', 'READ'))
+  const [chuDe, datChuDe] = useState<ChuDeTroLyBenhVien>(theo === 'so-lieu' ? 'so-lieu' : 'ma-icd')
   const [ky, datKy] = useState(kyHienTai)
   const [maCa, datMaCa] = useState('')
   const [maChiTieu, datMaChiTieu] = useState('BV-01')
@@ -57,10 +57,13 @@ export default function TroLyBenhVien() {
   }
   return (
     <>
-      <NhacGiaLap>
-        Trợ lý diễn tập đọc nguồn mẫu và tạo bản nháp để người dùng sửa. Không dùng để chẩn đoán hay chỉ định
-        điều trị.
-      </NhacGiaLap>
+      {theo === 'lao' ? (
+        <NhacGiaLap>Tra mã đã lưu và lịch theo dõi của ca mẫu.</NhacGiaLap>
+      ) : (
+        <ThongBao>
+          Tra cứu theo kỳ từ bảng điều hành. Số đã nạp được ưu tiên và từng kết quả có ghi nguồn.
+        </ThongBao>
+      )}
       {!coLao && !coSoLieu ? (
         <ThongBao kieu="loi">Tài khoản chưa được cấp quyền đọc nguồn cho trợ lý bệnh viện.</ThongBao>
       ) : (
@@ -178,4 +181,11 @@ export default function TroLyBenhVien() {
       )}
     </>
   )
+}
+
+export default function TraCuuCaMau() {
+  return <TraCuuBenhVien theo="lao" />
+}
+export function TraCuuSoLieuBenhVien() {
+  return <TraCuuBenhVien theo="so-lieu" />
 }

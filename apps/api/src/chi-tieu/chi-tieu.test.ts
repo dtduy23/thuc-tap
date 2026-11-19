@@ -9,7 +9,10 @@ describe('bảng chỉ tiêu điều hành', () => {
   it('mọi chỉ tiêu trong danh mục đều có giá trị trả về; mã không trùng', () => {
     const b = ghepBangChiTieu(TRONG)
     expect(new Set(BO_CHI_TIEU.map((c) => c.ma)).size).toBe(BO_CHI_TIEU.length)
-    for (const c of BO_CHI_TIEU) expect(b.giaTri[c.ma], c.ma).toBeDefined()
+    for (const c of BO_CHI_TIEU) {
+      if (c.linhVuc === 'benh-vien') expect(b.giaTri[c.ma], c.ma).toBeUndefined()
+      else expect(b.giaTri[c.ma], c.ma).toBeDefined()
+    }
     // Số minh họa không có mã lạ ngoài danh mục.
     for (const ma of Object.keys(SO_LIEU_MINH_HOA)) expect(timChiTieu(ma), ma).toBeDefined()
   })

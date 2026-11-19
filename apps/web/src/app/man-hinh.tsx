@@ -25,6 +25,11 @@ export const MAN_HINH: Partial<Record<string, LazyExoticComponent<ComponentType>
     },
     { id: 'du-an', nhan: 'Tình hình dự án', Man: TONG_QUAN_DU_AN },
     { id: 'benh-vien', nhan: 'Bệnh viện', Man: lazy(() => import('@/man/dieu-hanh-benh-vien')) },
+    {
+      id: 'tra-cuu-so-lieu',
+      nhan: 'Tra cứu số liệu',
+      Man: lazy(() => import('@/man/benh-vien/tro-ly').then((m) => ({ default: m.TraCuuSoLieuBenhVien }))),
+    },
   ]),
   'dh-kpi': gopMan('kpi', [
     {
@@ -84,6 +89,9 @@ export const MAN_HINH: Partial<Record<string, LazyExoticComponent<ComponentType>
   'bv-bhyt': lazy(() => import('@/man/benh-vien/bhyt')),
   'bv-tro-ly': lazy(() => import('@/man/benh-vien/tro-ly')),
   'bv-lao': lazy(() => import('@/man/benh-vien/lao')),
+  'bv-bao-cao-phim': lazy(() => import('@/man/bao-cao/danh-sach').then((m) => ({ default: m.BaoCaoPhim }))),
+  'bv-bao-cao-bhyt': lazy(() => import('@/man/bao-cao/danh-sach').then((m) => ({ default: m.BaoCaoBHYT }))),
+  'bv-bao-cao-lao': lazy(() => import('@/man/bao-cao/danh-sach').then((m) => ({ default: m.BaoCaoLao }))),
   'nk-tat-ca': lazy(() => import('@/man/nhat-ky-ds')),
   'nk-ho-so': lazy(() => import('@/man/nhat-ky-theo').then((m) => ({ default: m.NhatKyTheoHoSo }))),
   'nk-nguoi': lazy(() => import('@/man/nhat-ky-theo').then((m) => ({ default: m.NhatKyTheoNguoi }))),

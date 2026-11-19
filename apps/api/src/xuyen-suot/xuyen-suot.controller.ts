@@ -17,6 +17,7 @@ import {
   DANH_SACH_MODULE,
   GOC_NHIN_TONG_QUAN,
   homNay,
+  quyenCua,
   timBaoCao,
   LOAI_CHI_SO,
   type CanhBaoDef,
@@ -123,10 +124,11 @@ export class XuyenSuotController {
   }
 
   private chayBaoCao(nd: NguoiDungPhien, ma: string, q: Record<string, unknown>): Promise<KetQuaBaoCao> {
+    if (nd.phaiDoiMatKhau) throw new ForbiddenException('Cần đổi mật khẩu được cấp trước khi làm việc')
     const tim = timBaoCao(DANH_SACH_MODULE, ma)
     const nguon = tim && this.nguon.find((n) => n.module.id === tim.module.id)
     if (!tim || !nguon?.baoCao) throw new NotFoundException('Không có báo cáo này')
-    if (!nd.quyen.has(`${tim.module.maQuyen}.${tim.muc.hanhDong ?? 'READ'}`))
+    if (!nd.quyen.has(quyenCua(tim.module, tim.muc)))
       throw new ForbiddenException('Tài khoản không có quyền xem báo cáo này')
     return nguon.baoCao(nd, ma, kiemThamSo(tim.muc, q))
   }

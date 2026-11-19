@@ -2,6 +2,8 @@ import { Inject, Injectable } from '@nestjs/common'
 import {
   BO_CHI_TIEU,
   CHI_TIEU_BENH_VIEN,
+  MA_CONG_SUAT_GIUONG,
+  dongChiTieuBenhVien,
   kyHien,
   timChiTieu,
   type BangChiTieu,
@@ -58,7 +60,8 @@ export function ghepBangChiTieu(t: SoThat, nap: ReadonlyMap<string, SoNap> = new
 
   // ── Số nạp từ ngoài đè lên minh họa (KPI không nạp — tự tính bên dưới) ──
   for (const [ma, n] of nap) {
-    if (timChiTieu(ma)?.linhVuc === 'kpi' || !timChiTieu(ma)) continue
+    const c = timChiTieu(ma)
+    if (!c || c.linhVuc === 'kpi' || c.linhVuc === 'benh-vien') continue
     giaTri[ma] = {
       giaTri: n.giaTri,
       nguon: 'nap',
@@ -119,8 +122,10 @@ export function ghepBangChiTieu(t: SoThat, nap: ReadonlyMap<string, SoNap> = new
           lyDo: t.lyDoNhiemVu ?? 'Chưa có nhiệm vụ nào trong phân hệ Nhiệm vụ.',
         }
 
-  for (const c of BO_CHI_TIEU)
+  for (const c of BO_CHI_TIEU) {
+    if (c.linhVuc === 'benh-vien') continue
     giaTri[c.ma] ??= { giaTri: null, nguon: 'chua-co', chuoi: [], lyDo: 'Chưa có nguồn số liệu.' }
+  }
 
   const phanHe: SoLieuPhanHe[] = [
     {
@@ -195,7 +200,26 @@ export class ChiTieuService {
   async benhVien(nd: NguoiDungPhien, ky: string, nguon: NguonBenhVien): Promise<BangDieuHanhBenhVien> {
     const cacKy = cacKyBenhVien(ky)
     if (nguon === 'gia-lap') return bangGiaLap(this.csdl, nd, cacKy)
+    const daNap = await this.soBenhVienDaNap(nd, cacKy)
+    if (nguon === 'da-nap') return daNap
+    const mau = await bangGiaLap(this.csdl, nd, cacKy)
+    const coSoNap = daNap.cacKy.some((k) => k.soLieu.length > 0)
+    return {
+      donVi: coSoNap ? daNap.donVi : mau.donVi,
+      nguon,
+      cacKy: mau.cacKy.map((kMau, i) => {
+        const nap = new Map(daNap.cacKy[i]!.soLieu.map((d) => [d.ma, d]))
+        const congSuatGiaLap = dongChiTieuBenhVien(kMau).find((d) => d.ma === MA_CONG_SUAT_GIUONG)?.giaTri
+        return {
+          ky: kMau.ky,
+          soLieu: kMau.soLieu.map((d) => nap.get(d.ma) ?? d),
+          ...(congSuatGiaLap != null ? { congSuatGiaLap } : {}),
+        }
+      }),
+    }
+  }
 
+  private async soBenhVienDaNap(nd: NguoiDungPhien, cacKy: string[]): Promise<BangDieuHanhBenhVien> {
     return trongPhamVi(dbCua(this.csdl), nd.nguCanh, async (tx) => {
       const [t] = await tx
         .select({ id: donVi.id, ten: donVi.ten })
@@ -210,6 +234,7 @@ export class ChiTieuService {
               giaTri: chiTieuSoLieu.giaTri,
               kenh: chiTieuSoLieu.kenh,
               tenNguon: chiTieuSoLieu.tenNguon,
+              luc: chiTieuSoLieu.updatedAt,
             })
             .from(chiTieuSoLieu)
             .where(
@@ -226,7 +251,7 @@ export class ChiTieuService {
         : []
       return {
         donVi: t?.ten ?? 'Đơn vị của bạn',
-        nguon,
+        nguon: 'da-nap',
         cacKy: cacKy.map((ky) => ({
           ky,
           soLieu: ds
@@ -235,6 +260,8 @@ export class ChiTieuService {
               ma: d.ma,
               giaTri: d.giaTri,
               nguon: `${d.kenh === 'excel' ? 'Excel' : 'API'} · ${d.tenNguon}`,
+              loaiNguon: 'da-nap',
+              capNhatLuc: d.luc.toISOString(),
             })),
         })),
       }
