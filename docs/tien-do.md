@@ -29,6 +29,9 @@
 
 ### Diễn tập toàn bộ yêu cầu bệnh viện
 
+Xem [báo cáo triển khai và quy trình nghiệp vụ bệnh viện](bao-cao-nghiep-vu-benh-vien.md)
+để đối chiếu từng bước, vai trò, điều kiện chuyển trạng thái và đầu ra.
+
 | TT  | Luồng diễn tập                                                                                                                                  | Chức năng                     |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
 | 1   | Mô hình nguồn mở trong repo, học trên ảnh phantom tổng hợp. Nhận lô bệnh viện và xe lưu động, mã chỉ định HIS mẫu, đối chiếu sau duyệt độc lập. | `bv-phim`                     |
