@@ -32,6 +32,8 @@
 Xem [vị trí nghiệp vụ trong workbook và GDOS](bao-cao-nghiep-vu-benh-vien.md#vị-trí-nghiệp-vụ-trong-workbook-và-gdos)
 để tra ô yêu cầu, đường dẫn menu, vai trò và quy trình. Nhóm X-quang gồm TT 1–2 (`Sheet1!C2:C3`).
 Nhóm Quản trị bệnh viện và AI hỗ trợ nghiệp vụ gồm TT 3–7 (`Sheet1!C4:C8`).
+[Tình trạng triển khai theo hạng mục](bao-cao-nghiep-vu-benh-vien.md#tình-trạng-triển-khai-theo-hạng-mục)
+ghi phần đã xong trong bản diễn tập và phần còn thiếu để vận hành thực tế cho cả 7 mục.
 
 | TT  | Luồng diễn tập                                                                                                                                  | Chức năng                                        |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |

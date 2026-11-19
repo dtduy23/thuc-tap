@@ -4,6 +4,20 @@ GDOS đã triển khai **bản diễn tập cho cả 7 hạng mục** trong `YC_
 
 Phiên bản được mô tả nằm trên nhánh `feat/dashboard-benh-vien-hang-muc-2`. Bản diễn tập sử dụng ảnh do phần mềm tạo, mã hồ sơ mẫu và kết nối giả lập. Các kết quả X-quang phản ánh khả năng xử lý ảnh tổng hợp của mô hình thử. Báo cáo xuất ra là bản nháp để đối soát.
 
+## Tình trạng triển khai theo hạng mục
+
+**Cả 7 hạng mục đều đã có luồng diễn tập trên localhost. Chưa có hạng mục nào được nghiệm thu để vận hành với dữ liệu thật tại bệnh viện.**
+
+| Hạng mục                               | Phần đã xong trong bản diễn tập                                                                                                                         | Phần còn thiếu để vận hành thực tế                                                                                                                                                             |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **TT 1 — Đọc X-quang phổi**            | Nhận lô phim tổng hợp từ bệnh viện và xe lưu động, gán nhãn, duyệt nhãn rồi đối chiếu với gợi ý của mô hình thử.                                        | Kết nối thiết bị và HIS/PACS, đối chiếu đúng người bệnh và chỉ định, đánh giá mô hình trên phim bệnh viện trước khi dùng hỗ trợ chuyên môn.                                                    |
+| **TT 2 — Dữ liệu và hồ sơ nghiên cứu** | Có bộ 5.000 ảnh lịch sử tổng hợp, công cụ gán nhãn và duyệt, theo dõi mốc nghiên cứu, xuất bộ nhãn và tài liệu bản nháp.                                | Bộ phim bệnh viện được phép sử dụng, quy trình ẩn danh, thẩm định đạo đức, kết quả đánh giá trên phim thật và hồ sơ phân loại thiết bị theo mục đích sử dụng.                                  |
+| **TT 3 — Nguồn dữ liệu bệnh viện**     | Nạp chỉ tiêu theo đơn vị và tháng từ Excel hoặc API vào chung một kho. Có vết lần nạp và luồng nhận mẫu cho HIS, LIS, X-quang, BHXH và VITIMES.         | Đặc tả và kết nối với từng hệ thống thật, quy tắc đối chiếu dữ liệu gốc và kiểm thử liên thông.                                                                                                |
+| **TT 4 — Bảng điều hành và báo cáo**   | Có KPI, xu hướng sáu tháng, bảng nguồn số liệu và ba bản nháp Excel cho Sở Y tế, BHXH và VITIMES. Có chế độ Đã nạp để đối soát riêng số đã ghi vào kho. | Định nghĩa chỉ tiêu được bệnh viện xác nhận, đối chiếu với số gốc, chốt kỳ, biểu mẫu và quy trình phát hành. Chế độ Tự động có thể điền số giả lập khi thiếu số đã nạp, nên dùng cho diễn tập. |
+| **TT 5 — Rà soát hồ sơ BHYT**          | Có danh sách và chi tiết hồ sơ mẫu, lọc nhanh theo trạng thái, rà soát theo quy tắc mẫu, bổ sung, duyệt, trả lại và gửi giả lập.                        | Hồ sơ trích từ HIS, kiểm tra theo danh mục và định dạng áp dụng, ký số, gửi qua cổng BHXH, nhận phản hồi, điều chỉnh và đối chiếu kết quả giám định.                                           |
+| **TT 6 — Tra cứu và soạn thảo**        | Tra mã ICD đã lưu và mốc theo dõi ca mẫu, hỏi số liệu theo kỳ và soạn dự thảo giao ban theo chủ đề định sẵn.                                            | Nguồn bệnh viện được phép truy cập, luồng nhắc thuốc dựa trên đơn đã xác nhận, mẫu văn bản Bộ Y tế và quy trình duyệt nội dung chuyên môn.                                                     |
+| **TT 7 — Theo dõi điều trị lao**       | Ghi từng mốc của ca mẫu, duyệt hoàn tất theo dõi và lưu vết đồng bộ VITIMES giả lập.                                                                    | Hồ sơ ca thật, luồng đăng ký và chuyển gửi, theo dõi xét nghiệm và kết quả điều trị theo hướng dẫn chuyên môn, kết nối VITIMES và đối chiếu phản hồi.                                          |
+
 ## Vị trí nghiệp vụ trong workbook và GDOS
 
 Cột **B** trên `Sheet1` chia yêu cầu thành hai nhóm. Cột **A** ghi số **TT**, cột **C** ghi yêu cầu chi tiết của từng dòng. **Bảng điều hành bệnh viện thuộc nhóm hạng mục thứ hai, TT 4 (`Sheet1!C5`). TT 2 (`Sheet1!C3`) thuộc nhóm X-quang và là phần gán nhãn phim lịch sử, hồ sơ nghiên cứu.**
@@ -179,7 +193,7 @@ Danh sách có 6 ca `LAO-THU-…` với ngày bắt đầu, mã ICD đã có tro
 
 - **Quyền và phạm vi.** Các thao tác đọc, sửa, duyệt và xuất được kiểm ở API theo quyền phân hệ. Bảng `benh_vien_thu` lưu trạng thái theo đơn vị, áp dụng RLS và ghi nhật ký. Kiểm thử đã xác nhận đơn vị khác không đọc được vết của đơn vị đang diễn tập và vai ứng dụng không có quyền xóa cứng. Xem [ADR-0004](adr/0004-postgres-rls-nhat-ky.md).
 - **Kiểm thử nghiệp vụ.** Đã kiểm các tình huống chặn nhận phim khi chưa ghi nhận mốc đạo đức, chặn đối chiếu trước khi duyệt nhãn, chặn gửi BHYT trước khi duyệt, và chặn hoàn tất theo dõi khi còn mốc chưa xác nhận. Xem [kiểm thử tích hợp bệnh viện](../apps/api/src/benh-vien/benh-vien.e2e.test.ts).
-- **Kiểm thử trên localhost.** Đã áp dụng migration `0033_benh-vien-thu`, thao tác các luồng chính trên trình duyệt và kiểm tra tải báo cáo Excel. Sau đợt rà soát ADR, `VITEST_MAX_WORKERS=1 pnpm kiem-tra` đạt 390 bài test và build. Xem [ghi nhận tiến độ](tien-do.md).
+- **Kiểm thử trên localhost.** Đã áp dụng migration `0033_benh-vien-thu`, thao tác các luồng chính trên trình duyệt và kiểm tra tải báo cáo Excel. Sau lần chỉnh màn BHYT, `VITEST_MAX_WORKERS=1 pnpm kiem-tra` đạt 391 bài test và build. Xem [ghi nhận tiến độ](tien-do.md).
 
 ## Điều kiện chuyển sang triển khai thực tế
 
