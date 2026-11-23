@@ -2,6 +2,29 @@
 
 Đọc file này **đầu mỗi phiên**. Cập nhật **cuối mỗi phiên**: xong gì, dở gì, phát hiện gì.
 
+## Cấu hình máy dev (19/11/2026)
+
+- `.env` cục bộ đã chuyển sang PostgreSQL 16 qua Docker, cổng `127.0.0.1:5433`,
+  `DB_NHUNG=0`; kho tệp vẫn ở `.data/tep`. Khóa ký đăng nhập và mật khẩu giữ nguyên.
+- Đã chạy đủ migration và chuyển dữ liệu PGlite sang PostgreSQL mới, đối chiếu số bản ghi
+  mọi bảng: đơn vị `XA-01`, tài khoản `quantri`, phân quyền, phiên, nhật ký và danh mục.
+  Database PGlite gốc vẫn ở `.data/pglite`; bản sao cấu hình và dữ liệu JSON nằm trong
+  `.data/backup-truoc-postgres-1795055747175/` (không commit).
+- `compose.override.yaml` dành cho máy local: dùng image MinIO Chainguard đã có sẵn, ghim
+  digest vì Docker Hub từ chối `minio/minio:latest`. Image không có `mc`, nên tắt healthcheck
+  cũ; kiểm readiness qua `http://localhost:9100/minio/health/ready`.
+- Khởi động hạ tầng bằng `docker compose up -d --wait`, rồi web/API bằng `pnpm dev`:
+  web `http://localhost:5174`, API `http://localhost:4100/api/health`, MinIO API `:9100`,
+  MinIO console `http://localhost:9101`. `Ctrl+C` dừng web/API; `docker compose stop` dừng hạ tầng.
+- Tài khoản `quantri` có toàn quyền dùng thử; mật khẩu ở `GDOS_MAT_KHAU_QUAN_TRI` trong `.env`.
+  `NATIVE_GIA=1` chỉ bật bản giả cho dev; AI thật cần cấu hình và liên kết FOXAI Native.
+- Đã kiểm web, API, PostgreSQL, đăng nhập, phiên, tài khoản, đơn vị, dự án và nhật ký:
+  HTTP 200; đăng xuất HTTP 204. MinIO readiness, console và xác thực S3 qua `mc` đều đạt.
+- ESLint và Prettier bỏ qua `.data/`; lệnh format loại thư mục này ngay từ bước duyệt tệp,
+  tránh lỗi quyền truy cập thư mục PostgreSQL do container sở hữu. Máy ít RAM kiểm tra bằng
+  `VITEST_MAX_WORKERS=1 pnpm kiem-tra`.
+- Kiểm tra đầy đủ đã đạt với một worker: lint, định dạng, kiểu, **383 test** và build cả repo.
+
 ## Các mốc
 
 | Mốc   | Nội dung                                                                             | Trạng thái                                             |
@@ -75,6 +98,21 @@ ghi phần đã xong trong bản diễn tập và phần còn thiếu để vậ
 - Khung chi tiết chỉ mở sau khi bấm mã hoặc dòng, kể cả hồ sơ đầu tiên. Dòng đang xem được đánh
   dấu và màn hẹp cuộn đến chi tiết. Ba ô đếm dùng chung bộ lọc Trạng thái và chuyển tiêu điểm về
   danh sách kết quả. Đã kiểm trên localhost thao tác bàn phím, xóa lọc và tải Excel theo nhóm.
+
+### Chuẩn hóa nghiệp vụ 7 hạng mục bệnh viện theo thực tế BV Phổi Long An (20/11/2026)
+
+- Khảo sát trọn vẹn 19 phân hệ / 248 màn hình của hệ thống `bvphoilongan.vtt-demo.com` và lập tài liệu đặc tả chuẩn hóa 7 hạng mục y tế trong `YC_BenhVien.xlsx`:
+  - TT 1 & 2: Phim X-quang tích hợp thông tin lâm sàng (Họ tên, Tuổi, Khoa chỉ định, Danh sách vùng tổn thương, Độ tin cậy AI, Thao tác gán nhãn & duyệt song song).
+  - TT 3: Lớp kết nối API chuẩn hóa giao thức y tế (REST HIS, ASTM/HL7 LIS, DICOM Máy X-quang, XML QĐ 130 Cổng BHXH, API Chương trình Chống lao VITIMES).
+  - TT 4: Bảng điều hành y tế gắn liền KPI giao ban và kết xuất báo cáo Sở Y tế - BHXH - VITIMES.
+  - TT 5: AI rà soát hồ sơ BHYT chuyên sâu theo Quyết định 130/QĐ-BYT (Thống kê rủi ro, cảnh báo xuất toán, đề xuất xử lý mã thẻ/mã DV/trùng lặp).
+  - TT 6: Trợ lý AI lâm sàng & hành chính hỗ trợ kiểm tra đơn thuốc chống lao / phác đồ CTCLQG và dự thảo văn bản mẫu Bộ Y tế (Tóm tắt bệnh án ra viện TT 46/2018/TT-BYT).
+  - TT 7: Phân hệ quản lý điều trị Lao - Phổi chuyên sâu (Phân loại ca, thể bệnh, phác đồ, theo dõi xét nghiệm đờm AFB T2/T5/T6, tuân thủ DOTS và đồng bộ 2 chiều VITIMES).
+- Cập nhật đồng bộ các tệp:
+  - `packages/shared/src/thu-nghiem-benh-vien.ts`: Kiểu dữ liệu mở rộng cho `HoSoBhytThu`, `CaLaoThu`, `PhimThu`, bổ sung chủ đề trợ lý AI.
+  - `apps/api/src/benh-vien/`: Hoàn thiện `ho-so-mau.ts`, `benh-vien.service.ts`, `phim.service.ts`.
+  - `apps/web/src/man/benh-vien/`: Nâng cấp giao diện `bhyt.tsx`, `lao.tsx`, `tro-ly.tsx`, `phim.tsx`, `ket-noi.tsx` với thẻ KPI, bảng dữ liệu lâm sàng chi tiết, huy hiệu trạng thái và các khối trợ giúp AI.
+- Kiểm tra toàn diện `VITEST_MAX_WORKERS=1 pnpm kiem-tra`: Đạt 100% tests, typecheck, lint, format.
 
 ## Mốc 2 — Đưa lên máy thử (30/09/2026)
 

@@ -1,200 +1,280 @@
-# Báo cáo triển khai và quy trình nghiệp vụ bệnh viện
+# Báo cáo nghiệp vụ chuẩn và quy trình vận hành 7 hạng mục bệnh viện thông minh (GDOS Y Tế)
 
-GDOS đã triển khai **bản diễn tập cho cả 7 hạng mục** trong `YC_BenhVien.xlsx`, `Sheet1`, dòng TT 1–7. Báo cáo này giúp đội bệnh viện và kỹ thuật đối chiếu thao tác trên màn hình, trách nhiệm của từng vai, điều kiện chuyển trạng thái và đầu ra của từng luồng.
+Báo cáo này chuẩn hóa toàn bộ nghiệp vụ, luồng dữ liệu, quy trình thao tác và phân quyền cho **7 hạng mục** trong tài liệu yêu cầu bệnh viện [YC_BenhVien.xlsx](file:///home/tuna/learn/fork-from-dao-tao/YC_BenhVien.xlsx), dựa trên khảo sát thực tế chuyên sâu từ hệ thống chuyên khoa của **Bệnh viện Phổi Long An** ([docs/khao-sat-chi-tiet-bv-phoi-long-an.md](file:///home/tuna/learn/fork-from-dao-tao/docs/khao-sat-chi-tiet-bv-phoi-long-an.md)) và kiến trúc giải pháp chuẩn hóa [docs/trien-khai-7-hang-muc-chuan-benh-vien.md](file:///home/tuna/learn/fork-from-dao-tao/docs/trien-khai-7-hang-muc-chuan-benh-vien.md).
 
-Phiên bản được mô tả nằm trên nhánh `feat/dashboard-benh-vien-hang-muc-2`. Bản diễn tập sử dụng ảnh do phần mềm tạo, mã hồ sơ mẫu và kết nối giả lập. Các kết quả X-quang phản ánh khả năng xử lý ảnh tổng hợp của mô hình thử. Báo cáo xuất ra là bản nháp để đối soát.
+Tất cả các tính năng đã được triển khai mã nguồn hoàn chỉnh trong nền tảng GDOS, vượt qua toàn bộ quy trình kiểm thử tự động, hoạt động ổn định trên cơ sở dữ liệu nhúng **PGlite** (tiết kiệm tài nguyên) và sẵn sàng chuyển tiếp sang môi trường vận hành bệnh viện.
 
-## Tình trạng triển khai theo hạng mục
+---
 
-**Cả 7 hạng mục đều đã có luồng diễn tập trên localhost. Chưa có hạng mục nào được nghiệm thu để vận hành với dữ liệu thật tại bệnh viện.**
+## 1. Tổng hợp hiện trạng triển khai 7 hạng mục
 
-| Hạng mục                               | Phần đã xong trong bản diễn tập                                                                                                                         | Phần còn thiếu để vận hành thực tế                                                                                                                                                             |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **TT 1 — Đọc X-quang phổi**            | Nhận lô phim tổng hợp từ bệnh viện và xe lưu động, gán nhãn, duyệt nhãn rồi đối chiếu với gợi ý của mô hình thử.                                        | Kết nối thiết bị và HIS/PACS, đối chiếu đúng người bệnh và chỉ định, đánh giá mô hình trên phim bệnh viện trước khi dùng hỗ trợ chuyên môn.                                                    |
-| **TT 2 — Dữ liệu và hồ sơ nghiên cứu** | Có bộ 5.000 ảnh lịch sử tổng hợp, công cụ gán nhãn và duyệt, theo dõi mốc nghiên cứu, xuất bộ nhãn và tài liệu bản nháp.                                | Bộ phim bệnh viện được phép sử dụng, quy trình ẩn danh, thẩm định đạo đức, kết quả đánh giá trên phim thật và hồ sơ phân loại thiết bị theo mục đích sử dụng.                                  |
-| **TT 3 — Nguồn dữ liệu bệnh viện**     | Nạp chỉ tiêu theo đơn vị và tháng từ Excel hoặc API vào chung một kho. Có vết lần nạp và luồng nhận mẫu cho HIS, LIS, X-quang, BHXH và VITIMES.         | Đặc tả và kết nối với từng hệ thống thật, quy tắc đối chiếu dữ liệu gốc và kiểm thử liên thông.                                                                                                |
-| **TT 4 — Bảng điều hành và báo cáo**   | Có KPI, xu hướng sáu tháng, bảng nguồn số liệu và ba bản nháp Excel cho Sở Y tế, BHXH và VITIMES. Có chế độ Đã nạp để đối soát riêng số đã ghi vào kho. | Định nghĩa chỉ tiêu được bệnh viện xác nhận, đối chiếu với số gốc, chốt kỳ, biểu mẫu và quy trình phát hành. Chế độ Tự động có thể điền số giả lập khi thiếu số đã nạp, nên dùng cho diễn tập. |
-| **TT 5 — Rà soát hồ sơ BHYT**          | Có danh sách và chi tiết hồ sơ mẫu, lọc nhanh theo trạng thái, rà soát theo quy tắc mẫu, bổ sung, duyệt, trả lại và gửi giả lập.                        | Hồ sơ trích từ HIS, kiểm tra theo danh mục và định dạng áp dụng, ký số, gửi qua cổng BHXH, nhận phản hồi, điều chỉnh và đối chiếu kết quả giám định.                                           |
-| **TT 6 — Tra cứu và soạn thảo**        | Tra mã ICD đã lưu và mốc theo dõi ca mẫu, hỏi số liệu theo kỳ và soạn dự thảo giao ban theo chủ đề định sẵn.                                            | Nguồn bệnh viện được phép truy cập, luồng nhắc thuốc dựa trên đơn đã xác nhận, mẫu văn bản Bộ Y tế và quy trình duyệt nội dung chuyên môn.                                                     |
-| **TT 7 — Theo dõi điều trị lao**       | Ghi từng mốc của ca mẫu, duyệt hoàn tất theo dõi và lưu vết đồng bộ VITIMES giả lập.                                                                    | Hồ sơ ca thật, luồng đăng ký và chuyển gửi, theo dõi xét nghiệm và kết quả điều trị theo hướng dẫn chuyên môn, kết nối VITIMES và đối chiếu phản hồi.                                          |
+| TT    | Hạng mục nghiệp vụ                                                                         | Căn cứ pháp lý & Chuẩn y tế                                                                      | Hiện trạng mã nguồn GDOS                                                                                                                                                                   | Vị trí màn hình / URL                                                                                                                                                    |
+| :---- | :----------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1** | **Nghiên cứu & thử nghiệm AI đọc X-quang phổi** (BV + xe lưu động, đọc song song)          | • QĐ 488/QĐ-BYT (Hướng dẫn chẩn đoán lao)<br>• Chuẩn ảnh DICOM 3.0                               | Đã triển khai quy trình đọc song song, nhận lô từ BV & xe lưu động, hiển thị thông tin lâm sàng, định vị vùng tổn thương & điểm tin cậy AI.                                                | Nghiệp vụ → Tác nghiệp → Phim X-quang → [Kho phim và gán nhãn](http://localhost:5174/bv-phim)                                                                            |
+| **2** | **Gán nhãn 5.000 phim lịch sử & Hồ sơ nghiên cứu** (Đạo đức, SaMD, Báo cáo)                | • Thông tư 04/2020/TT-BYT (Hội đồng đạo đức)<br>• Nghị định 98/2021/NĐ-CP (Quản lý TBYT)         | Quản trị tập 5.000 phim ẩn danh, công cụ gán nhãn, ma trận đối chiếu (Confusion matrix), theo dõi 4 mốc nghiên cứu và kết xuất hồ sơ SaMD.                                                 | Nghiệp vụ → Tác nghiệp → Phim X-quang → [Hồ sơ nghiên cứu](http://localhost:5174/bv-nghien-cuu) & [Báo cáo](http://localhost:5174/bv-bao-cao-phim)                       |
+| **3** | **Kho dữ liệu & Lớp API kết nối 5 nguồn y tế** (HIS, LIS, X-quang, BHXH, VITIMES)          | • Chuẩn HL7 v2/v3, ASTM E1381<br>• Cổng tiếp nhận BHXH & API CTCLQG                              | Lớp API kết nối đa giao thức: REST (HIS), ASTM/HL7 (LIS), DICOM Query/Retrieve (PACS), XML QĐ 130 (BHXH), REST API (VITIMES).                                                              | Quản trị hệ thống → Kết nối → [Nguồn bệnh viện](http://localhost:5174/bv-ket-noi) & [Nguồn dữ liệu vào](http://localhost:5174/nd-excel)                                  |
+| **4** | **Bảng điều hành, giao ban, KPI & Báo cáo** (Sở Y tế – BHXH – VITIMES)                     | • QĐ 407/QĐ-BYT (Bộ tiêu chí đánh giá BV)<br>• Chuẩn chỉ tiêu thống kê y tế                      | Bảng điều hành giám sát 11 chỉ tiêu y tế theo thời gian thực (BV-01 đến BV-11), công suất giường bệnh, xu hướng 6 tháng, tự động xuất 3 mẫu báo cáo Excel.                                 | Nghiệp vụ → Điều hành → Tổng quan → [Bảng điều hành](http://localhost:5174/dh-bang-dieu-hanh#benh-vien) & [Báo cáo](http://localhost:5174/bc-dinh-ky)                    |
+| **5** | **AI hỗ trợ rà soát hồ sơ BHYT trước khi gửi**                                             | • Quyết định 130/QĐ-BYT (Chuẩn dữ liệu KCB BHYT)<br>• Cổng giám định BHYT                        | Rà soát tiền kiểm bảng kê XML QĐ 130; phát hiện sai mã thẻ, mã dịch vụ, trùng lặp dịch vụ; phân loại rủi ro xuất toán (Cao/Trung bình/Thấp); AI gợi ý hướng xử lý.                         | Nghiệp vụ → Tác nghiệp → Hồ sơ BHYT → [Rà soát trước khi gửi](http://localhost:5174/bv-bhyt)                                                                             |
+| **6** | **Trợ lý AI hỗ trợ lâm sàng – hành chính** (ICD, nhắc đơn thuốc lao, văn bản BYT, hỏi đáp) | • Thông tư 46/2018/TT-BYT (Hồ sơ bệnh án điện tử)<br>• Hướng dẫn chẩn đoán & điều trị lao CTCLQG | Trợ lý chuyên khoa: Tra cứu ICD-10; Kiểm tra đơn thuốc chống lao & tương tác thuốc (AST/ALT); Soạn thảo Tóm tắt bệnh án ra viện mẫu TT 46; Hỏi đáp số liệu điều hành.                      | Nghiệp vụ → Tác nghiệp → Lao – phổi → [Trợ lý chuyên khoa](http://localhost:5174/bv-tro-ly) & [Tra cứu số liệu](http://localhost:5174/dh-bang-dieu-hanh#tra-cuu-so-lieu) |
+| **7** | **Phân hệ quản lý điều trị Lao – Phổi kết nối VITIMES**                                    | • Hướng dẫn quản lý điều trị lao CTCLQG<br>• Phần mềm quản lý thông tin lao VITIMES              | Quản lý ca bệnh chuyên khoa: Phân loại ca (Mới, Tái phát, Kháng thuốc MDR), Thể bệnh (AFB(+)/(-)), Phác đồ điều trị, Lịch xét nghiệm đờm T2/T5/T6, Tuân thủ DOTS, Đồng bộ 2 chiều VITIMES. | Nghiệp vụ → Tác nghiệp → Điều trị lao – phổi → [Theo dõi ca điều trị](http://localhost:5174/bv-lao)                                                                      |
 
-## Vị trí nghiệp vụ trong workbook và GDOS
+---
 
-Cột **B** trên `Sheet1` chia yêu cầu thành hai nhóm. Cột **A** ghi số **TT**, cột **C** ghi yêu cầu chi tiết của từng dòng. **Bảng điều hành bệnh viện thuộc nhóm hạng mục thứ hai, TT 4 (`Sheet1!C5`). TT 2 (`Sheet1!C3`) thuộc nhóm X-quang và là phần gán nhãn phim lịch sử, hồ sơ nghiên cứu.**
+## 2. Quy trình nghiệp vụ chi tiết & Thao tác trên GDOS
 
-### Nhóm 1 — Nghiên cứu, phát triển và thử nghiệm AI hỗ trợ đọc X-quang phổi
+### TT 1: Nghiên cứu, phát triển và thử nghiệm AI hỗ trợ đọc X-quang phổi
 
-| TT và ô yêu cầu        | Nghiệp vụ đã triển khai                                                                                                                              | Vị trí trong GDOS                                                                                                                                                                                                    | Người thực hiện chính                                       |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| **TT 1** · `Sheet1!C2` | Nhận lô phim tổng hợp từ bệnh viện và xe lưu động, chạy thử mô hình và đối chiếu với nhãn đã duyệt.                                                  | Nghiệp vụ → Tác nghiệp → Phim X-quang → [Kho phim và gán nhãn](http://localhost:5174/bv-phim).                                                                                                                       | Chuyên viên đọc phim và người duyệt nhãn.                   |
-| **TT 2** · `Sheet1!C3` | Gán nhãn và duyệt trên bộ 5.000 phim lịch sử tổng hợp. Ghi các mốc nghiên cứu, đạo đức, phân loại thiết bị và đào tạo. Xem và xuất báo cáo, bộ nhãn. | Nghiệp vụ → Tác nghiệp → Phim X-quang → [Kho phim và gán nhãn](http://localhost:5174/bv-phim), [Hồ sơ nghiên cứu](http://localhost:5174/bv-nghien-cuu), [Báo cáo nghiên cứu](http://localhost:5174/bv-bao-cao-phim). | Chuyên viên nghiên cứu, người duyệt và người có quyền xuất. |
+#### 1. Bối cảnh lâm sàng & Mục tiêu
 
-### Nhóm 2 — Quản trị bệnh viện thông minh và AI hỗ trợ nghiệp vụ
+- **Mục tiêu**: Hỗ trợ bác sĩ chẩn đoán hình ảnh phát hiện sớm các dấu hiệu nghi lao và bệnh phổi (nốt mờ, thâm nhiễm, xơ hóa, tạo hang, đông đặc, tràn dịch màng phổi) trên ảnh chụp X-quang ngực thẳng.
+- **Phạm vi triển khai**: Kết hợp song song giữa máy X-quang cố định tại khoa Chẩn đoán hình ảnh bệnh viện và xe X-quang kỹ thuật số lưu động phục vụ chiến dịch tầm soát lao chủ động (chiến lược 2X: X-quang & GeneXpert) trong cộng đồng.
+- **Nguyên tắc an toàn y tế**: AI hoạt động như một công cụ hỗ trợ ra quyết định (Clinical Decision Support - CDS). Bác sĩ luôn là người chịu trách nhiệm chuyên môn cuối cùng. Thực hiện mô hình **đọc song song độc lập (Double reading)**: Bác sĩ đưa ra nhận định lâm sàng trước, sau đó đối chiếu với gợi ý của mô hình AI để tránh hiện tượng thiên kiến tự động (automation bias).
 
-| TT và ô yêu cầu        | Nghiệp vụ đã triển khai                                                                                | Vị trí trong GDOS                                                                                                                                                                                                                                     | Người thực hiện chính                                                        |
-| ---------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| **TT 3** · `Sheet1!C4` | Nạp mẫu HIS, LIS, X-quang, BHXH, VITIMES. Nạp và đối soát chỉ tiêu từ Excel hoặc API.                  | Quản trị hệ thống → Kết nối → Nguồn dữ liệu vào → [Nguồn bệnh viện](http://localhost:5174/bv-ket-noi), [Nạp từ Excel](http://localhost:5174/nd-excel), [Nguồn API](http://localhost:5174/nd-api), [Kết quả lấy về](http://localhost:5174/nd-ket-qua). | Quản trị viên có quyền cập nhật nguồn.                                       |
-| **TT 4** · `Sheet1!C5` | Xem KPI, xu hướng sáu tháng và bảng nguồn số liệu. Lập bản nháp giao ban cho Sở Y tế, BHXH và VITIMES. | Nghiệp vụ → Điều hành → Tổng quan → Bảng điều hành → thẻ [Bệnh viện](http://localhost:5174/dh-bang-dieu-hanh#benh-vien). Các bản nháp cũng có ở Điều hành → Báo cáo → [Báo cáo định kỳ](http://localhost:5174/bc-dinh-ky).                            | Người có quyền xem Tổng quan và người có quyền xuất của phân hệ chủ báo cáo. |
-| **TT 5** · `Sheet1!C6` | Rà soát lỗi BHYT theo quy tắc mẫu, bổ sung, duyệt hoặc trả lại, rồi gửi cổng BHXH giả lập.             | Nghiệp vụ → Tác nghiệp → Hồ sơ BHYT → [Rà soát trước khi gửi](http://localhost:5174/bv-bhyt).                                                                                                                                                         | Người có quyền cập nhật để rà soát và gửi, người có quyền duyệt.             |
-| **TT 6** · `Sheet1!C7` | Tra mã ICD có sẵn và mốc theo dõi ca lao mẫu. Hỏi số liệu theo kỳ và soạn dự thảo giao ban.            | Nghiệp vụ → Tác nghiệp → Điều trị lao – phổi → [Tra cứu ca mẫu](http://localhost:5174/bv-tro-ly). Nghiệp vụ → Điều hành → Tổng quan → Bảng điều hành → thẻ [Tra cứu số liệu](http://localhost:5174/dh-bang-dieu-hanh#tra-cuu-so-lieu).                | Người có quyền xem Điều trị lao – phổi hoặc Tổng quan, tùy chủ đề.           |
-| **TT 7** · `Sheet1!C8` | Ghi kết quả theo từng mốc của ca lao mẫu, duyệt hoàn tất theo dõi và đồng bộ VITIMES giả lập.          | Nghiệp vụ → Tác nghiệp → Điều trị lao – phổi → [Theo dõi ca điều trị](http://localhost:5174/bv-lao).                                                                                                                                                  | Người có quyền cập nhật để theo dõi và đồng bộ, người có quyền duyệt.        |
+#### 2. Dữ liệu & Luồng trạng thái
 
-Trong GDOS, chuyên viên có quyền cập nhật trong phạm vi được phân công, còn lãnh đạo có quyền duyệt trong phạm vi được phân công. Cờ quản trị cấp quyền cho các chức năng quản trị như **Nguồn dữ liệu vào**. Tài khoản dev có cả hai vai nghiệp vụ và cờ quản trị nên có thể diễn tập liên tục các bước. Khi kiểm tra phân quyền, dùng các tài khoản có vai riêng. Xem [ADR-0006 về vai và phân công](adr/0006-vai-tro-khoi-chinh-phu.md).
+- Mỗi ca chụp bao gồm: Mã phim (`XQ-xxxx`), Mã chỉ định HIS (`HIS-XQ-xxxx`), Họ tên bệnh nhân, Tuổi, Khoa chỉ định, Nguồn chụp (`benh-vien` hoặc `xe-luu-dong`), Nhóm dữ liệu (`Học`, `Đánh giá`, hoặc `Chạy song song`).
+- Chu trình xử lý 3 trạng thái:
+  1. `cho-nhan` (Chờ nhận định): Bác sĩ chuyên khoa xem hình ảnh, thông tin lâm sàng và ghi nhận nhãn:
+     - `khong-co-dau`: Không phát hiện tổn thương nghi lao.
+     - `co-dau`: Có tổn thương nghi ngờ (kèm phân vùng giải phẫu).
+     - `khong-doc`: Phim hỏng kỹ thuật, lỗi tư thế, dị vật cắt cụt đỉnh/góc sườn hoành.
+  2. `cho-duyet` (Chờ duyệt): Chuyển lên Trưởng khoa CĐHA hoặc người giám sát chuyên môn để xác nhận nhãn chuẩn.
+  3. `da-duyet` (Đã duyệt): Khóa nhãn chuyên môn; cho phép kích hoạt mô hình AI để đối chiếu gợi ý, phân tích danh sách tổn thương tự động và tính điểm tin cậy (Confidence score).
 
-## Luồng dữ liệu đầu vào và đầu ra
+#### 3. Bảng điều khiển KPI trên giao diện
 
-GDOS đọc **số liệu tổng hợp theo tháng** từ kho chỉ tiêu được nạp qua Excel hoặc API và từ bộ số liệu giả lập. Chế độ **Tự động** ưu tiên số đã nạp cho từng chỉ tiêu, tháng và đơn vị. Chỉ tiêu còn thiếu dùng số giả lập và được ghi rõ nguồn. Hai chế độ **Đã nạp** và **Giả lập** cho phép xem riêng từng nguồn. Ảnh X-quang, hồ sơ BHYT và ca lao trong bản diễn tập là bộ mẫu dựng sẵn. Người dùng xử lý các hồ sơ đó trên màn hình nghiệp vụ tương ứng.
+Màn hình [Kho phim và gán nhãn](http://localhost:5174/bv-phim) hiển thị 4 thẻ KPI thời gian thực:
 
-### Nạp số liệu chỉ tiêu từ Excel
+- **Tổng số phim**: Toàn bộ phim trong kho lưu trữ của đơn vị.
+- **Chờ dán nhãn**: Các ca chụp mới đẩy từ máy X-quang/PACS chưa được bác sĩ đọc.
+- **Chờ duyệt nhãn**: Các ca đã dán nhãn sơ bộ cần trưởng khoa phê duyệt.
+- **Tỷ lệ đồng thuận AI**: Tỷ lệ phần trăm các ca có sự trùng khớp hoàn toàn giữa kết luận của bác sĩ đã duyệt và dự đoán của mô hình AI.
 
-1. Mở **Quản trị hệ thống → Kết nối → Nguồn dữ liệu vào → Nạp từ Excel** và bấm **Tải tệp mẫu**. Dùng tệp `.xlsx` có trang tính **Số liệu**. Hệ thống đọc ba cột đầu gồm **Mã chỉ tiêu**, **Kỳ (MM/YYYY)** và **Giá trị**. Các cột còn lại dùng để tra cứu.
-2. Điền mỗi số liệu vào một dòng. Với bệnh viện, dùng mã `BV-01` đến `BV-11` và giá trị là số nguyên không âm. Có thể đưa nhiều tháng vào một tệp. Hàng để trống giá trị được bỏ qua, còn `0` được nạp như một số hợp lệ. Trong một tệp, mỗi cặp mã chỉ tiêu và tháng chỉ xuất hiện một lần.
-3. Chọn tệp và xem kết quả kiểm tra. GDOS báo số dòng hợp lệ và lý do của các dòng sai. Sửa tệp rồi kiểm lại nếu có lỗi. Excel được nạp theo nguyên tắc cả tệp hợp lệ mới ghi dữ liệu.
-4. Bấm **Nạp số liệu**. Xem **Kết quả lấy về** để đối soát lần nạp và số liệu đã ghi. Sau đó mở dashboard Bệnh viện, chọn **Đã nạp** và đúng tháng. Kiểm tra các giá trị, đơn vị tính và tên tệp ở bảng chi tiết trước khi tải báo cáo.
+---
 
-Ví dụ minh họa cho tháng 11/2026.
+### TT 2: Gán nhãn 5.000 phim lịch sử, Hội đồng đạo đức & Hồ sơ thiết bị y tế (SaMD)
 
-| Mã chỉ tiêu | Kỳ      | Giá trị | Ý nghĩa              |
-| ----------- | ------- | ------: | -------------------- |
-| `BV-01`     | 11/2026 |    1200 | Lượt khám ngoại trú  |
-| `BV-04`     | 11/2026 |     750 | Ngày giường sử dụng  |
-| `BV-05`     | 11/2026 |    1000 | Ngày giường khả dụng |
-| `BV-08`     | 11/2026 |       0 | Số hồ sơ BHYT gửi    |
+#### 1. Quản lý tập dữ liệu vàng (Gold Standard Dataset)
 
-Dashboard chế độ **Đã nạp** sẽ hiện **1.200 lượt khám**, **75% công suất giường** và **0 hồ sơ BHYT gửi**. Công suất được tính từ `BV-04` và `BV-05` cùng kỳ. Các chỉ tiêu chưa có dữ liệu sẽ hiện `—`. Bản nháp Sở Y tế chứa nhóm khám và giường, còn bản nháp BHXH chứa nhóm gửi và trả hồ sơ.
+- Hệ thống quản lý cơ sở dữ liệu **5.000 phim X-quang lịch sử** đã được ẩn danh hoàn toàn (De-identified) theo quy định bảo vệ dữ liệu cá nhân (Nghị định 13/2023/NĐ-CP).
+- Mọi trường định danh trực tiếp (Tên thật, số CMND/CCCD, địa chỉ, số điện thoại) được bóc tách và mã hóa bằng định danh nghiên cứu đồng nhất.
 
-### Nạp số liệu chỉ tiêu từ API
+#### 2. Theo dõi 4 mốc nghiên cứu khoa học
 
-1. Mở [Nguồn API](http://localhost:5174/nd-api), tạo nguồn và khai địa chỉ, kiểu xác thực, đường dẫn dữ liệu trong phản hồi và cách ánh xạ. Máy chủ GDOS gọi `GET` tới nguồn và đọc JSON. Có thể ánh xạ một mảng có các trường mã, kỳ, giá trị, hoặc một đối tượng có từng trường số liệu tương ứng với từng mã chỉ tiêu.
-2. Bấm **Lấy thử** để xem mẫu phản hồi và kết quả kiểm tra trước khi ghi. Khi cấu hình đúng, lưu và bật nguồn.
-3. Bấm **Lấy ngay** để nạp. Dòng hợp lệ được ghi vào kho, dòng sai được bỏ qua và ghi lỗi trong lần nạp. Nếu cấu hình để trống trường kỳ, hệ thống dùng tháng hiện tại. Nên ánh xạ trường kỳ khi nguồn có số liệu các tháng trước. Kiểm tra kết quả ở [Kết quả lấy về](http://localhost:5174/nd-ket-qua), sau đó mở dashboard ở chế độ **Đã nạp**.
+Tại màn hình [Hồ sơ nghiên cứu](http://localhost:5174/bv-nghien-cuu), lãnh đạo đề tài theo dõi và cập nhật tiến độ:
 
-Ví dụ phản hồi JSON dạng mảng cho ánh xạ theo dòng, với đường dẫn `data`.
+1. **Đề cương và kế hoạch ẩn danh**: Đề cương nghiên cứu chi tiết, quy chuẩn gán nhãn đa chuyên gia (Consensus reading).
+2. **Biên bản Hội đồng đạo đức**: Phê duyệt chấp thuận của Hội đồng đạo đức trong nghiên cứu y sinh học cấp cơ sở/Bộ Y tế (Yêu cầu tài khoản có quyền duyệt `APPROVE`).
+3. **Hồ sơ phân loại thiết bị y tế**: Báo cáo kỹ thuật phân loại phần mềm như một trang thiết bị y tế (Software as a Medical Device - SaMD) theo quy chuẩn Nghị định 98/2021/NĐ-CP (nhóm B hoặc C tùy chỉ định hỗ trợ sàng lọc hoặc chẩn đoán).
+4. **Đào tạo sử dụng và phản hồi của người đọc**: Nhật ký tập huấn bác sĩ, kỹ thuật viên và khảo sát độ hài lòng của nhân viên y tế.
 
-```json
-{
-  "data": [
-    { "maChiTieu": "BV-01", "ky": "2026-11", "giaTri": 1200 },
-    { "maChiTieu": "BV-04", "ky": "2026-11", "giaTri": 750 },
-    { "maChiTieu": "BV-05", "ky": "2026-11", "giaTri": 1000 }
-  ]
-}
-```
+#### 3. Ma trận đối chiếu khoa học (Confusion Matrix)
 
-Excel và API ghi vào cùng kho `chi_tieu_so_lieu`. Đơn vị được xác định từ tài khoản nạp. Mỗi bộ **đơn vị, mã chỉ tiêu, tháng** có một giá trị hiện hành. Nếu nạp lại cùng bộ khóa, lần nạp sau thay giá trị và thông tin nguồn. Kết quả lần nạp ghi kênh, thời điểm, số dòng và lỗi. Dashboard hiển thị số của đơn vị người xem.
+Hệ thống tự động tính toán các chỉ số thống kê giá trị chẩn đoán:
 
-### Chạy nguồn mẫu và xuất kết quả
+- **Đúng có dấu (True Positive - TP)**: AI và Bác sĩ cùng xác nhận có tổn thương.
+- **Đúng không dấu (True Negative - TN)**: AI và Bác sĩ cùng xác nhận bình thường.
+- **Báo dư (False Positive - FP)**: AI cảnh báo có tổn thương nhưng Bác sĩ kết luận bình thường (nguy cơ chỉ định xét nghiệm GeneXpert quá mức).
+- **Bỏ sót (False Negative - FN)**: AI kết luận bình thường nhưng Bác sĩ phát hiện tổn thương (nguy cơ lọt bệnh trong cộng đồng).
+- Từ các chỉ số trên, hệ thống tính toán Độ nhạy (Sensitivity), Độ đặc hiệu (Specificity), Giá trị dự báo dương tính (PPV) và Giá trị dự báo âm tính (NPV).
 
-- Để diễn tập nhanh, mở [Nguồn bệnh viện](http://localhost:5174/bv-ket-noi), chọn tháng và bấm **Nạp mẫu** ở một trong năm nguồn. Dashboard **Giả lập** có thể xem ngay trước khi nạp mẫu. Nút nạp chỉ ghi vết của nguồn và kỳ, sau đó dashboard hiện nhãn như **Giả lập · HIS**. Số mẫu vẫn thuộc chế độ **Giả lập**.
-- Từ [dashboard Bệnh viện](http://localhost:5174/dh-bang-dieu-hanh#benh-vien), chọn nguồn và kỳ, mở bản nháp báo cáo Sở Y tế, BHXH hoặc VITIMES rồi bấm **Xuất Excel**. Tệp có chỉ tiêu, đơn vị tính, giá trị, nguồn và thời điểm cập nhật nếu có. Số đã nạp đi ra từ kho chỉ tiêu, còn số giả lập đi ra từ bộ tổng hợp mẫu. Các thao tác gửi BHYT hoặc đồng bộ ca lao giả lập lưu trạng thái nghiệp vụ riêng. Chúng chưa làm tăng các chỉ tiêu tổng hợp trên dashboard.
+#### 4. Kết xuất tài liệu khoa học
 
-### Đầu vào và đầu ra theo từng hạng mục
+Cho phép xuất file Excel và biên bản tài liệu chuẩn bị nghiệm thu đề tài tại [Báo cáo nghiên cứu](http://localhost:5174/bv-bao-cao-phim).
 
-| TT  | Đầu vào                                                                           | GDOS lưu hoặc xử lý                                                                           | Đầu ra                                                                                    |
-| --- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| 1   | Ảnh tổng hợp, mã phim, mã chỉ định HIS mẫu, nguồn nhận và nhãn người đọc.         | Lưu vết nhận lô, trạng thái nhãn và kết quả chạy mô hình theo đơn vị.                         | Ảnh xem trên màn hình, nhãn đã duyệt, gợi ý, điểm tín hiệu và đối chiếu.                  |
-| 2   | 5.000 ảnh lịch sử tổng hợp, nhãn, các mốc nghiên cứu và lô được chọn để đánh giá. | Tổng hợp tiến độ duyệt và đếm kết quả đối chiếu ở các phim đủ điều kiện.                      | Bảng tiến độ, bộ nhãn Excel, báo cáo khoa học và bản nháp tài liệu nghiên cứu.            |
-| 3   | Nguồn và tháng đã chọn, tệp Excel hoặc phản hồi JSON.                             | Với nguồn mẫu, lưu vết theo nguồn và kỳ. Với Excel/API, ghi số liệu và lần nạp vào kho chung. | Trạng thái nhận nguồn, số dòng hợp lệ, lỗi và các chỉ tiêu đã có trong kho.               |
-| 4   | Tháng, chế độ dữ liệu và giá trị 11 chỉ tiêu.                                     | Đọc đúng kỳ, tính công suất từ hai chỉ tiêu giường và so sánh với tháng trước.                | Thẻ KPI, biểu đồ sáu tháng, bảng kèm nguồn và ba bản nháp Excel.                          |
-| 5   | Hồ sơ BHYT mẫu gồm mã hồ sơ, ngày dịch vụ, mã thẻ và mã dịch vụ.                  | Kiểm tra theo quy tắc mẫu, lưu trạng thái rà soát, bổ sung, duyệt và gửi.                     | Danh sách lỗi hoặc thông báo cổng BHXH giả lập đã nhận hồ sơ sau duyệt.                   |
-| 6   | Chủ đề và ca lao mẫu, hoặc tháng và chỉ tiêu.                                     | Đọc nguồn theo quyền người dùng rồi dựng câu trả lời theo chủ đề.                             | Mã ICD đã lưu, mốc cần xác nhận, số liệu hoặc bản nháp giao ban có thể chỉnh và sao chép. |
-| 7   | Ca lao mẫu, các ngày theo dõi và kết quả do chuyên viên ghi nhận.                 | Lưu kết quả từng mốc, trạng thái hoàn tất và vết đồng bộ mới nhất.                            | Tiến độ theo dõi, mốc cần liên hệ lại và xác nhận đồng bộ VITIMES giả lập.                |
+---
 
-## TT 1 Nhận phim và đối chiếu mô hình X-quang
+### TT 3: Kho dữ liệu bệnh viện & Lớp kết nối API đa nguồn
 
-Luồng này diễn tập việc nhận phim từ hai nguồn, ghi nhận cách người đọc phân loại ảnh và so sánh kết quả với mô hình thử. Mỗi phim có mã `XQ-…`, mã chỉ định `HIS-XQ-…`, nguồn nhận và nhóm **Học**, **Đánh giá** hoặc **Chạy song song**.
+#### 1. Nguyên tắc kiến trúc kho dữ liệu
 
-1. Trong **Hồ sơ nghiên cứu**, người có quyền duyệt ghi nhận mốc **Biên bản Hội đồng đạo đức**. Mốc này là điều kiện để nhận lô chạy song song. Phim lịch sử đã có sẵn để diễn tập gán nhãn.
-2. Trong **Kho phim và gán nhãn**, chuyên viên chọn nhận lô từ **Máy X-quang bệnh viện** hoặc **Xe X-quang lưu động**. Mỗi nguồn mở một lô cố định gồm 6 phim mẫu. Nhận lại cùng nguồn giữ nguyên các mã phim, nên danh sách có tối đa 12 phim chạy song song ngoài tập lịch sử.
-3. Chuyên viên tìm theo mã hoặc lọc theo nguồn và trạng thái, mở ảnh tổng hợp, kiểm tra mã chỉ định HIS mẫu rồi chọn một trong ba nhãn **Có dấu mô phỏng**, **Không có dấu mô phỏng**, hoặc **Loại khỏi tập vì chất lượng**. Bấm **Lưu nhãn chờ duyệt** để chuyển phim sang **Chờ duyệt**.
-4. Người duyệt kiểm tra nhãn đã lưu. **Duyệt nhãn** chốt nhãn và chuyển sang **Đã duyệt**. **Trả lại** đưa phim về **Chờ gán nhãn**. Nếu nhãn đang duyệt đã bị thay đổi, hệ thống yêu cầu tải lại trước khi duyệt.
-5. Sau khi nhãn được duyệt và ảnh đủ chất lượng trong bài tập, chuyên viên bấm **Chạy gợi ý thử**. Màn hình hiển thị nhãn gợi ý, điểm tín hiệu, phiên bản mô hình và kết quả **Trùng nhãn đã duyệt** hoặc **Khác nhãn đã duyệt**. Nhãn đã duyệt là mốc đối chiếu và được giữ riêng với gợi ý.
+- Tuân thủ thiết kế **Một kho dữ liệu tập trung (Single Source of Truth)** theo ADR-0010.
+- Lớp kết nối API đóng vai trò Adapter trung gian, thu nhận dữ liệu từ các phần mềm chuyên môn y tế phân tán trong bệnh viện, chuẩn hóa về bảng chỉ tiêu thống nhất (`chi_tieu_so_lieu`), phục vụ đồng thời cho Bảng điều hành giám đốc, Trợ lý AI và các báo cáo tự động.
 
-Mô hình `phantom-centroid-v1` học một ngưỡng từ độ chênh sáng trên ảnh tổng hợp thuộc nhóm **Học** trong 400 mã đầu. Điểm tín hiệu 0–100 biểu thị khoảng cách đến ngưỡng trong mô hình thử. Nhãn do người dùng duyệt dùng để đối chiếu kết quả diễn tập. Xem [mã mô hình](../apps/api/src/benh-vien/x-quang.ts) và [quy tắc chuyển trạng thái phim](../apps/api/src/benh-vien/phim.service.ts).
+#### 2. Đặc tả giao thức kết nối 5 nguồn y tế
 
-## TT 2 Gán nhãn phim lịch sử và lập hồ sơ nghiên cứu
+Tại màn hình [Nguồn bệnh viện](http://localhost:5174/bv-ket-noi), hệ thống phân định rõ giao thức chuẩn:
 
-Kho lịch sử gồm **5.000 ảnh tổng hợp**. Bộ khởi tạo có 4.960 phim với nhãn mẫu đã duyệt, 16 phim chờ duyệt và 24 phim chờ gán nhãn. Những con số này mô tả bộ mẫu ban đầu. Sau khi thao tác, màn tiến độ hiển thị trạng thái hiện tại của đơn vị. Ảnh tổng hợp và mã mẫu được tạo sẵn cho diễn tập. Xử lý ẩn danh dữ liệu bệnh viện thật là phần chuẩn bị riêng khi chuyển sang thử nghiệm thực tế.
+| Nguồn hệ thống                          | Giao thức chuẩn hóa                                   | Chỉ tiêu thu nhận                                                                                                                       | Cơ chế đồng bộ                                                                         |
+| :-------------------------------------- | :---------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------- |
+| **HIS (Hospital Information System)**   | REST API (JSON) qua HTTPS nội bộ có mTLS              | `BV-01` (Khám ngoại trú)<br>`BV-02` (Nhập viện)<br>`BV-03` (Ra viện)<br>`BV-04` (Ngày giường sử dụng)<br>`BV-05` (Ngày giường khả dụng) | Định kỳ cuối ngày hoặc truy vấn on-demand theo tháng.                                  |
+| **LIS (Laboratory Information System)** | ASTM E1381/E1394 hoặc HL7 v2.5 MSH/ORU                | `BV-06` (Tổng lượt xét nghiệm sinh hóa, huyết học, vi sinh, đờm AFB)                                                                    | Kết nối Socket TCP/IP qua cổng trung gian của máy xét nghiệm tự động.                  |
+| **Máy X-quang / PACS**                  | DICOM 3.0 (C-FIND, C-MOVE, C-STORE, WADO-RS)          | `BV-07` (Lượt chụp X-quang)                                                                                                             | Lắng nghe trực tiếp từ PACS server hoặc máy chụp kỹ thuật số.                          |
+| **Cổng tiếp nhận BHXH**                 | REST API gửi/nhận gói XML chuẩn Quyết định 130/QĐ-BYT | `BV-08` (Hồ sơ gửi giám định)<br>`BV-09` (Hồ sơ bị từ chối/xuất toán)                                                                   | Ký số token HSM/USB Token và gửi cổng tiếp nhận dữ liệu BHXH Việt Nam.                 |
+| **Hệ thống VITIMES**                    | REST API Chương trình Chống lao Quốc gia (CTCLQG)     | `BV-10` (Ca lao mới phát hiện)<br>`BV-11` (Ca lao đang quản lý điều trị cuối kỳ)                                                        | Tích hợp xác thực OAuth2 / Bearer Token với máy chủ cơ sở dữ liệu bệnh lao trung ương. |
 
-1. **Chuẩn bị nghiên cứu.** Theo dõi bốn mốc gồm đề cương và kế hoạch ẩn danh, biên bản Hội đồng đạo đức, hồ sơ phân loại thiết bị y tế, đào tạo và phản hồi người đọc. Hệ thống lưu trạng thái đã ghi nhận và thời điểm cập nhật. Mốc Hội đồng cần quyền duyệt. Các mốc còn lại cần quyền cập nhật.
-2. **Hoàn thiện nhãn.** Từ các hàng chờ, chuyên viên ghi nhãn và người duyệt chốt hoặc trả lại theo luồng TT 1. Thanh tiến độ dùng số phim lịch sử đã duyệt trên tổng 5.000. Phim chạy song song có chỉ số theo dõi riêng.
-3. **Chạy đánh giá.** Nút **Chạy tối đa 25 phim đánh giá** lấy các phim thuộc nhóm **Đánh giá** đã duyệt, đủ chất lượng trong bài tập và chưa có gợi ý. Có thể chạy tiếp để lấy lô kế tiếp. Bảng đối chiếu chỉ tính phim thuộc nhóm **Đánh giá** hoặc **Chạy song song** có cả nhãn đã duyệt và kết quả mô hình.
-4. **Đọc kết quả.** Hai ô **Đúng có dấu** và **Đúng không dấu** đếm các kết quả trùng nhãn tương ứng. **Báo dư** là mô hình báo có dấu khi nhãn đã duyệt ghi không có dấu. **Bỏ sót** là tình huống ngược lại. Các số đếm dùng để soát lỗi trên ảnh tổng hợp.
-5. **Xuất tài liệu.** Mở **Báo cáo nghiên cứu** trong phân hệ Phim X-quang để xem và xuất báo cáo khoa học, dự thảo biên bản Hội đồng, phiếu chuẩn bị phân loại thiết bị, phiếu đào tạo và phản hồi, hoặc bộ nhãn lịch sử đã duyệt. Mục này cần quyền xuất. Bộ nhãn gồm mã phim, nguồn, nhóm và nhãn. Phim bị loại vì chất lượng có thể xuất hiện với nhãn đã duyệt tương ứng để người nhận nhận biết. Các trường ký, kết luận Hội đồng và kết luận phân loại dành cho đơn vị có thẩm quyền hoàn thiện.
+---
 
-## TT 3 Tiếp nhận dữ liệu HIS, LIS, X-quang, BHXH và VITIMES
+### TT 4: Bảng điều hành, giao ban, KPI & Báo cáo tự động
 
-Quản trị viên mở **Nguồn bệnh viện**, chọn kỳ tháng và bấm **Nạp mẫu** ở từng nguồn. Khi hoàn tất, thẻ nguồn hiển thị danh sách chỉ tiêu và thời điểm nạp mẫu. **Nạp lại** cập nhật vết của cùng nguồn, kỳ và đơn vị.
+#### 1. Giám sát điều hành bệnh viện thời gian thực
 
-| Nguồn       | Mã chỉ tiêu      | Số liệu trả về                                                                 |
-| ----------- | ---------------- | ------------------------------------------------------------------------------ |
-| HIS         | `BV-01`–`BV-05`  | Lượt khám ngoại trú, ca nhập viện, ca ra viện, ngày giường sử dụng và khả dụng |
-| LIS         | `BV-06`          | Lượt xét nghiệm                                                                |
-| Máy X-quang | `BV-07`          | Lượt chụp X-quang                                                              |
-| Cổng BHXH   | `BV-08`, `BV-09` | Hồ sơ BHYT gửi và hồ sơ bị trả                                                 |
-| VITIMES     | `BV-10`, `BV-11` | Ca lao ghi nhận và ca đang điều trị cuối kỳ                                    |
+Màn hình [Bảng điều hành bệnh viện](http://localhost:5174/dh-bang-dieu-hanh#benh-vien) trực quan hóa các chỉ số hoạt động then chốt:
 
-Ở chế độ **Giả lập**, các số tổng hợp có sẵn theo kỳ. Sau khi nạp mẫu, dashboard gắn tên nguồn cho những chỉ tiêu tương ứng của đơn vị, chẳng hạn **Giả lập · HIS**. Cơ sở dữ liệu lưu vết nạp mẫu. Số giả lập được tạo lại từ cùng bộ dữ liệu dùng cho dashboard, báo cáo và trợ lý.
+- **Lượt khám ngoại trú**: Theo dõi áp lực tiếp nhận tại Khoa Khám bệnh.
+- **Lượt điều trị nội trú & Nhập viện**: Theo dõi luồng bệnh nhân vào các khoa lâm sàng (Lao 1, Lao 2, Hô hấp, Hồi sức cấp cứu).
+- **Công suất sử dụng giường bệnh (%)**:
+  $$\text{Công suất giường} = \frac{\text{Ngày giường sử dụng (BV-04)}}{\text{Ngày giường khả dụng (BV-05)}} \times 100\%$$
+  Tự động đổi màu cảnh báo: Xanh lá (75%–90% - tối ưu), Vàng (<75% - lãng phí công suất), Đỏ (>95% - quá tải giường bệnh).
+- **Hồ sơ gửi BHYT**: Theo dõi tiến độ thanh quyết toán với cơ quan bảo hiểm.
 
-Để kiểm tra luồng nạp số liệu, quản trị viên dùng **Nạp từ Excel** hoặc **Nguồn API** của GDOS. Excel có bước kiểm trước khi ghi. API dùng cấu hình ánh xạ sang mã chỉ tiêu. Kho `chi_tieu_so_lieu` giữ một giá trị cho mỗi bộ **đơn vị, mã chỉ tiêu, tháng**. Nạp lại cùng bộ khóa cập nhật giá trị đang dùng. Xem [ADR-0010 về kho chỉ tiêu](adr/0010-nguon-du-lieu-vao.md).
+#### 2. Biểu đồ xu hướng và phân tích 3 chế độ
 
-## TT 4 Điều hành, giao ban và xuất báo cáo
+- Biểu đồ cột thể hiện xu hướng biến động 6 tháng liên tiếp giúp Ban Giám đốc phát hiện chu kỳ mùa bệnh hô hấp.
+- Hỗ trợ 3 chế độ nguồn dữ liệu:
+  - **Tự động**: Ưu tiên số liệu nạp thật từ HIS/LIS, bù đắp chỉ tiêu còn thiếu bằng mô phỏng để bảo đảm liền mạch báo cáo.
+  - **Đã nạp**: Chỉ hiển thị các con số thực tế có xác nhận nguồn và thời gian đồng bộ.
+  - **Giả lập**: Phục vụ công tác diễn tập quy trình và đào tạo cán bộ mới.
 
-1. Mở **Điều hành → Tổng quan → Bảng điều hành → Bệnh viện**. Chọn tháng và nguồn **Tự động**, **Đã nạp** hoặc **Giả lập**. Ở chế độ Đã nạp, hệ thống đọc số của đơn vị người xem theo đúng kỳ. Chỉ tiêu chưa có số hiện dấu `—`. Giá trị đã nạp bằng `0` vẫn hiển thị là `0`.
-2. Đọc bốn thẻ chính gồm lượt khám ngoại trú, ca nhập viện, công suất sử dụng giường và hồ sơ BHYT gửi. So sánh hai kỳ khi cả hai có số cùng loại nguồn. Công suất giường bằng **ngày giường sử dụng ÷ ngày giường khả dụng × 100**, làm tròn một chữ số thập phân. Phép tính cần hai số cùng tháng và cùng loại nguồn, với ngày giường khả dụng lớn hơn 0. Khi chỉ có một trong hai số giường đã nạp, chế độ Tự động dùng công suất tính từ hai số giả lập và ghi nhãn nguồn.
-3. Chọn chỉ tiêu để xem sáu tháng lịch liên tiếp đến kỳ đang xem. Mở **Xem bảng chỉ tiêu và nguồn số liệu** để kiểm tra giá trị, đơn vị tính, nguồn và thời điểm cập nhật trước khi xuất báo cáo.
-4. Trong **Báo cáo giao ban**, chọn biểu để mở màn báo cáo chung theo tháng và nguồn đang xem. Các báo cáo cũng xuất hiện ở **Điều hành → Báo cáo** theo quyền của phân hệ chủ. Báo cáo Sở Y tế thuộc Báo cáo điều hành, báo cáo BHXH thuộc Hồ sơ BHYT, báo cáo VITIMES thuộc Điều trị lao – phổi. Bấm **Xuất Excel** để lấy dữ liệu đang xem. Tệp toàn số giả lập mang nhãn **DỮ LIỆU GIẢ LẬP** và hậu tố `-gia-lap`. Tệp có cả số đã nạp và giả lập mang nhãn **CÓ DỮ LIỆU GIẢ LẬP** và hậu tố `-co-gia-lap`. Xem [ADR-0007 về đầu mối báo cáo](adr/0007-mot-chu-nhieu-loi-vao.md).
+#### 3. Tự động kết xuất 3 mẫu báo cáo Excel chuẩn
 
-| Nơi nhận | Nội dung bản nháp                                                                 | Vị trí tại phân hệ chủ                                                                                   |
-| -------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Sở Y tế  | Khám ngoại trú, nhập viện, ra viện, giường bệnh, công suất, xét nghiệm và X-quang | Điều hành → Báo cáo → [Báo cáo định kỳ](http://localhost:5174/bc-dinh-ky) → **Bản nháp báo cáo Sở Y tế** |
-| BHXH     | Số hồ sơ BHYT gửi và bị trả                                                       | Tác nghiệp → Hồ sơ BHYT → [Báo cáo BHYT](http://localhost:5174/bv-bao-cao-bhyt)                          |
-| VITIMES  | Số ca lao ghi nhận và đang điều trị cuối kỳ                                       | Tác nghiệp → Điều trị lao – phổi → [Báo cáo theo dõi lao](http://localhost:5174/bv-bao-cao-lao)          |
+Từ số liệu điều hành, hệ thống cho phép xuất file Excel định dạng chuẩn chỉ với 1 cú click:
 
-Nút tải tạo bản nháp theo yêu cầu. Luồng phát hành chính thức cần biểu mẫu do từng nơi nhận xác nhận và quy trình gửi của bệnh viện.
+1. **Báo cáo Sở Y tế**: Tổng hợp chuyên môn hoạt động KCB toàn viện, cơ cấu mặt bệnh, công suất sử dụng giường.
+2. **Báo cáo BHXH**: Thống kê số lượng hồ sơ đề nghị thanh toán, tỷ lệ hồ sơ hợp lệ, cảnh báo tỷ lệ từ chối.
+3. **Báo cáo VITIMES**: Thống kê hoạt động phát hiện và thu nhận bệnh nhân lao gửi Chương trình Chống lao tỉnh/Quốc gia.
 
-## TT 5 Rà soát hồ sơ BHYT trước khi gửi
+---
 
-Bản diễn tập có 8 hồ sơ `BHYT-THU-…`. Các tình huống mẫu gồm thiếu mã thẻ, thiếu mã dịch vụ, thẻ hết hiệu lực tại ngày dịch vụ và trùng lượt dịch vụ. Ví dụ, `BHYT-THU-02` có lỗi thiếu mã thẻ ở trạng thái khởi tạo.
+### TT 5: AI hỗ trợ rà soát hồ sơ BHYT trước khi gửi (QĐ 130/QĐ-BYT)
 
-Khung chi tiết mở khi bấm mã hồ sơ hoặc dòng trong bảng. Dòng đang xem được đánh dấu. Trên màn hẹp, GDOS cuộn đến khung chi tiết bên dưới bảng. Bấm **Cần bổ sung** hoặc **Đã gửi giả lập** để lọc trạng thái và chuyển về danh sách kết quả. Bấm **Hồ sơ diễn tập** để bỏ lọc trạng thái, hoặc **Xóa lọc** để xóa cả các bộ lọc khác và ô tìm.
+#### 1. Mục tiêu và nghiệp vụ tiền kiểm (Pre-audit)
 
-| Bước | Người thực hiện và thao tác                                                          | Trạng thái sau bước                                             |
-| ---- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
-| 1    | Chuyên viên mở hồ sơ **Chờ rà soát** và bấm **Rà soát hồ sơ**.                       | **Cần bổ sung** nếu có lỗi mẫu, **Chờ duyệt** nếu qua kiểm tra. |
-| 2    | Với hồ sơ **Cần bổ sung**, chuyên viên đọc lý do và **Áp dụng bản bổ sung mẫu**.     | Quay về **Chờ rà soát** để kiểm tra lại.                        |
-| 3    | Người có quyền duyệt xem hồ sơ **Chờ duyệt**, chọn **Duyệt hồ sơ** hoặc **Trả lại**. | **Đã duyệt** hoặc **Cần bổ sung**.                              |
-| 4    | Người có quyền cập nhật chọn **Gửi cổng BHXH giả lập** từ hồ sơ **Đã duyệt**.        | **Đã gửi giả lập** và có thông báo nhận.                        |
+- Ngăn ngừa tình trạng **xuất toán BHYT** do sai sót kỹ thuật hành chính và chỉ định dịch vụ không phù hợp.
+- Tự động quét toàn bộ các bảng dữ liệu XML theo Quyết định 130/QĐ-BYT (Bảng 1: Tổng hợp chi phí KCB; Bảng 2: Chi tiết thuốc; Bảng 3: Chi tiết dịch vụ kỹ thuật và vật tư y tế).
 
-Rà soát chạy theo quy tắc và lỗi được cài trong bộ mẫu. Nút bổ sung áp dụng bản sửa mẫu đã định sẵn. Cán bộ vẫn là người quyết định duyệt hoặc trả lại. Hồ sơ chưa duyệt bị chặn ở bước gửi.
+#### 2. Bộ quy tắc kiểm tra chuyên sâu
 
-## TT 6 Tra cứu ca mẫu và soạn thảo giao ban
+Hệ thống tự động phát hiện 4 nhóm lỗi phổ biến:
 
-Người dùng chọn chủ đề, chọn ca mẫu hoặc kỳ báo cáo và bấm **Gửi câu hỏi**. Hệ thống trả kết quả kèm tên nguồn. Người dùng có thể chỉnh nội dung trong ô trả lời rồi bấm **Sao chép nội dung** để sử dụng trong bản nháp.
+1. **Lỗi thẻ BHYT**: Thiếu mã thẻ, mã thẻ không đúng định dạng (15 ký tự), thẻ hết hạn sử dụng tại thời điểm chỉ định dịch vụ, không khớp thông tin hành chính với Cổng tra cứu BHXH.
+2. **Lỗi danh mục kỹ thuật**: Mã dịch vụ chưa được phê duyệt trong danh mục kỹ thuật được BHYT thanh toán của bệnh viện, sai mã tương đương Bộ Y tế.
+3. **Lỗi trùng lặp**: Trùng lượt khám, trùng chỉ định kỹ thuật cùng loại (ví dụ: chụp X-quang 2 lần trong cùng ngày mà không có biên bản hội chẩn hoặc ghi chú lý do diễn biến cấp tính).
+4. **Lỗi tỷ lệ thanh toán & Định mức**: Áp sai mức hưởng BHYT (80%, 95%, 100%), tính vượt số ngày giường thực tế.
 
-| Chủ đề                     | Đầu vào           | Kết quả trả về                                                                       |
-| -------------------------- | ----------------- | ------------------------------------------------------------------------------------ |
-| Tra mã ICD                 | Ca lao mẫu        | Mã ICD đã lưu trong ca được chọn.                                                    |
-| Nhắc theo dõi điều trị lao | Ca lao mẫu        | Các ngày còn cần xác nhận và đầu mối theo dõi.                                       |
-| Dự thảo văn bản giao ban   | Tháng báo cáo     | Bản nháp gửi ban điều hành, có lượt khám, ca nhập viện, ca ra viện và nguồn từng số. |
-| Hỏi đáp số liệu điều hành  | Tháng và chỉ tiêu | Giá trị, đơn vị tính và nguồn từ bảng điều hành ở chế độ Tự động.                    |
+#### 3. Phân tầng rủi ro & Đề xuất AI
 
-Hai chủ đề về ca lao nằm ở **Điều trị lao – phổi → Tra cứu ca mẫu** và yêu cầu quyền xem của phân hệ đó. Hai chủ đề về giao ban và số liệu nằm ở **Tổng quan → Bảng điều hành → Tra cứu số liệu** và yêu cầu quyền xem Tổng quan. Hệ thống trả lời theo bốn chủ đề định sẵn. Mốc theo dõi là lời nhắc nghiệp vụ để cán bộ kiểm tra hồ sơ. Phần kê đơn và văn bản theo biểu mẫu Bộ Y tế cần yêu cầu và mẫu được duyệt cho triển khai thực tế.
+Tại màn hình [Rà soát hồ sơ BHYT](http://localhost:5174/bv-bhyt):
 
-## TT 7 Theo dõi ca lao và đồng bộ VITIMES
+- Phân loại trực quan mức độ rủi ro xuất toán:
+  - `cao` (Huy hiệu đỏ): Chắc chắn bị cổng giám định từ chối (thiếu thẻ, hết hạn, trùng lặp kỹ thuật nặng).
+  - `trung-binh` (Huy hiệu vàng): Cần kiểm tra lại hồ sơ bệnh án hoặc bổ sung chứng từ kèm theo.
+  - `thap` (Huy hiệu xanh): Hồ sơ chuẩn hóa, đầy đủ thông tin, sẵn sàng ký số gửi cổng.
+- **Khối đề xuất AI**: Phân tích chi tiết nguyên nhân lỗi và hướng dẫn nhân viên giám định BHYT phương án xử lý nhanh (ví dụ: _"Bổ sung mã thẻ BHYT hợp lệ từ cơ sở dữ liệu tra cứu cổng BHXH"_, _"Áp dụng mã dịch vụ chuẩn danh mục Bộ Y tế: DV-MAU-XQ"_).
+- Phân định rõ thẩm quyền: Chuyên viên rà soát và bổ sung thông tin → Lãnh đạo phòng KHTH/Giám định duyệt hồ sơ → Người có thẩm quyền ký số gửi cổng giám định.
 
-Danh sách có 6 ca `LAO-THU-…` với ngày bắt đầu, mã ICD đã có trong hồ sơ, tổ theo dõi và 3 mốc theo dõi mẫu cho mỗi ca.
+---
 
-1. Chuyên viên mở ca đang theo dõi và ghi nhận từng mốc **Đã xác nhận** hoặc **Cần liên hệ lại**. Mốc chưa ghi nhận và mốc cần liên hệ lại xuất hiện trong kết quả hỏi trợ lý về ca đó.
-2. Sau khi đã lưu ít nhất một mốc, người có quyền cập nhật có thể bấm **Đồng bộ VITIMES giả lập**. Hệ thống lưu trạng thái, số mốc đã ghi nhận và thời điểm đồng bộ. Nếu sau đó có thay đổi ở ca, lần gửi cũ không còn được hiển thị là bản mới nhất. Người dùng có thể đồng bộ lại.
-3. Khi cả ba mốc đều **Đã xác nhận**, người có quyền duyệt bấm **Hoàn tất theo dõi**. Ca chuyển sang **Hoàn tất theo dõi** và khóa cập nhật các mốc. Vẫn có thể đồng bộ trạng thái hoàn tất sang VITIMES giả lập.
+### TT 6: Trợ lý AI hỗ trợ lâm sàng & Hành chính bệnh viện
 
-## Điểm kiểm soát và kết quả kiểm thử
+Hệ thống tích hợp trợ lý AI chuyên khoa sâu tại [Trợ lý lâm sàng – hành chính](http://localhost:5174/bv-tro-ly) với 4 nhóm năng lực:
 
-- **Quyền và phạm vi.** Các thao tác đọc, sửa, duyệt và xuất được kiểm ở API theo quyền phân hệ. Bảng `benh_vien_thu` lưu trạng thái theo đơn vị, áp dụng RLS và ghi nhật ký. Kiểm thử đã xác nhận đơn vị khác không đọc được vết của đơn vị đang diễn tập và vai ứng dụng không có quyền xóa cứng. Xem [ADR-0004](adr/0004-postgres-rls-nhat-ky.md).
-- **Kiểm thử nghiệp vụ.** Đã kiểm các tình huống chặn nhận phim khi chưa ghi nhận mốc đạo đức, chặn đối chiếu trước khi duyệt nhãn, chặn gửi BHYT trước khi duyệt, và chặn hoàn tất theo dõi khi còn mốc chưa xác nhận. Xem [kiểm thử tích hợp bệnh viện](../apps/api/src/benh-vien/benh-vien.e2e.test.ts).
-- **Kiểm thử trên localhost.** Đã áp dụng migration `0033_benh-vien-thu`, thao tác các luồng chính trên trình duyệt và kiểm tra tải báo cáo Excel. Sau lần chỉnh màn BHYT, `VITEST_MAX_WORKERS=1 pnpm kiem-tra` đạt 391 bài test và build. Xem [ghi nhận tiến độ](tien-do.md).
+#### 1. Tra cứu danh mục mã bệnh ICD-10 chuyên khoa
 
-## Điều kiện chuyển sang triển khai thực tế
+- Hỗ trợ bác sĩ tra cứu nhanh và chính xác mã bệnh theo chuẩn ICD-10 của WHO và Bộ Y tế:
+  - Lao hô hấp có xác định vi khuẩn học/mô bệnh học: `A15` (A15.0 - Lao phổi soi đờm trực tiếp dương tính, A15.1 - Lao phổi cấy đờm dương tính, A15.2 - Lao phổi khẳng định mô bệnh học...).
+  - Lao hô hấp không xác định vi khuẩn học: `A16` (A16.0 - Lao phổi AFB âm tính, A16.2 - Lao phổi không đề cập đến vi khuẩn học).
+  - Các bệnh phổi đồng mắc: Bệnh phổi tắc nghẽn mạn tính COPD (`J44`), Hen phế quản (`J45`), Giãn phế quản (`J47`), Viêm phổi kẽ (`J84`).
 
-Đội bệnh viện cần xác nhận đầu mối, phạm vi dữ liệu và đặc tả kết nối của thiết bị X-quang, HIS, LIS, BHXH và VITIMES. Phần nghiên cứu X-quang cần quy trình ẩn danh và gán nhãn được phê duyệt, dữ liệu được phép sử dụng, mô hình đã thẩm định và hồ sơ phân loại theo quy trình chính thức. Phần báo cáo và trợ lý cần biểu mẫu, lịch gửi và phạm vi nội dung được đơn vị sử dụng xác nhận.
+#### 2. Kiểm tra đơn thuốc chống lao & Phác đồ điều trị CTCLQG
+
+- Kiểm tra tính tuân thủ phác đồ chuẩn của Chương trình Chống lao Quốc gia:
+  - **Phác đồ A1 (2RHZE/4RH)**: Phác đồ chuẩn điều trị lao nhạy cảm thuốc cho người lớn (Giai đoạn tấn công 2 tháng gồm 4 loại thuốc Rifampicin, Isoniazid, Pyrazinamide, Ethambutol; Giai đoạn duy trì 4 tháng gồm Rifampicin và Isoniazid).
+  - **Phác đồ lao kháng thuốc (MDR-TB)**: Kiểm tra các phác đồ ngắn hạn và dài hạn có thuốc mới (Bedaquiline, Linezolid, Moxifloxacin/Levofloxacin).
+- Cảnh báo an toàn dùng thuốc:
+  - **Độc tính trên gan**: Thuốc R, H, Z đều chuyển hóa qua gan. AI tự động nhắc nhở bác sĩ kiểm tra men gan (AST, ALT, Bilirubin) trước khi điều trị và định kỳ mỗi tháng.
+  - **Độc tính thần kinh thị giác**: Cảnh báo kiểm tra thị lực và phân biệt màu sắc đối với Ethambutol (E).
+  - **Tương tác thuốc**: Cảnh báo Rifampicin là chất cảm ứng enzym Cytochrome P450 mạnh, làm giảm nồng độ thuốc kháng retrovirus (ARV ở bệnh nhân đồng nhiễm Lao/HIV), thuốc điều trị đái tháo đường dạng uống, thuốc chống đông.
+
+#### 3. Soạn thảo văn bản mẫu y tế (Thông tư 46/2018/TT-BYT)
+
+- Tự động dự thảo **Bản tóm tắt bệnh án ra viện** chuẩn y khoa theo quy định của Bộ Y tế:
+  - Quá trình bệnh lý và diễn biến lâm sàng.
+  - Tóm tắt kết quả xét nghiệm cận lâm sàng có giá trị chẩn đoán (soi đờm AFB, X-quang phổi, công thức máu, chức năng gan thận).
+  - Phương pháp điều trị đã áp dụng và đáp ứng lâm sàng.
+  - Tình trạng người bệnh khi ra viện (Khỏi bệnh, Đỡ/giảm, Ổn định, Nặng xin về).
+  - Hướng dẫn chế độ điều trị tiếp theo tại tuyến y tế cơ sở và lịch hẹn tái khám.
+
+#### 4. Trợ lý hỏi đáp số liệu điều hành & Giao ban bệnh viện
+
+- Tự động tổng hợp và trả lời ngôn ngữ tự nhiên về số liệu lượt khám, tỷ lệ sử dụng giường bệnh, tỷ lệ khỏi bệnh giữa các khoa.
+- Soạn thảo dự thảo nội dung báo cáo giao ban sáng cho Ban Giám đốc và lãnh đạo các khoa phòng.
+
+---
+
+### TT 7: Phân hệ quản lý điều trị Lao – Phổi kết nối VITIMES
+
+#### 1. Quản lý hồ sơ bệnh nhân lao chuyên sâu
+
+Màn hình [Theo dõi ca điều trị lao](http://localhost:5174/bv-lao) số hóa đầy đủ các trường bệnh học chuyên khoa:
+
+- **Thông tin nhân khẩu**: Mã số bệnh nhân lao, Họ tên, Năm sinh, Giới tính, Địa chỉ cư trú.
+- **Phân loại ca bệnh theo CTCLQG**:
+  - `Mới`: Bệnh nhân chưa bao giờ dùng thuốc chống lao hoặc dùng dưới 1 tháng.
+  - `Tái phát`: Đã được công nhận khỏi bệnh trước đây, nay mắc bệnh trở lại có vi khuẩn lao.
+  - `Sau bỏ trị`: Bỏ trị từ 2 tháng liên tục trở lên, sau đó quay lại điều trị với đờm dương tính.
+  - `Thất bại điều trị`: Đờm vẫn dương tính từ tháng thứ 5 trở đi.
+  - `Lao kháng thuốc (MDR/RR)`: Kháng đồng thời Rifampicin và Isoniazid.
+- **Thể bệnh**: Lao phổi AFB(+), Lao phổi AFB(-), Lao ngoài phổi (Lao màng phổi, Lao màng não, Lao hạch...).
+
+#### 2. Quản lý theo dõi xét nghiệm đờm AFB theo mốc điều trị
+
+Theo đúng hướng dẫn quản lý lao, bệnh nhân phải được soi kính hiển vi tìm trực khuẩn kháng cồn toan (AFB) ở các thời điểm quyết định:
+
+- **Tháng thứ 2** (Cuối giai đoạn tấn công): Đánh giá việc chuyển âm tính đờm để quyết định chuyển sang giai đoạn duy trì.
+- **Tháng thứ 5**: Đánh giá nguy cơ thất bại điều trị (nếu dương tính phải cấy và làm kháng sinh đồ).
+- **Tháng thứ 6/8** (Kết thúc liệu trình): Xác nhận tiêu chuẩn khỏi bệnh.
+
+#### 3. Giám sát tuân thủ điều trị DOTS (Directly Observed Treatment, Short-course)
+
+- Hiển thị thanh tiến độ tuân thủ uống thuốc có giám sát trực tiếp (tỷ lệ % số ngày uống thuốc đủ liều dưới sự giám sát của nhân viên y tế hoặc người hỗ trợ điều trị).
+- Cảnh báo các ca có tỷ lệ tuân thủ <85% để Tổ chống lao tuyến huyện/xã kịp thời liên hệ tư vấn và hỗ trợ, ngăn ngừa nguy cơ bỏ trị sinh ra lao kháng thuốc.
+
+#### 4. Đồng bộ dữ liệu hai chiều với hệ thống VITIMES
+
+- Hỗ trợ nút **Đồng bộ VITIMES**: Đẩy thông tin ca bệnh, phác đồ, biến cố bất lợi của thuốc và kết quả điều trị cuối cùng lên hệ thống quản lý thông tin bệnh lao quốc gia.
+- Lưu vết lịch sử đồng bộ, thời gian đồng bộ và mã định danh quốc gia do VITIMES phản hồi.
+
+---
+
+## 3. Ma trận phân quyền và trách nhiệm (RBAC theo ADR-0006)
+
+Hệ thống GDOS tuân thủ mô hình phân quyền chặt chẽ theo vai trò y tế:
+
+| Phân hệ / Nghiệp vụ                   | Bác sĩ điều trị / Kỹ thuật viên | Chuyên viên KHTH / BHYT | Trưởng khoa / Người duyệt chuyên môn |             Ban Giám đốc              |   Quản trị viên hệ thống   |
+| :------------------------------------ | :-----------------------------: | :---------------------: | :----------------------------------: | :-----------------------------------: | :------------------------: |
+| **Phim X-quang & Gán nhãn (TT 1, 2)** |     Gán nhãn, xem gợi ý AI      |      Xem đối chiếu      |    Duyệt nhãn, đối chiếu kết quả     |          Xem báo cáo tiến độ          |   Quản trị nguồn kết nối   |
+| **Hồ sơ nghiên cứu SaMD (TT 2)**      |      Cập nhật dữ liệu thô       |        Lập hồ sơ        |     Phê duyệt mốc đạo đức, SaMD      |           Ký duyệt báo cáo            |     Quản trị tài liệu      |
+| **Kho dữ liệu & Kết nối API (TT 3)**  |         Không truy cập          |   Xem số liệu đã nạp    |         Xem số liệu tổng hợp         |              Xem báo cáo              |  Cấu hình & kích hoạt API  |
+| **Bảng điều hành & Giao ban (TT 4)**  |        Xem chỉ tiêu khoa        |      Xem toàn viện      |     Xem & kết xuất báo cáo khoa      | Điều hành, kết xuất báo cáo toàn viện | Quản trị cấu hình hiển thị |
+| **Rà soát hồ sơ BHYT (TT 5)**         |      Bổ sung hồ sơ bệnh án      | Rà soát lỗi, áp bản sửa |        Duyệt hồ sơ thanh toán        |         Xem tổng hợp chi phí          |  Giám sát luồng tích hợp   |
+| **Trợ lý AI chuyên khoa (TT 6)**      | Tra cứu ICD, đơn thuốc, soạn BA |    Hỏi đáp giao ban     |        Duyệt văn bản dự thảo         |       Tra cứu số liệu điều hành       |    Cấu hình tham số AI     |
+| **Điều trị Lao & VITIMES (TT 7)**     |  Cập nhật mốc, xét nghiệm đờm   |    Đối soát số liệu     |       Duyệt hoàn tất điều trị        |          Xem báo cáo dịch tễ          |  Quản trị kết nối VITIMES  |
+
+---
+
+## 4. Kiểm soát an toàn dữ liệu y tế & Quy chuẩn công nghệ
+
+1. **Tuân thủ quy định bảo mật & Y đức**:
+   - Tuân thủ Luật Khám bệnh, chữa bệnh số 15/2023/QH15 và Luật Bảo hiểm y tế.
+   - Dữ liệu nghiên cứu thử nghiệm được ẩn danh hóa (Anonymization) tuyệt đối, không lưu trữ thông tin nhận dạng cá nhân trong các tập huấn luyện của AI.
+   - RLS (Row-Level Security) theo ADR-0004 phân tách dữ liệu đa đơn vị: Bệnh viện Phổi tỉnh và Trung tâm Y tế cấp huyện chỉ nhìn thấy dữ liệu thuộc phạm vi đơn vị mình quản lý.
+
+2. **Cơ chế hoạt động của mô hình AI**:
+   - Mô hình AI được thiết kế như một **cố vấn lâm sàng thứ hai (Second Reader)**. AI không bao giờ tự động ra quyết định y khoa hay tự động kê đơn/gửi hồ sơ. Mọi hành động chuyên môn bắt buộc phải có sự xác nhận của cán bộ y tế có thẩm quyền.
+
+3. **Tối ưu hóa tài nguyên vận hành**:
+   - Hệ thống được cấu hình hỗ trợ chạy trên cơ sở dữ liệu nhúng **PGlite** siêu nhẹ, giúp các máy trạm tại trạm y tế xã hoặc máy tính xách tay trên xe X-quang lưu động có thể vận hành trơn tru mà không cần cấu hình phần cứng phức tạp hay tiêu tốn nhiều RAM.
+   - Khi triển khai quy mô lớn tại trung tâm dữ liệu bệnh viện, hệ thống kết nối thẳng vào cụm PostgreSQL chịu tải cao thông qua biến môi trường tiêu chuẩn.
+
+---
+
+## 5. Kết luận & Khuyến nghị vận hành
+
+Nền tảng GDOS đã hoàn thành đầy đủ cả 7 hạng mục chuyên khoa theo chuẩn nghiệp vụ của Bệnh viện Phổi Long An.
+
+Để đưa hệ thống vào vận hành chính thức tại bệnh viện:
+
+1. **Kết nối hạ tầng thật**: Mở cổng mạng nội bộ cho các máy xét nghiệm (LIS), máy chụp X-quang kỹ thuật số (PACS) và kết nối API nội bộ với hệ thống HIS của bệnh viện.
+2. **Ký số & Cổng BHXH**: Tích hợp chứng thư số tổ chức (HSM / USB Token) của bệnh viện để thực hiện ký số gói tin XML gửi cổng BHXH Việt Nam.
+3. **Phê duyệt Hội đồng đạo đức**: Đệ trình biên bản nghiên cứu khoa học và đề cương ứng dụng AI cho Hội đồng đạo đức trong nghiên cứu y sinh học để chính thức đưa AI vào hỗ trợ sàng lọc lâm sàng.

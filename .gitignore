@@ -24,6 +24,35 @@ logs/
 
 # Dữ liệu cục bộ của Docker Compose
 .data/
+compose.override.yaml
+compose.override.yml
+
+# Thư mục trợ lý / AI agent skills cục bộ
+.agents/
+
+# Báo cáo thực tập (tài liệu, LaTeX source, PDF và ảnh chụp minh chứng)
+*bao-cao-thuc-tap*
+docs/hinh-anh/
+
+# Tài liệu yêu cầu và tài liệu khảo sát tìm hiểu
+YC_BenhVien*
+docs/khao-sat-chi-tiet-bv-phoi-long-an.md
+docs/trien-khai-7-hang-muc-chuan-benh-vien.md
+
+# Scripts phụ trợ
+scripts/chup-hinh-minh-chung.mjs
+
+# Tệp trung gian khi biên dịch tài liệu LaTeX
+*.aux
+*.lof
+*.lot
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
 
 # Hệ điều hành / trình soạn thảo
 .DS_Store

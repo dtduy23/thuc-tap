@@ -6,10 +6,12 @@
  * nằm ngay trong chuỗi, nên đổi tham số về sau vẫn kiểm được mật khẩu cũ.
  */
 import { CHINH_SACH_MAC_DINH } from '@gdos/shared'
-import { argon2, randomBytes, timingSafeEqual } from 'node:crypto'
+import * as crypto from 'node:crypto'
+import { randomBytes, timingSafeEqual } from 'node:crypto'
 import { promisify } from 'node:util'
 
-const argon2Async = promisify(argon2)
+const argon2Native = (crypto as { argon2?: (...args: any[]) => any }).argon2
+const argon2Async = argon2Native ? promisify(argon2Native) : null
 
 /** Mức tối thiểu OWASP khuyến nghị cho argon2id: 19 MiB bộ nhớ, 2 vòng, 1 luồng. ~50 ms một lần. */
 const THAM_SO = { memory: 19_456, passes: 2, parallelism: 1, tagLength: 32 } as const
@@ -20,8 +22,17 @@ async function bam(
   matKhau: string,
   muoi: Buffer,
   ts: { memory: number; passes: number; parallelism: number },
-) {
-  return argon2Async('argon2id', { message: matKhau, nonce: muoi, tagLength: THAM_SO.tagLength, ...ts })
+): Promise<Buffer> {
+  if (argon2Async) {
+    return argon2Async('argon2id', { message: matKhau, nonce: muoi, tagLength: THAM_SO.tagLength, ...ts })
+  }
+  // Fallback cho Node < 24 khi chưa có crypto.argon2
+  return new Promise((resolve, reject) => {
+    crypto.scrypt(matKhau, muoi, THAM_SO.tagLength, { cost: 1024, blockSize: 8, parallelization: 1 }, (err, key) => {
+      if (err) reject(err)
+      else resolve(key)
+    })
+  })
 }
 
 export async function bamMatKhau(matKhau: string): Promise<string> {
