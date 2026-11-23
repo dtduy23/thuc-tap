@@ -15,4 +15,9 @@ export default defineConfig({
     // trên server thì nginx chuyển tiếp. Bundle không cứng địa chỉ nào.
     proxy: { '/api': 'http://localhost:4100' },
   },
+  preview: {
+    port: 5174,
+    strictPort: true,
+    proxy: { '/api': 'http://localhost:4100' },
+  },
 })

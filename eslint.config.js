@@ -7,6 +7,8 @@ import tseslint from 'typescript-eslint'
 export default tseslint.config(
   {
     ignores: [
+      // Dữ liệu Docker thuộc UID của database, không phải mã nguồn để lint.
+      '.data/**',
       '**/dist/**',
       '**/node_modules/**',
       '**/coverage/**',

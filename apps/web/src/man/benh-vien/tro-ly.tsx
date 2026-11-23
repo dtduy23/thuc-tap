@@ -31,7 +31,8 @@ function TraCuuBenhVien({ theo }: { theo: 'lao' | 'so-lieu' }) {
   const [nhap, datNhap] = useState('')
   const [daChep, datDaChep] = useState(false)
   const [loiChep, datLoiChep] = useState(false)
-  const laLao = chuDe === 'ma-icd' || chuDe === 'nhac-theo-doi'
+  const laLao =
+    chuDe === 'ma-icd' || chuDe === 'nhac-theo-doi' || chuDe === 'kiem-tra-don-thuoc' || chuDe === 'soan-thao'
   const ds = useQuery({
     queryKey: ['benh-vien-thu', '/lao'],
     queryFn: () => goiApi<CaLaoThu[]>('/benh-vien/lao'),
@@ -82,7 +83,14 @@ function TraCuuBenhVien({ theo }: { theo: 'lao' | 'so-lieu' }) {
                 onChange={(e) => datChuDe(e.target.value as ChuDeTroLyBenhVien)}
               >
                 {Object.entries(CHU_DE_TRO_LY_BENH_VIEN)
-                  .filter(([ma]) => (ma === 'ma-icd' || ma === 'nhac-theo-doi' ? coLao : coSoLieu))
+                  .filter(([ma]) =>
+                    ma === 'ma-icd' ||
+                    ma === 'nhac-theo-doi' ||
+                    ma === 'kiem-tra-don-thuoc' ||
+                    ma === 'soan-thao'
+                      ? coLao
+                      : coSoLieu,
+                  )
                   .map(([ma, ten]) => (
                     <option key={ma} value={ma}>
                       {ten}

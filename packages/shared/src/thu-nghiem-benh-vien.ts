@@ -23,8 +23,18 @@ export interface PhimThu {
   nhom: 'Học' | 'Đánh giá' | 'Chạy song song'
   trangThai: TrangThaiPhim
   nhan: NhanPhim | null
-  goiY: { nhan: Exclude<NhanPhim, 'khong-doc'>; diem: number; phienBan: string } | null
+  goiY: {
+    nhan: Exclude<NhanPhim, 'khong-doc'>
+    diem: number
+    phienBan: string
+    tonThuong?: string[]
+    doTinCay?: number
+  } | null
   capNhatLuc: string | null
+  hoTen?: string
+  tuoi?: number
+  khoaChiDinh?: string
+  tonThuongPhatHien?: string[]
 }
 
 export interface DanhSachPhimThu {
@@ -84,6 +94,13 @@ export interface HoSoBhytThu {
   maDichVu: string | null
   trangThai: TrangThaiBhytThu
   loi: string[]
+  hoTen?: string
+  namSinh?: number
+  khoa?: string
+  tongChiPhi?: number
+  tienBhyt?: number
+  mucDoRuiRo?: 'thap' | 'trung-binh' | 'cao'
+  goiYAI?: string
 }
 
 export const KET_QUA_NHAC_LAO = { 'da-xac-nhan': 'Đã xác nhận', 'bo-lo': 'Cần liên hệ lại' } as const
@@ -96,6 +113,14 @@ export interface CaLaoThu {
   hoanTat: boolean
   lanTheoDoi: { ngay: string; ketQua: KetQuaNhacLao | null }[]
   dongBoLuc: string | null
+  hoTen?: string
+  namSinh?: number
+  gioiTinh?: 'Nam' | 'Nữ'
+  phanLoai?: 'Mới' | 'Tái phát' | 'Sau bỏ trị' | 'Thất bại' | 'Kháng thuốc (MDR/RR)'
+  theBenh?: 'Lao phổi AFB(+)' | 'Lao phổi AFB(-)' | 'Lao ngoài phổi'
+  phacDo?: string
+  tuanThuDots?: number
+  ketQuaXnDom?: { thang: number; ketQua: 'Dương tính' | 'Âm tính'; ngayXn: string }[]
 }
 
 export const CHU_DE_TRO_LY_BENH_VIEN = {
@@ -103,6 +128,8 @@ export const CHU_DE_TRO_LY_BENH_VIEN = {
   'nhac-theo-doi': 'Nhắc theo dõi điều trị lao',
   'du-thao': 'Dự thảo văn bản giao ban',
   'so-lieu': 'Hỏi đáp số liệu điều hành',
+  'kiem-tra-don-thuoc': 'Kiểm tra đơn thuốc & phác đồ lao',
+  'soan-thao': 'Soạn thảo văn bản y khoa mẫu BYT',
 } as const
 export type ChuDeTroLyBenhVien = keyof typeof CHU_DE_TRO_LY_BENH_VIEN
 export interface TraLoiBenhVienThu {

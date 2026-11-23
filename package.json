@@ -14,8 +14,8 @@
     "lint": "pnpm build:shared && eslint . && node scripts/kiem-du-lieu-that.mjs",
     "typecheck": "pnpm build:shared && pnpm -r typecheck",
     "test": "pnpm build:shared && pnpm -r test",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "prettier --write . \"!.data/**\"",
+    "format:check": "prettier --check . \"!.data/**\"",
     "kiem-tra": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build"
   },
   "devDependencies": {

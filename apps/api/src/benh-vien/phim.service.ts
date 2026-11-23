@@ -60,6 +60,14 @@ export class PhimThuService {
         const d = sua.get(ma)
         const v = d?.giaTri ?? macDinhPhim(so)
         const goiY = daChay.get(ma)
+        const nhanHienTai = (v.split(':')[1] as NhanPhim | undefined) ?? null
+        const hoTen = ['Nguyễn Văn An', 'Trần Thị Bình', 'Lê Hữu Cường', 'Phạm Thị Dung', 'Vũ Văn Em'][
+          (so - 1) % 5
+        ]
+        const tuoi = 22 + ((so * 11) % 55)
+        const khoaChiDinh = so % 2 === 1 ? 'Khoa Khám bệnh' : 'Khoa Hô hấp'
+        const tonThuongPhatHien =
+          nhanHienTai === 'co-dau' ? ['Nốt mờ thâm nhiễm hạ đòn phải', 'Hình mờ nghi hang lao đỉnh phổi'] : []
         return {
           ma,
           so,
@@ -67,9 +75,13 @@ export class PhimThuService {
           nguon: nguonPhimThu(so),
           nhom: nhomPhimThu(so),
           trangThai: trangThai(v),
-          nhan: (v.split(':')[1] as NhanPhim | undefined) ?? null,
+          nhan: nhanHienTai,
           goiY: goiY ? (JSON.parse(goiY) as PhimThu['goiY']) : null,
           capNhatLuc: d?.updatedAt.toISOString() ?? null,
+          hoTen,
+          tuoi,
+          khoaChiDinh,
+          tonThuongPhatHien,
         }
       })
   }

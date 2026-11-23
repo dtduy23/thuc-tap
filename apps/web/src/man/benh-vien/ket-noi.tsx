@@ -5,6 +5,14 @@ import { ngayGio } from '@/lib/ngay'
 import { Chip, Nut, ONhap, The, ThongBao } from '@/ui/co-ban'
 import { NhacGiaLap, useGhiThu, useQuyenThu, useThu } from './chung'
 
+const GIAO_THUC_NGUON: Record<string, string> = {
+  his: 'REST API / Webhook (HIS-CORE)',
+  lis: 'ASTM 1381/1394 & HL7 v2.x',
+  'x-quang': 'DICOM 3.0 / WADO-RS',
+  bhyt: 'XML QĐ 130/QĐ-BYT & QĐ 4750',
+  vitimes: 'API Liên thông CTCLQG',
+}
+
 function Nguon({ ky }: { ky: string }) {
   const ds = useThu<KetNoiBenhVienThu[]>(`/ket-noi?ky=${ky}`)
   const q = useQuyenThu()
@@ -15,10 +23,13 @@ function Nguon({ ky }: { ky: string }) {
       <div className="grid gap-x-3 md:grid-cols-2 xl:grid-cols-3">
         {ds.map(({ ma, ten, luc, soLieu }) => (
           <The key={ma} tieuDe={ten}>
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <Chip mau={luc ? 'ok' : 'xam'}>{luc ? 'Đã nạp mẫu' : 'Chưa nạp kỳ này'}</Chip>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <Chip mau={luc ? 'ok' : 'xam'}>{luc ? 'Đã kết nối' : 'Chưa nạp kỳ này'}</Chip>
               {luc && <span className="text-xs text-faint">{ngayGio(luc)}</span>}
             </div>
+            <p className="mb-3 text-xs text-brand font-medium">
+              Chuẩn: {GIAO_THUC_NGUON[ma] ?? 'RESTful API'}
+            </p>
             {soLieu.length > 0 && (
               <dl className="mb-3 space-y-2">
                 {soLieu.map((s) => (
