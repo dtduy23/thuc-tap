@@ -194,7 +194,11 @@ export class BenhVienThuController {
       motTrong(than, 'chuDe', Object.keys(CHU_DE_TRO_LY_BENH_VIEN) as ChuDeTroLyBenhVien[]),
       'chuDe',
     )
-    const laLao = chuDe === 'ma-icd' || chuDe === 'nhac-theo-doi'
+    const laLao =
+      chuDe === 'ma-icd' ||
+      chuDe === 'nhac-theo-doi' ||
+      chuDe === 'kiem-tra-don-thuoc' ||
+      chuDe === 'soan-thao'
     if (!nd.quyen.has(laLao ? lao('READ') : quyenBenhVien('tong-quan', 'READ')))
       throw new ForbiddenException('Tài khoản không có quyền đọc dữ liệu cho câu hỏi này')
     return this.bv.troLy(nd, chuDe, kyThu(chuoiTuyChon(than, 'ky', 7)), chuoiTuyChon(than, 'ma', 30))

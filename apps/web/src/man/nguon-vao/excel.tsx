@@ -1,6 +1,7 @@
 import { SO_DONG_NAP_TOI_DA, type KetQuaKiemNap, type LanNap } from '@gdos/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
+import { FileSpreadsheet, Upload, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { LoiApi, taiVeTep } from '@/lib/http'
 import { KHOA_NGUON_VAO, kiemTepSoLieu, napTepSoLieu } from '@/lib/nguon-vao'
@@ -60,6 +61,7 @@ export default function NapExcel() {
             trống được bỏ qua. Tối đa {SO_DONG_NAP_TOI_DA.toLocaleString('vi-VN')} dòng mỗi lần.
           </p>
           <Nut
+            disabled={dangChay}
             onClick={() => void chay(() => taiVeTep('/nguon-vao/excel/mau', 'Mau_nap_so_lieu_chi_tieu.xlsx'))}
           >
             ⬇ Tải tệp mẫu
@@ -76,9 +78,73 @@ export default function NapExcel() {
             accept=".xlsx"
             disabled={dangChay}
             onChange={(e) => chonTep(e.target.files?.[0])}
-            className="w-full text-[13px]"
+            className="sr-only"
           />
-          <p className="mt-2 mb-0 text-[12px] text-faint">
+          <div
+            onDragOver={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+            onDrop={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              if (dangChay) return
+              const f = e.dataTransfer.files?.[0]
+              if (f) chonTep(f)
+            }}
+            className="rounded-lg border border-dashed border-line bg-nen-2/60 p-4 text-center transition-colors hover:border-brand/60"
+          >
+            {tep ? (
+              <div className="flex items-center justify-between gap-2 text-left">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <FileSpreadsheet size={20} className="shrink-0 text-ok" aria-hidden="true" />
+                  <div className="min-w-0">
+                    <p className="m-0 truncate text-[13px] font-semibold text-ink">{tep.name}</p>
+                    <p className="m-0 text-[11.5px] text-faint">
+                      {(tep.size / 1024).toFixed(1)} KB · Đã chọn
+                    </p>
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <Nut
+                    type="button"
+                    disabled={dangChay}
+                    onClick={() => oTep.current?.click()}
+                  >
+                    Đổi tệp
+                  </Nut>
+                  <button
+                    type="button"
+                    aria-label="Xóa tệp đã chọn"
+                    disabled={dangChay}
+                    onClick={() => {
+                      if (oTep.current) oTep.current.value = ''
+                      chonTep(undefined)
+                    }}
+                    className="rounded-md p-1.5 text-faint hover:bg-nen hover:text-ink disabled:opacity-50"
+                  >
+                    <X size={15} aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <Upload size={22} className="text-brand" aria-hidden="true" />
+                <p className="m-0 text-[12.5px] text-body">
+                  Kéo thả tệp <b>.xlsx</b> vào đây hoặc bấm nút bên dưới
+                </p>
+                <Nut
+                  type="button"
+                  kieu="chinh"
+                  disabled={dangChay}
+                  onClick={() => oTep.current?.click()}
+                >
+                  Chọn tệp Excel (.xlsx)
+                </Nut>
+              </div>
+            )}
+          </div>
+          <p className="mt-2.5 mb-0 text-[12px] text-faint">
             Hệ thống kiểm từng dòng — chưa ghi gì. Nạp lại cùng chỉ tiêu và kỳ thì số mới thay số cũ.
           </p>
         </The>
@@ -117,7 +183,7 @@ export default function NapExcel() {
                 <b className="text-ok">{kq.soHopLe}</b> dòng hợp lệ ·{' '}
                 <b className={kq.soLoi ? 'text-danger' : 'text-faint'}>{kq.soLoi}</b> dòng lỗi
               </span>
-              <Nut kieu="chinh" disabled={dangChay || kq.soLoi > 0} onClick={() => void nap()}>
+              <Nut kieu="chinh" disabled={dangChay || kq.soLoi > 0 || kq.soHopLe === 0} onClick={() => void nap()}>
                 3. Nạp {kq.soHopLe} số liệu
               </Nut>
               {kq.soLoi > 0 && (

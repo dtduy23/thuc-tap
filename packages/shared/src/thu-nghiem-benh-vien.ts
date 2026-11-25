@@ -7,9 +7,9 @@ export const NGUON_PHIM = {
 } as const
 export type NguonPhim = keyof typeof NGUON_PHIM
 export const NHAN_PHIM = {
-  'khong-co-dau': 'Không có dấu mô phỏng',
-  'co-dau': 'Có dấu mô phỏng',
-  'khong-doc': 'Loại khỏi tập vì chất lượng',
+  'khong-co-dau': 'Không có dấu hiệu',
+  'co-dau': 'Có dấu hiệu',
+  'khong-doc': 'Không đạt chất lượng',
 } as const
 export type NhanPhim = keyof typeof NHAN_PHIM
 export type TrangThaiPhim = 'cho-nhan' | 'cho-duyet' | 'da-duyet'
@@ -53,9 +53,20 @@ export const VIEC_NGHIEN_CUU = [
   { ma: 'dao-tao', ten: 'Đào tạo sử dụng và phản hồi của người đọc' },
 ] as const
 export type MucNghienCuu = (typeof VIEC_NGHIEN_CUU)[number]['ma']
+export type LoaiDoiChieu = 'dungCoDau' | 'dungKhongDau' | 'baoDu' | 'boSot'
+export interface DongDoiChieuPhimThu {
+  ma: string
+  nguon: NguonPhim
+  nhom: PhimThu['nhom']
+  nhan: Exclude<NhanPhim, 'khong-doc'>
+  goiY: Exclude<NhanPhim, 'khong-doc'>
+  diem: number
+  ketQua: LoaiDoiChieu
+}
 export interface NghienCuuPhimThu {
   viec: { ma: MucNghienCuu; daGhiNhan: boolean; luc: string | null }[]
-  doiChieu: { dungCoDau: number; dungKhongDau: number; baoDu: number; boSot: number }
+  doiChieu: Record<LoaiDoiChieu, number>
+  chiTietDoiChieu?: DongDoiChieuPhimThu[]
   soPhimLichSu: number
   daDuyet: number
   choDuyet: number
@@ -84,7 +95,7 @@ export const TRANG_THAI_BHYT_THU = {
   'can-sua': 'Cần bổ sung',
   'cho-duyet': 'Chờ duyệt',
   'da-duyet': 'Đã duyệt',
-  'da-gui': 'Đã gửi giả lập',
+  'da-gui': 'Đã gửi BHXH',
 } as const
 export type TrangThaiBhytThu = keyof typeof TRANG_THAI_BHYT_THU
 export interface HoSoBhytThu {

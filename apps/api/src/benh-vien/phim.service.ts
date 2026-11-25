@@ -3,6 +3,8 @@ import {
   SO_PHIM_LICH_SU,
   VIEC_NGHIEN_CUU,
   type DanhSachPhimThu,
+  type DongDoiChieuPhimThu,
+  type LoaiDoiChieu,
   type LocPhim,
   type MucNghienCuu,
   type NghienCuuPhimThu,
@@ -33,15 +35,35 @@ const macDinhPhim = (so: number) =>
 const trangThai = (v: string): PhimThu['trangThai'] =>
   v.startsWith('da-duyet:') ? 'da-duyet' : v.startsWith('cho-duyet:') ? 'cho-duyet' : 'cho-nhan'
 
-function doiChieu(ds: PhimThu[]): NghienCuuPhimThu['doiChieu'] {
-  const kq = { dungCoDau: 0, dungKhongDau: 0, baoDu: 0, boSot: 0 }
+function phanLoaiDoiChieu(ds: PhimThu[]): {
+  doiChieu: NghienCuuPhimThu['doiChieu']
+  chiTietDoiChieu: DongDoiChieuPhimThu[]
+} {
+  const kq: NghienCuuPhimThu['doiChieu'] = { dungCoDau: 0, dungKhongDau: 0, baoDu: 0, boSot: 0 }
+  const chiTiet: DongDoiChieuPhimThu[] = []
   for (const p of ds) {
     if (p.nhom === 'Học' || p.trangThai !== 'da-duyet' || !p.goiY || !p.nhan || p.nhan === 'khong-doc')
       continue
-    if (p.nhan === 'co-dau') kq[p.goiY.nhan === 'co-dau' ? 'dungCoDau' : 'boSot']++
-    else kq[p.goiY.nhan === 'co-dau' ? 'baoDu' : 'dungKhongDau']++
+    const ketQua: LoaiDoiChieu =
+      p.nhan === 'co-dau'
+        ? p.goiY.nhan === 'co-dau'
+          ? 'dungCoDau'
+          : 'boSot'
+        : p.goiY.nhan === 'co-dau'
+          ? 'baoDu'
+          : 'dungKhongDau'
+    kq[ketQua]++
+    chiTiet.push({
+      ma: p.ma,
+      nguon: p.nguon,
+      nhom: p.nhom,
+      nhan: p.nhan,
+      goiY: p.goiY.nhan,
+      diem: p.goiY.diem,
+      ketQua,
+    })
   }
-  return kq
+  return { doiChieu: kq, chiTietDoiChieu: chiTiet }
 }
 
 @Injectable()
@@ -189,12 +211,14 @@ export class PhimThuService {
       const ds = await this.danhMuc(tx, dv)
       const lichSu = ds.filter((p) => p.nhom !== 'Chạy song song')
       const viec = await docKho(tx, dv, 'nghien-cuu')
+      const { doiChieu, chiTietDoiChieu } = phanLoaiDoiChieu(ds)
       return {
         viec: VIEC_NGHIEN_CUU.map(({ ma }) => {
           const d = viec.find((v) => v.ma === ma)
           return { ma, daGhiNhan: d?.giaTri === 'da-ghi-nhan', luc: d?.updatedAt.toISOString() ?? null }
         }),
-        doiChieu: doiChieu(ds),
+        doiChieu,
+        chiTietDoiChieu,
         soPhimLichSu: lichSu.length,
         daDuyet: lichSu.filter((p) => p.trangThai === 'da-duyet').length,
         choDuyet: lichSu.filter((p) => p.trangThai === 'cho-duyet').length,

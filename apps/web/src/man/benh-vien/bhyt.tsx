@@ -50,17 +50,41 @@ const COT_CHI_TIET: CotLuoi<HoSoBhytThu>[] = [
 
 const NHOM_HO_SO = [
   { ma: '', nhan: 'tất cả hồ sơ', mau: 'xam' },
+  { ma: 'cho-ra-soat', nhan: 'chờ rà soát', mau: 'xam' },
   { ma: 'can-sua', nhan: 'cần bổ sung', mau: 'warn' },
   { ma: 'cho-duyet', nhan: 'chờ duyệt', mau: 'brand' },
+  { ma: 'da-duyet', nhan: 'đã duyệt', mau: 'ok' },
   { ma: 'da-gui', nhan: 'đã gửi BHXH', mau: 'ok' },
 ] as const
+
+const BUOC_BHYT = [
+  { id: 'cho-ra-soat', ten: '1. Rà soát XML' },
+  { id: 'cho-duyet', ten: '2. Phê duyệt (Ký số)' },
+  { id: 'da-duyet', ten: '3. Sẵn sàng gửi' },
+  { id: 'da-gui', ten: '4. Đã gửi BHXH' },
+] as const
+
+const THONG_BAO_BHYT: Record<string, string> = {
+  'ra-soat': 'Đã chạy kiểm tra bộ quy tắc QĐ 130/QĐ-BYT cho hồ sơ.',
+  'bo-sung': 'Đã áp dụng dữ liệu chuẩn hóa. Có thể rà soát lại để trình duyệt.',
+  duyet: 'Đã ký số phê duyệt hồ sơ BHYT.',
+  'tra-lai': 'Đã trả lại hồ sơ về trạng thái Cần bổ sung.',
+  gui: 'Đã gửi hồ sơ lên Cổng giám định BHXH thành công.',
+}
 
 function HopThoaiChiTietBhyt({ h, dong }: { h: HoSoBhytThu; dong: () => void }) {
   const q = useQuyenThu()
   const ghi = useGhiThu()
+  const [thongBao, datThongBao] = useState<string | null>(null)
   const sua = q.includes(quyenBenhVien('ho-so-bhyt', 'UPDATE'))
   const duyet = q.includes(quyenBenhVien('ho-so-bhyt', 'APPROVE'))
-  const thaoTac = (viec: string) => ghi.mutate({ duongDan: `/bhyt/${h.ma}/${viec}` })
+  const thaoTac = (viec: string) =>
+    ghi.mutate(
+      { duongDan: `/bhyt/${h.ma}/${viec}` },
+      { onSuccess: () => datThongBao(THONG_BAO_BHYT[viec] ?? 'Đã cập nhật hồ sơ.') },
+    )
+  const buocHienTai =
+    h.trangThai === 'da-gui' ? 3 : h.trangThai === 'da-duyet' ? 2 : h.trangThai === 'cho-duyet' ? 1 : 0
 
   useEffect(() => {
     const phim = (e: KeyboardEvent) => {
@@ -100,6 +124,27 @@ function HopThoaiChiTietBhyt({ h, dong }: { h: HoSoBhytThu; dong: () => void }) 
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          <div className="mb-4 grid grid-cols-4 gap-1.5 text-[11px]">
+            {BUOC_BHYT.map((b, i) => (
+              <div
+                key={b.id}
+                className={`rounded border px-2 py-1.5 text-center font-medium ${
+                  i < buocHienTai
+                    ? 'border-ok/40 bg-ok/10 text-ok'
+                    : i === buocHienTai
+                      ? 'border-brand bg-tint-brand text-brand'
+                      : 'border-line bg-nen-2 text-faint'
+                }`}
+              >
+                {b.ten}
+              </div>
+            ))}
+          </div>
+          {thongBao && (
+            <div className="mb-3">
+              <ThongBao kieu="ok">{thongBao}</ThongBao>
+            </div>
+          )}
           <dl className="mb-4 grid grid-cols-2 gap-2 text-sm">
             <div className="rounded-md border border-line bg-nen-2 p-2.5">
               <dt className="text-xs text-faint">Khoa điều trị</dt>
@@ -172,7 +217,7 @@ function HopThoaiChiTietBhyt({ h, dong }: { h: HoSoBhytThu; dong: () => void }) 
           )}
           {h.trangThai === 'can-sua' && sua && (
             <Nut kieu="chinh" disabled={ghi.isPending} onClick={() => thaoTac('bo-sung')}>
-              Áp dụng bản bổ sung mẫu (AI)
+              Bổ sung dữ liệu chuẩn hóa
             </Nut>
           )}
           {h.trangThai === 'cho-duyet' && duyet && (
@@ -187,7 +232,12 @@ function HopThoaiChiTietBhyt({ h, dong }: { h: HoSoBhytThu; dong: () => void }) 
           )}
           {h.trangThai === 'da-duyet' && sua && (
             <Nut kieu="chinh" disabled={ghi.isPending} onClick={() => thaoTac('gui')}>
-              Gửi cổng BHXH giả lập
+              Gửi cổng giám định BHXH
+            </Nut>
+          )}
+          {h.trangThai !== 'da-duyet' && h.trangThai !== 'da-gui' && sua && (
+            <Nut disabled title="Cần duyệt hồ sơ trước khi gửi sang BHXH">
+              Gửi dữ liệu sang BHXH
             </Nut>
           )}
         </div>
@@ -204,8 +254,7 @@ export default function RaSoatBhyt() {
   const danhSach = useRef<HTMLElement>(null)
   const locTrangThai = loc['trang-thai']
   const trangThai = locTrangThai?.kieu === 'danh-muc' ? locTrangThai.chon : []
-  const hoSoTrongNhom = (d: HoSoBhytThu) => !trangThai.length || trangThai.includes(d.trangThai)
-  const h = ds.find((d) => d.ma === ma && hoSoTrongNhom(d))
+  const h = ds.find((d) => d.ma === ma)
 
   const tongTien = ds.reduce((s, d) => s + (d.tongChiPhi ?? 0), 0)
   const hopLe = ds.filter((d) => d.trangThai === 'da-duyet' || d.trangThai === 'da-gui').length
@@ -316,7 +365,7 @@ export default function RaSoatBhyt() {
 
       {h && (
         <HopThoaiChiTietBhyt
-          key={`${h.ma}:${h.trangThai}`}
+          key={h.ma}
           h={h}
           dong={() => {
             datMa(undefined)

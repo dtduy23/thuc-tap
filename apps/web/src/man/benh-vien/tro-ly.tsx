@@ -14,6 +14,15 @@ import { goiApi } from '@/lib/http'
 import { Chip, Nut, OChon, ONhap, The, ThongBao } from '@/ui/co-ban'
 import { NhacGiaLap, useQuyenThu } from './chung'
 
+const MO_TA_CHU_DE: Record<ChuDeTroLyBenhVien, string> = {
+  'ma-icd': 'Tra cứu mã bệnh ICD-10 đã lưu và chẩn đoán chuẩn trên hồ sơ ca lao.',
+  'nhac-theo-doi': 'Tổng hợp lịch uống thuốc DOTS và các mốc cần liên hệ nhắc tái khám.',
+  'kiem-tra-don-thuoc': 'Đối chiếu phác đồ chuẩn CTCLQG (2RHZE/4RH), liều lượng và cảnh báo tương tác.',
+  'soan-thao': 'Soạn thảo biểu mẫu báo cáo, phiếu theo dõi đúng thể thức Bộ Y tế.',
+  'du-thao': 'Tổng hợp số liệu bệnh viện thành bản dự thảo văn bản giao ban định kỳ.',
+  'so-lieu': 'Truy vấn số liệu KPI từng chỉ tiêu bệnh viện theo kỳ báo cáo từ Dashboard.',
+}
+
 interface CauHoi {
   chuDe: ChuDeTroLyBenhVien
   ky: string
@@ -80,7 +89,13 @@ function TraCuuBenhVien({ theo }: { theo: 'lao' | 'so-lieu' }) {
                 id="bv-chu-de"
                 nhan="Chủ đề"
                 value={chuDe}
-                onChange={(e) => datChuDe(e.target.value as ChuDeTroLyBenhVien)}
+                onChange={(e) => {
+                  datChuDe(e.target.value as ChuDeTroLyBenhVien)
+                  datNhap('')
+                  datDaChep(false)
+                  datLoiChep(false)
+                  hoi.reset()
+                }}
               >
                 {Object.entries(CHU_DE_TRO_LY_BENH_VIEN)
                   .filter(([ma]) =>
@@ -97,6 +112,7 @@ function TraCuuBenhVien({ theo }: { theo: 'lao' | 'so-lieu' }) {
                     </option>
                   ))}
               </OChon>
+              <p className="mb-3 -mt-1 text-xs text-faint">{MO_TA_CHU_DE[chuDe]}</p>
               {laLao ? (
                 <OChon
                   id="bv-ca-tro-ly"
@@ -107,7 +123,7 @@ function TraCuuBenhVien({ theo }: { theo: 'lao' | 'so-lieu' }) {
                   {ds.isPending && <option value="">Đang tải ca mẫu…</option>}
                   {ds.data?.map((d) => (
                     <option key={d.ma} value={d.ma}>
-                      {d.ma}
+                      {d.hoTen ? `${d.ma} — ${d.hoTen}` : d.ma}
                     </option>
                   ))}
                 </OChon>
@@ -143,7 +159,7 @@ function TraCuuBenhVien({ theo }: { theo: 'lao' | 'so-lieu' }) {
                 <ThongBao kieu="loi">{hoi.error?.message ?? ds.error?.message}</ThongBao>
               )}
               <Nut type="submit" kieu="chinh" disabled={hoi.isPending || (laLao && !hoSo)}>
-                {hoi.isPending ? 'Đang trả lời…' : 'Gửi câu hỏi'}
+                {hoi.isPending ? 'Đang tra cứu…' : 'Thực hiện tra cứu'}
               </Nut>
             </form>
           </The>
@@ -168,7 +184,7 @@ function TraCuuBenhVien({ theo }: { theo: 'lao' | 'so-lieu' }) {
                   }}
                 />
                 <Nut onClick={() => void chep()} disabled={!nhap}>
-                  Sao chép nội dung
+                  {daChep ? '✓ Đã chép' : 'Sao chép kết quả'}
                 </Nut>
                 {daChep && (
                   <span className="ml-2 text-sm text-ok" role="status">

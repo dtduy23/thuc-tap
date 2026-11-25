@@ -93,9 +93,26 @@ function HopThoaiMoPhim({ p, dong }: { p: PhimThu; dong: () => void }) {
   const q = useQuyenThu()
   const ghi = useGhiThu()
   const [nhan, datNhan] = useState<NhanPhim | ''>(p.nhan ?? '')
+  const [thongBao, datThongBao] = useState<string | null>(null)
   const sua = q.includes(quyenBenhVien('phim-x-quang', 'UPDATE'))
   const duyet = q.includes(quyenBenhVien('phim-x-quang', 'APPROVE'))
-  const goi = (tacVu: string, body?: unknown) => ghi.mutate({ duongDan: `/phim/${p.ma}/${tacVu}`, body })
+  const goi = (tacVu: string, body?: unknown) =>
+    ghi.mutate(
+      { duongDan: `/phim/${p.ma}/${tacVu}`, body },
+      {
+        onSuccess: () => {
+          if (tacVu === 'nhan') datThongBao('Đã lưu nhãn và chuyển phim sang trạng thái Chờ duyệt.')
+          else if (tacVu === 'duyet') {
+            const chapNhan = (body as { chapNhan?: boolean } | undefined)?.chapNhan
+            datThongBao(chapNhan ? 'Đã duyệt nhãn phim thành công.' : 'Đã trả lại phim để đọc lại nhãn.')
+          } else if (tacVu === 'goi-y') datThongBao('Đã chạy gợi ý đối chiếu từ mô hình AI.')
+        },
+      },
+    )
+
+  useEffect(() => {
+    datNhan(p.nhan ?? '')
+  }, [p.nhan])
 
   useEffect(() => {
     const phim = (e: KeyboardEvent) => {
@@ -165,6 +182,11 @@ function HopThoaiMoPhim({ p, dong }: { p: PhimThu; dong: () => void }) {
           )}
 
           {ghi.isError && <ThongBao kieu="loi">{ghi.error.message}</ThongBao>}
+          {thongBao && (
+            <div className="mb-3">
+              <ThongBao kieu="ok">{thongBao}</ThongBao>
+            </div>
+          )}
 
           {p.trangThai !== 'da-duyet' && sua && (
             <form
@@ -221,7 +243,8 @@ function HopThoaiMoPhim({ p, dong }: { p: PhimThu; dong: () => void }) {
             <>
               <Nut
                 kieu="chinh"
-                disabled={ghi.isPending}
+                disabled={ghi.isPending || (sua && nhan !== p.nhan)}
+                title={sua && nhan !== p.nhan ? 'Vui lòng bấm Lưu nhãn chờ duyệt trước khi duyệt nhãn mới' : undefined}
                 onClick={() => goi('duyet', { nhan: p.nhan, chapNhan: true })}
               >
                 Duyệt nhãn
@@ -235,6 +258,11 @@ function HopThoaiMoPhim({ p, dong }: { p: PhimThu; dong: () => void }) {
             <Nut kieu="chinh" disabled={ghi.isPending} onClick={() => goi('goi-y')}>
               Chạy gợi ý thử
             </Nut>
+          )}
+          {!p.goiY && p.trangThai === 'da-duyet' && p.nhan === 'khong-doc' && (
+            <span className="self-center text-xs text-faint">
+              Phim không đạt chất lượng nên không chạy gợi ý đối chiếu.
+            </span>
           )}
         </div>
       </div>
@@ -268,19 +296,23 @@ export default function DanhSachPhim() {
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-lg border border-line bg-nen-2 p-3">
           <span className="block text-xs text-faint">Tổng số phim</span>
-          <strong className="text-xl text-ink">{ds.data?.tong ?? 5000}</strong>
+          <strong className="text-xl text-ink">
+            {ds.data
+              ? (ds.data.choNhan + ds.data.choDuyet + ds.data.daDuyet).toLocaleString('vi-VN')
+              : '5.000'}
+          </strong>
         </div>
         <div className="rounded-lg border border-line bg-nen-2 p-3">
           <span className="block text-xs text-faint">Đã duyệt nhãn</span>
-          <strong className="text-xl text-ok">{ds.data?.daDuyet ?? 0}</strong>
+          <strong className="text-xl text-ok">{(ds.data?.daDuyet ?? 0).toLocaleString('vi-VN')}</strong>
         </div>
         <div className="rounded-lg border border-line bg-nen-2 p-3">
           <span className="block text-xs text-faint">Chờ duyệt nhãn</span>
-          <strong className="text-xl text-warn">{ds.data?.choDuyet ?? 0}</strong>
+          <strong className="text-xl text-warn">{(ds.data?.choDuyet ?? 0).toLocaleString('vi-VN')}</strong>
         </div>
         <div className="rounded-lg border border-line bg-nen-2 p-3">
           <span className="block text-xs text-faint">Đã chạy mô hình AI</span>
-          <strong className="text-xl text-brand">{ds.data?.daChay ?? 0}</strong>
+          <strong className="text-xl text-brand">{(ds.data?.daChay ?? 0).toLocaleString('vi-VN')}</strong>
         </div>
       </div>
       {q.includes(quyenBenhVien('phim-x-quang', 'CREATE')) && (
@@ -363,10 +395,28 @@ export default function DanhSachPhim() {
             />
           </div>
           {ds.data && (
-            <div className="flex flex-wrap gap-2">
-              <Chip>{ds.data.choNhan} chờ nhãn</Chip>
-              <Chip mau="warn">{ds.data.choDuyet} chờ duyệt</Chip>
-              <Chip mau="ok">{ds.data.daDuyet.toLocaleString('vi-VN')} đã duyệt</Chip>
+            <div role="group" aria-label="Lọc nhanh theo trạng thái phim" className="flex flex-wrap gap-2">
+              {(
+                [
+                  ['tat-ca', `Tất cả (${(ds.data.choNhan + ds.data.choDuyet + ds.data.daDuyet).toLocaleString('vi-VN')})`, 'xam'],
+                  ['cho-nhan', `${ds.data.choNhan} chờ nhãn`, 'xam'],
+                  ['cho-duyet', `${ds.data.choDuyet} chờ duyệt`, 'warn'],
+                  ['da-duyet', `${ds.data.daDuyet.toLocaleString('vi-VN')} đã duyệt`, 'ok'],
+                ] as const
+              ).map(([maLoc, nhanLoc, mauLoc]) => (
+                <button
+                  key={maLoc}
+                  type="button"
+                  aria-pressed={loc === maLoc}
+                  onClick={() => {
+                    datLoc(maLoc)
+                    datTrang(1)
+                  }}
+                  className="cursor-pointer rounded-full hover:ring-1 hover:ring-brand aria-pressed:ring-2 aria-pressed:ring-brand"
+                >
+                  <Chip mau={mauLoc}>{nhanLoc}</Chip>
+                </button>
+              ))}
             </div>
           )}
         </The>
@@ -375,7 +425,7 @@ export default function DanhSachPhim() {
         {ds.data && (
           <Luoi
             ma="bv-kho-phim"
-            tieuDe="Trang phim giả lập"
+            tieuDe="Kho phim X-quang phổi"
             cot={COT}
             dong={ds.data.dong}
             khoa={(d) => d.ma}
@@ -399,7 +449,7 @@ export default function DanhSachPhim() {
           />
         )}
       </div>
-      {p && <HopThoaiMoPhim key={`${p.ma}:${p.trangThai}:${p.nhan}`} p={p} dong={() => datChon(undefined)} />}
+      {p && <HopThoaiMoPhim key={p.ma} p={p} dong={() => datChon(undefined)} />}
     </>
   )
 }

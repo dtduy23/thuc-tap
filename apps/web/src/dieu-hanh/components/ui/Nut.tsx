@@ -23,7 +23,12 @@ export function NutChinh({ onPress, children, isDisabled, className }: Props) {
 /** Nút phụ — Button HeroUI variant outline. */
 export function NutPhu({ onPress, children, isDisabled, className }: Props) {
   return (
-    <Button variant="outline" onPress={onPress} isDisabled={isDisabled} className={className}>
+    <Button
+      variant="outline"
+      onPress={onPress}
+      isDisabled={isDisabled}
+      className={`border-line bg-nen-2/60 text-ink hover:bg-nen-2 ${className ?? ''}`}
+    >
       {children}
     </Button>
   )

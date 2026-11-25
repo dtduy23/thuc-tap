@@ -70,7 +70,9 @@ export function hoSoBhytMau(hoSo: DongBhyt, trangThai: string): HoSoBhytThu {
     tongChiPhi: hoSo.tongChiPhi,
     tienBhyt: hoSo.tienBhyt,
     mucDoRuiRo: hoSo.mucDoRuiRo,
-    goiYAI: hoSo.goiYAI,
+    goiYAI: daSua
+      ? 'Hồ sơ đã được chuẩn hóa dữ liệu hợp lệ theo Quyết định 130/QĐ-BYT, sẵn sàng trình duyệt.'
+      : hoSo.goiYAI,
   }
 }
 

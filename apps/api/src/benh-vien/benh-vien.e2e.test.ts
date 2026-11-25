@@ -64,6 +64,8 @@ it('tra cứu theo quyền nguồn và chỉ mở báo cáo cho người có quy
     a.post(`${GOC}/tro-ly`).set(GHI).send({ chuDe, ma, ky: '2026-11' })
   expect((await hoi('so-lieu', 'BV-01')).status).toBe(201)
   expect((await hoi('ma-icd', 'LAO-THU-01')).status).toBe(403)
+  expect((await hoi('kiem-tra-don-thuoc', 'LAO-THU-01')).status).toBe(403)
+  expect((await hoi('soan-thao', 'LAO-THU-01')).status).toBe(403)
 
   const baoCao = '/api/bao-cao/bao-cao-benh-vien-so-y-te'
   expect((await a.get(baoCao)).status).toBe(403)
@@ -182,6 +184,8 @@ it('trợ lý đọc đúng nguồn và nhận thay đổi theo dõi lao, VITIME
   const hoi = (chuDe: string, ma?: string) =>
     cv.post(`${GOC}/tro-ly`).set(GHI).send({ chuDe, ma, ky: '2026-11' })
   expect((await hoi('ma-icd', ma)).body).toMatchObject({ nguon: 'Hồ sơ lao giả lập' })
+  expect((await hoi('kiem-tra-don-thuoc', ma)).status).toBe(201)
+  expect((await hoi('soan-thao', ma)).status).toBe(201)
   const { lanTheoDoi } = await doc()
   for (const { ngay } of lanTheoDoi)
     expect((await cv.post(`${url}/nhac`).set(GHI).send({ ngay, ketQua: 'da-xac-nhan' })).status).toBe(201)

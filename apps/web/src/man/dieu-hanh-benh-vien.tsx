@@ -14,7 +14,8 @@ import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { Activity, BedDouble, ClipboardList, Hospital, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
-import { goiApi } from '@/lib/http'
+import { taiExcelBaoCao } from '@/lib/bao-cao'
+import { goiApi, LoiApi } from '@/lib/http'
 import { ngayGio } from '@/lib/ngay'
 import { truyVanToi } from '@/lib/phien'
 import { Chip, Nut, OChon, ONhap, The, ThongBao } from '@/ui/co-ban'
@@ -106,15 +107,32 @@ function NoiDung({ bang, quyen }: { bang: BangDieuHanhBenhVien; quyen: string[] 
   const dong = dongChiTieuBenhVien(hienTai)
   const kyTruoc = dongChiTieuBenhVien(bang.cacKy.at(-2)!)
   const [hienChiTiet, datHienChiTiet] = useState(false)
+  const [dangTaiExcel, datDangTaiExcel] = useState<string | null>(null)
+  const [loiExcel, datLoiExcel] = useState<string | null>(null)
   const duocXem = new Set(baoCaoCua(DANH_SACH_MODULE, new Set(quyen)).map((b) => b.muc.id))
   const cacBieu = BAO_CAO_BENH_VIEN.filter((b) => duocXem.has(b.maBaoCao))
   const coSoLieu = hienTai.soLieu.length > 0
+
+  const xuatExcel = async (maBaoCao: string) => {
+    datLoiExcel(null)
+    datDangTaiExcel(maBaoCao)
+    try {
+      await taiExcelBaoCao(maBaoCao, { ky: hienTai.ky, nguon: bang.nguon })
+    } catch (e) {
+      datLoiExcel(e instanceof LoiApi ? e.message : 'Không tải được tệp Excel.')
+    } finally {
+      datDangTaiExcel(null)
+    }
+  }
+
   return (
     <>
       {!coSoLieu && <ThongBao>Chưa có số liệu bệnh viện đã nạp cho {kyHien(hienTai.ky)}.</ThongBao>}
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {KPI.map(({ ma, BieuTuong }) => {
           const d = dong.find((c) => c.ma === ma)!
+          const vuotNguong = ma === MA_CONG_SUAT_GIUONG && d.giaTri !== null && d.giaTri > 90
+          const mauSo = vuotNguong ? (d.giaTri! >= 100 ? 'text-danger' : 'text-warn') : 'text-ink'
           return (
             <article key={ma} className="rounded-xl border border-line bg-nen p-4 shadow-sm">
               <div className="flex items-start justify-between gap-2">
@@ -123,10 +141,15 @@ function NoiDung({ bang, quyen }: { bang: BangDieuHanhBenhVien; quyen: string[] 
                   <BieuTuong size={17} aria-hidden="true" />
                 </span>
               </div>
-              <p className="mt-2 text-[28px] leading-tight font-bold tabular-nums text-ink">
+              <p className={`mt-2 text-[28px] leading-tight font-bold tabular-nums ${mauSo}`}>
                 {hienSo(d.giaTri)}{' '}
                 {d.giaTri !== null && <span className="text-xs font-medium text-faint">{d.donVi}</span>}
               </p>
+              {vuotNguong && (
+                <div className="mt-1">
+                  <Chip mau={d.giaTri! >= 100 ? 'danger' : 'warn'}>Vượt ngưỡng 90%</Chip>
+                </div>
+              )}
               <p className="mt-2 text-xs text-faint">
                 <SoSanh nay={d} truoc={kyTruoc.find((c) => c.ma === ma)} />
               </p>
@@ -141,6 +164,11 @@ function NoiDung({ bang, quyen }: { bang: BangDieuHanhBenhVien; quyen: string[] 
           <p className="mb-3 text-xs text-faint">
             Bản nháp tổng hợp để đối soát trước khi lập báo cáo chính thức.
           </p>
+          {loiExcel && (
+            <div className="mb-2">
+              <ThongBao kieu="loi">{loiExcel}</ThongBao>
+            </div>
+          )}
           {!cacBieu.length && (
             <p className="text-xs text-faint">Chưa có báo cáo trong phạm vi quyền của bạn.</p>
           )}
@@ -155,15 +183,23 @@ function NoiDung({ bang, quyen }: { bang: BangDieuHanhBenhVien; quyen: string[] 
                       {m.mo} · {coSo}/{m.chiTieu.length} chỉ tiêu có số
                     </p>
                   </div>
-                  <Link
-                    to="/bao-cao/$ma"
-                    params={{ ma: m.maBaoCao }}
-                    search={{ ky: hienTai.ky, nguon: bang.nguon }}
-                    aria-label={`Xem báo cáo ${m.ten}`}
-                    className="rounded-lg border border-line px-3 py-2 text-xs font-semibold text-brand hover:underline"
-                  >
-                    Xem báo cáo
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Nut
+                      disabled={dangTaiExcel === m.maBaoCao}
+                      onClick={() => void xuatExcel(m.maBaoCao)}
+                    >
+                      {dangTaiExcel === m.maBaoCao ? 'Đang tạo…' : '⬇ Excel'}
+                    </Nut>
+                    <Link
+                      to="/bao-cao/$ma"
+                      params={{ ma: m.maBaoCao }}
+                      search={{ ky: hienTai.ky, nguon: bang.nguon }}
+                      aria-label={`Xem báo cáo ${m.ten}`}
+                      className="rounded-lg border border-line px-3 py-2 text-xs font-semibold text-brand hover:underline"
+                    >
+                      Xem báo cáo
+                    </Link>
+                  </div>
                 </li>
               )
             })}
@@ -250,6 +286,14 @@ export default function DieuHanhBenhVien() {
             className="font-semibold text-brand underline"
           >
             Nguồn dữ liệu vào
+          </Link>{' '}
+          hoặc kiểm tra{' '}
+          <Link
+            to="/$chucNang"
+            params={{ chucNang: 'bv-ket-noi' }}
+            className="font-semibold text-brand underline"
+          >
+            Nguồn bệnh viện (5 hệ thống)
           </Link>
           .
         </p>

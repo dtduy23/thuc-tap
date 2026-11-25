@@ -11,7 +11,7 @@ import {
   type KetQuaBaoCao,
   type CheDoSoLieu,
 } from '@gdos/shared'
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useRouter } from '@tanstack/react-router'
 import { Suspense, useState, type FormEvent } from 'react'
 import { taiExcelBaoCao, truyVanBaoCao, type ThamSoUrl } from '@/lib/bao-cao'
@@ -85,8 +85,11 @@ function ThamSo({ ma, muc, ts }: { ma: string; muc: BaoCaoDef; ts: ThamSoUrl }) 
     nguon: ts.nguon ?? 'tu-dong',
   })
   const { data: linhVuc = [] } = useQuery({ ...truyVanDanhMuc('linh-vuc'), enabled: ds.includes('linh-vuc') })
+  const qc = useQueryClient()
   const [loi, datLoi] = useState<string>()
   const [dangTai, datDangTai] = useState(false)
+  const [dangXem, datDangXem] = useState(false)
+  const [capNhatLuc, datCapNhatLuc] = useState<string | null>(null)
 
   const thamSoMoi = (): ThamSoUrl => ({
     ...(ds.includes('nam') ? { nam: Number(f.nam) } : {}),
@@ -97,9 +100,18 @@ function ThamSo({ ma, muc, ts }: { ma: string; muc: BaoCaoDef; ts: ThamSoUrl }) 
     ...(ds.includes('ky-bao-cao') ? { ky: f.ky } : {}),
     ...(ds.includes('nguon-so-lieu') ? { nguon: f.nguon } : {}),
   })
-  const xem = (e: FormEvent) => {
+  const xem = async (e: FormEvent) => {
     e.preventDefault()
-    void di({ to: '/bao-cao/$ma', params: { ma }, search: thamSoMoi() })
+    datLoi(undefined)
+    datDangXem(true)
+    try {
+      const moi = thamSoMoi()
+      await di({ to: '/bao-cao/$ma', params: { ma }, search: moi })
+      await qc.invalidateQueries({ queryKey: truyVanBaoCao(ma, moi).queryKey })
+      datCapNhatLuc(new Date().toLocaleTimeString('vi-VN'))
+    } finally {
+      datDangXem(false)
+    }
   }
   const excel = async () => {
     datLoi(undefined)
@@ -125,6 +137,8 @@ function ThamSo({ ma, muc, ts }: { ma: string; muc: BaoCaoDef; ts: ThamSoUrl }) 
       {chu}
     </label>
   )
+  const coBoLoc = ds.length > 0 || Boolean(muc.nhomTheo?.length)
+
   return (
     <form
       onSubmit={xem}
@@ -259,13 +273,20 @@ function ThamSo({ ma, muc, ts }: { ma: string; muc: BaoCaoDef; ts: ThamSoUrl }) 
           )
         : null}
       <div className="flex gap-2">
-        <Nut type="submit" kieu="chinh">
-          Xem báo cáo
-        </Nut>
-        <Nut type="button" onClick={() => void excel()} disabled={dangTai}>
+        {coBoLoc && (
+          <Nut type="submit" kieu="chinh" disabled={dangXem}>
+            {dangXem ? 'Đang tải lại…' : 'Xem báo cáo'}
+          </Nut>
+        )}
+        <Nut type="button" kieu={coBoLoc ? undefined : 'chinh'} onClick={() => void excel()} disabled={dangTai}>
           {dangTai ? 'Đang tạo tệp…' : '⬇ Xuất Excel'}
         </Nut>
       </div>
+      {capNhatLuc && (
+        <span role="status" className="self-center text-xs font-medium text-ok">
+          ✓ Đã tải lại số liệu mới nhất lúc {capNhatLuc}
+        </span>
+      )}
       {loi && (
         <div className="basis-full">
           <ThongBao kieu="loi">{loi}</ThongBao>

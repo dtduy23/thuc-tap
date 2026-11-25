@@ -33,7 +33,9 @@ const COT: CotLuoi<CaLaoThu>[] = [
     giaTri: (d) => d.tuanThuDots ?? 90,
     hien: (d) => (
       <span
-        className={d.tuanThuDots && d.tuanThuDots < 85 ? 'text-warn font-semibold' : 'text-ok font-semibold'}
+        className={
+          d.tuanThuDots !== undefined && d.tuanThuDots < 85 ? 'text-warn font-semibold' : 'text-ok font-semibold'
+        }
       >
         {d.tuanThuDots ?? 90}%
       </span>
@@ -52,11 +54,22 @@ const COT: CotLuoi<CaLaoThu>[] = [
 function HopThoaiChiTietLao({ ca, dong }: { ca: CaLaoThu; dong: () => void }) {
   const q = useQuyenThu()
   const ghi = useGhiThu()
+  const [thongBao, datThongBao] = useState<string | null>(null)
   const sua = q.includes(quyenBenhVien('dieu-tri-lao', 'UPDATE'))
   const duyet = q.includes(quyenBenhVien('dieu-tri-lao', 'APPROVE'))
   const coMoi = ca.lanTheoDoi.some((d) => d.ketQua)
   const daXacNhan = ca.lanTheoDoi.filter((d) => d.ketQua === 'da-xac-nhan').length
-  const lam = (viec: string, body?: unknown) => ghi.mutate({ duongDan: `/lao/${ca.ma}/${viec}`, body })
+  const lam = (viec: string, body?: unknown) =>
+    ghi.mutate(
+      { duongDan: `/lao/${ca.ma}/${viec}`, body },
+      {
+        onSuccess: () => {
+          if (viec === 'nhac') datThongBao('Đã cập nhật trạng thái uống thuốc DOTS.')
+          else if (viec === 'hoan-tat') datThongBao('Đã hoàn tất đợt theo dõi ca lao.')
+          else if (viec === 'dong-bo') datThongBao('Đã đồng bộ hồ sơ ca lao sang hệ thống VITIMES.')
+        },
+      },
+    )
 
   useEffect(() => {
     const phim = (e: KeyboardEvent) => {
@@ -80,9 +93,12 @@ function HopThoaiChiTietLao({ ca, dong }: { ca: CaLaoThu; dong: () => void }) {
       >
         <div className="flex items-start justify-between border-b border-line px-5 py-3.5">
           <div className="min-w-0 flex-1">
-            <h2 id="bv-lao-tieu-de" className="m-0 text-[17px] font-extrabold text-ink">
-              {ca.ma} — {ca.hoTen ?? 'Bệnh nhân'}
-            </h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 id="bv-lao-tieu-de" className="m-0 text-[17px] font-extrabold text-ink">
+                {ca.ma} — {ca.hoTen ?? 'Bệnh nhân'}
+              </h2>
+              {ca.dongBoLuc && <Chip mau="ok">Đã đồng bộ VITIMES</Chip>}
+            </div>
             <p className="mt-0.5 mb-0 text-xs text-faint">
               ICD-10: {ca.maIcd} · {ca.theBenh ?? 'Lao phổi'}
             </p>
@@ -145,6 +161,11 @@ function HopThoaiChiTietLao({ ca, dong }: { ca: CaLaoThu; dong: () => void }) {
           )}
 
           {ghi.isError && <ThongBao kieu="loi">{ghi.error.message}</ThongBao>}
+          {thongBao && (
+            <div className="mb-3">
+              <ThongBao kieu="ok">{thongBao}</ThongBao>
+            </div>
+          )}
 
           <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-faint">
             Nhật ký uống thuốc DOTS định kỳ
@@ -181,17 +202,32 @@ function HopThoaiChiTietLao({ ca, dong }: { ca: CaLaoThu; dong: () => void }) {
           </ul>
         </div>
 
-        <div className="flex flex-wrap justify-end gap-2 border-t border-line px-5 py-3 bg-nen-2/40 rounded-b-[12px]">
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line px-5 py-3 bg-nen-2/40 rounded-b-[12px]">
+          {duyet && !ca.hoanTat && daXacNhan !== ca.lanTheoDoi.length && (
+            <span className="mr-auto text-xs text-faint">
+              Xác nhận đủ {ca.lanTheoDoi.length} mốc uống thuốc để hoàn tất
+            </span>
+          )}
           {duyet && !ca.hoanTat && (
             <Nut
               disabled={ghi.isPending || daXacNhan !== ca.lanTheoDoi.length}
+              title={
+                daXacNhan !== ca.lanTheoDoi.length
+                  ? `Cần xác nhận đủ ${ca.lanTheoDoi.length} mốc DOTS trước khi hoàn tất`
+                  : undefined
+              }
               onClick={() => lam('hoan-tat')}
             >
               Hoàn tất theo dõi
             </Nut>
           )}
           {sua && (
-            <Nut kieu="chinh" disabled={ghi.isPending || !coMoi} onClick={() => lam('dong-bo')}>
+            <Nut
+              kieu="chinh"
+              disabled={ghi.isPending || !coMoi}
+              title={!coMoi ? 'Cần ghi nhận ít nhất một lần theo dõi trước khi đồng bộ' : undefined}
+              onClick={() => lam('dong-bo')}
+            >
               Đồng bộ VITIMES (CTCLQG)
             </Nut>
           )}
@@ -211,9 +247,22 @@ function HopThoaiChiTietLao({ ca, dong }: { ca: CaLaoThu; dong: () => void }) {
 export default function TheoDoiLao() {
   const ds = useThu<CaLaoThu[]>('/lao')
   const [ma, datMa] = useState<string>()
+  const [locNhom, datLocNhom] = useState<'tat-ca' | 'dang-dieu-tri' | 'can-lien-he' | 'hoan-tat'>('tat-ca')
   const ca = ds.find((d) => d.ma === ma)
   const hoanTat = ds.filter((d) => d.hoanTat).length
   const canLienHe = ds.filter((d) => d.lanTheoDoi.some((l) => l.ketQua === 'bo-lo')).length
+  const coXnT2 = ds.filter((d) => d.ketQuaXnDom?.some((x) => x.thang === 2))
+  const amHoaT2 = coXnT2.filter((d) =>
+    d.ketQuaXnDom?.some((x) => x.thang === 2 && x.ketQua === 'Âm tính'),
+  ).length
+  const tyLeAmHoa = coXnT2.length ? Math.round((amHoaT2 / coXnT2.length) * 100) : 0
+
+  const dsLoc = ds.filter((d) => {
+    if (locNhom === 'dang-dieu-tri') return !d.hoanTat
+    if (locNhom === 'can-lien-he') return d.lanTheoDoi.some((l) => l.ketQua === 'bo-lo')
+    if (locNhom === 'hoan-tat') return d.hoanTat
+    return true
+  })
 
   return (
     <>
@@ -237,8 +286,29 @@ export default function TheoDoiLao() {
         </div>
         <div className="rounded-lg border border-line bg-nen-2 p-3">
           <span className="block text-xs text-faint">Tỷ lệ âm hóa đờm T2</span>
-          <strong className="text-xl text-ok">84 %</strong>
+          <strong className="text-xl text-ok">{tyLeAmHoa} %</strong>
         </div>
+      </div>
+
+      <div role="group" aria-label="Lọc nhanh ca lao" className="mb-4 flex flex-wrap gap-2">
+        {(
+          [
+            ['tat-ca', `Tất cả (${ds.length})`, 'xam'],
+            ['dang-dieu-tri', `Đang điều trị (${ds.length - hoanTat})`, 'brand'],
+            ['can-lien-he', `Cần liên hệ lại (${canLienHe})`, 'warn'],
+            ['hoan-tat', `Hoàn tất (${hoanTat})`, 'ok'],
+          ] as const
+        ).map(([id, nhan, mau]) => (
+          <button
+            key={id}
+            type="button"
+            aria-pressed={locNhom === id}
+            onClick={() => datLocNhom(id)}
+            className="cursor-pointer rounded-full hover:ring-1 hover:ring-brand aria-pressed:ring-2 aria-pressed:ring-brand"
+          >
+            <Chip mau={mau}>{nhan}</Chip>
+          </button>
+        ))}
       </div>
 
       <div className="w-full">
@@ -246,7 +316,7 @@ export default function TheoDoiLao() {
           ma="bv-ca-lao"
           tieuDe="Danh sách bệnh nhân lao đang điều trị theo phác đồ"
           cot={COT}
-          dong={ds}
+          dong={dsLoc}
           khoa={(d) => d.ma}
           moDong={(d) => datMa(d.ma)}
           dongDangMo={ca?.ma}

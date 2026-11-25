@@ -180,15 +180,20 @@ export class BenhVienThuService {
       return { noiDung, nguon: 'Lịch theo dõi lao giả lập' }
     }
     if (chuDe === 'kiem-tra-don-thuoc') {
+      const ca = ma ? caLao(ma) : CA_LAO_MAU[0]!
+      const phacDo = ca.phacDo ?? '2RHZE/4RH (Phác đồ A1)'
       return {
-        noiDung: `KẾT QUẢ KIỂM TRA ĐƠN THUỐC & PHÁC ĐỒ LAO (AI)\n\n• Phác đồ chuẩn áp dụng: 2RHZE/4RH (Phác đồ A1 - CTCLQG Bộ Y tế)\n• Đánh giá liều lượng theo cân nặng tiêu chuẩn (50 kg):\n  - Rifampicin (R) 150mg x 3 viên (10 mg/kg/ngày) -> ĐẠT LIỀU\n  - Isoniazid (H) 100mg x 3 viên (5 mg/kg/ngày) -> ĐẠT LIỀU\n  - Pyrazinamide (Z) 500mg x 3 viên (25 mg/kg/ngày) -> ĐẠT LIỀU\n  - Ethambutol (E) 400mg x 2 viên (15 mg/kg/ngày) -> ĐẠT LIỀU\n• Cảnh báo tương tác thuốc:\n  - Cảnh báo vàng: Rifampicin cảm ứng men gan cytochrome P450, làm giảm nồng độ thuốc phối hợp. Khuyến cáo kiểm tra men gan (AST/ALT) sau 2 tuần.\n• Đánh giá độ tin cậy AI: 96%.`,
-        nguon: 'Trợ lý Dược lâm sàng AI · Hướng dẫn CTCLQG Bộ Y tế',
+        noiDung: `KẾT QUẢ KIỂM TRA ĐƠN THUỐC & PHÁC ĐỒ LAO (AI)\n\n• Hồ sơ người bệnh: ${ca.ma} — ${ca.hoTen ?? 'Bệnh nhân'} (${ca.theBenh ?? 'Lao phổi'}, ICD-10: ${ca.maIcd})\n• Phác đồ đang áp dụng: ${phacDo}\n• Đánh giá liều lượng theo cân nặng tiêu chuẩn (50 kg):\n  - Rifampicin (R) 150mg x 3 viên (10 mg/kg/ngày) -> ĐẠT LIỀU\n  - Isoniazid (H) 100mg x 3 viên (5 mg/kg/ngày) -> ĐẠT LIỀU\n  - Pyrazinamide (Z) 500mg x 3 viên (25 mg/kg/ngày) -> ĐẠT LIỀU\n  - Ethambutol (E) 400mg x 2 viên (15 mg/kg/ngày) -> ĐẠT LIỀU\n• Cảnh báo tương tác thuốc:\n  - Cảnh báo vàng: Rifampicin cảm ứng men gan cytochrome P450, làm giảm nồng độ thuốc phối hợp. Khuyến cáo kiểm tra men gan (AST/ALT) sau 2 tuần.\n• Đánh giá độ tin cậy AI: 96%.`,
+        nguon: `Trợ lý Dược lâm sàng AI · ${ca.ma} · Hướng dẫn CTCLQG Bộ Y tế`,
       }
     }
     if (chuDe === 'soan-thao') {
+      const ca = ma ? caLao(ma) : CA_LAO_MAU[0]!
+      const xnT2 = ca.ketQuaXnDom?.find((x) => x.thang === 2)
+      const kqT2 = xnT2 ? `${xnT2.ketQua} (${xnT2.ngayXn})` : 'Chưa có kết quả'
       return {
-        noiDung: `DỰ THẢO TÓM TẮT BỆNH ÁN RA VIỆN (THEO MẪU BỘ Y TẾ - TT 46/2018/TT-BYT)\n\n1. Thông tin người bệnh: Trích xuất tự động từ hệ thống EMR\n2. Chẩn đoán vào viện: Lao phổi AFB(+) mới (A15.0)\n3. Quá trình điều trị:\n  - Bệnh nhân được thu nhận và điều trị tấn công theo phác đồ 2RHZE/4RH có kiểm soát trực tiếp (DOTS).\n  - Kết quả xét nghiệm đờm kiểm tra tháng thứ 2: Âm hóa đờm (Soi trực tiếp âm tính).\n  - Lâm sàng: Hết sốt, giảm ho rõ rệt, thể trạng hồi phục, tăng 2.5 kg.\n4. Chẩn đoán ra viện: Lao phổi AFB(+) giai đoạn tấn công đáp ứng tốt, chuyển duy trì.\n5. Hướng điều trị tiếp theo:\n  - Chuyển Trạm Y tế xã quản lý điều trị giai đoạn duy trì (4RH).\n  - Tái khám và làm xét nghiệm đờm định kỳ tại tháng thứ 5.\n\nBác sĩ điều trị: [Họ tên bác sĩ ký số]`,
-        nguon: 'Trợ lý Soạn thảo Văn bản Y tế AI · EMR Thông tư 46',
+        noiDung: `DỰ THẢO TÓM TẮT BỆNH ÁN RA VIỆN (THEO MẪU BỘ Y TẾ - TT 46/2018/TT-BYT)\n\n1. Thông tin người bệnh: ${ca.hoTen ?? 'Bệnh nhân'} (Mã hồ sơ: ${ca.ma} · Năm sinh: ${ca.namSinh ?? '—'} · Giới: ${ca.gioiTinh ?? '—'})\n2. Chẩn đoán vào viện: ${ca.theBenh ?? 'Lao phổi'} — ${ca.phanLoai ?? 'Mới'} (${ca.maIcd})\n3. Quá trình điều trị:\n  - Bệnh nhân được thu nhận từ ${ca.batDau} và điều trị theo phác đồ ${ca.phacDo ?? '2RHZE/4RH'} có kiểm soát trực tiếp (DOTS).\n  - Kết quả xét nghiệm đờm kiểm tra tháng thứ 2: ${kqT2}.\n  - Tỷ lệ tuân thủ DOTS: ${ca.tuanThuDots ?? 90}%.\n4. Chẩn đoán ra viện: ${ca.theBenh ?? 'Lao phổi'} (${ca.maIcd}) đáp ứng điều trị, tiếp tục theo dõi.\n5. Hướng điều trị tiếp theo:\n  - Đầu mối phụ trách: ${ca.theoDoi}.\n  - Tái khám và làm xét nghiệm đờm định kỳ tại tháng thứ 5 và tháng thứ 6.\n\nBác sĩ điều trị: [Họ tên bác sĩ ký số]`,
+        nguon: `Trợ lý Soạn thảo Văn bản Y tế AI · ${ca.ma} · EMR Thông tư 46`,
       }
     }
     const dong = dongChiTieuBenhVien((await this.ct.benhVien(nd, ky, 'tu-dong')).cacKy.at(-1)!)
