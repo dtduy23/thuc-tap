@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: gdos-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    plan: free
+    region: singapore
+    healthCheckPath: /api/health
+    autoDeploy: false
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_PORT
+        value: '4100'
+      - key: KHO_TEP_THU_MUC
+        value: /du-lieu/tep
+      - key: TIN_PROXY
+        value: loopback, linklocal, uniquelocal
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: NATIVE_URL
+        sync: false
